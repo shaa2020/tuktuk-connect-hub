@@ -71,3 +71,8 @@ function IntegrationsPage() {
     </PageContainer>
   );
 }
+
+export const Route = createFileRoute("/_authenticated/integrations")({
+  head: () => ({ meta: [{ title: "Integrations — Tuk Tuk 24 Lisbon" }] }),
+  component: IntegrationsPage,
+});
