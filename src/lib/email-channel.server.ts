@@ -34,7 +34,7 @@ function findPart(p: any, mime: string): string | null {
   return null;
 }
 export function extractBody(m: any) {
-  let t = findPart(m.payload, "text/plain");
+  let t: string = findPart(m.payload, "text/plain") ?? "";
   if (!t) { const h = findPart(m.payload, "text/html"); t = h ? h.replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/[ \t]+/g, " ") : m.snippet ?? ""; }
   // Drop quoted history from replies
   const cut = t.search(/\n(On .{5,200}wrote:|-{2,} ?Original Message|>.*\n>)/);
@@ -42,7 +42,7 @@ export function extractBody(m: any) {
 }
 export function parseFrom(v: string) {
   const m = v.match(/^\s*"?([^"<]*)"?\s*<([^>]+)>/);
-  return m ? { name: m[1].trim() || m[2], email: m[2].trim().toLowerCase() } : { name: v.trim(), email: v.trim().toLowerCase() };
+  return m ? { name: (m[1] ?? "").trim() || (m[2] ?? ""), email: (m[2] ?? "").trim().toLowerCase() } : { name: v.trim(), email: v.trim().toLowerCase() };
 }
 
 /** Pulls recent inbox emails into the unified inbox. Duplicates are skipped. */
