@@ -10,18 +10,33 @@ import { ChannelIcon } from "./inbox";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MetaConnectForm } from "@/components/admin-connections";
+import { useServerFn } from "@tanstack/react-start";
+import { connectEmailChannel, syncEmailNow } from "@/lib/admin.functions";
+import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/integrations")({
-  head: () => ({ meta: [{ title: "Integrations — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Channel connection status." }] }),
-  component: IntegrationsPage,
-});
-
-const NEEDS: Record<string, string> = {
-  whatsapp: "A Meta Business account with WhatsApp Business Platform (Cloud API) access, a verified business phone number and a permanent access token.",
-  instagram: "An Instagram Professional account linked to a Facebook Page, plus a Meta app approved for instagram_manage_messages.",
-  messenger: "A Facebook Page and a Meta app approved for pages_messaging.",
-  email: "An email domain and inbox (e.g. bookings@yourdomain) we can receive and send from.",
-};
+function EmailControls({ workspaceId, connected, onDone }: { workspaceId: string; connected: boolean; onDone: () => void }) {
+  const connect = useServerFn(connectEmailChannel);
+  const sync = useServerFn(syncEmailNow);
+  const [busy, setBusy] = useState(false);
+  const run = async (fn: () => Promise<{ ok: boolean; error?: string; imported?: number }>) => {
+    setBusy(true);
+    try {
+      const r = await fn();
+      if (!r.ok) toast.error(r.error ?? "Failed");
+      else toast.success(r.imported !== undefined ? `${r.imported} new email(s) imported` : "Done");
+    } finally { setBusy(false); onDone(); }
+  };
+  return (
+    <div className="mt-3 space-y-2">
+      {!connected && <p className="rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground">Connects the business Gmail (tuktuklisbon24@gmail.com). Customer emails appear in the Inbox and replies are sent from that address.</p>}
+      <div className="flex flex-wrap gap-2">
+        {!connected && <Button size="sm" disabled={busy} onClick={() => run(() => connect({ data: { workspaceId, connect: true } }) as any)}>Connect Gmail</Button>}
+        {connected && <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => sync({ data: { workspaceId } }) as any)}>Check for new emails</Button>}
+        {connected && <Button size="sm" variant="ghost" disabled={busy} onClick={() => run(() => connect({ data: { workspaceId, connect: false } }) as any)}>Disconnect</Button>}
+      </div>
+    </div>
+  );
+}
 
 function IntegrationsPage() {
   const { workspaceId, role } = useWorkspace();
@@ -48,7 +63,7 @@ function IntegrationsPage() {
               </div>
               {role === "admin" && c.channel !== "email" && <Button size="sm" variant="outline" className="mt-3" onClick={() => setOpen(open === c.channel ? null : c.channel)}>{c.status === "connected" ? "Manage" : "Connect"}</Button>}
               {open === c.channel && <MetaConnectForm workspaceId={workspaceId} channel={c.channel as "whatsapp"} connected={c.status === "connected"} onDone={() => q.refetch()} />}
-              {c.status !== "connected" && c.channel === "email" && <p className="mt-3 rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground"><span className="font-semibold text-foreground">Needed:</span> {NEEDS[c.channel]}</p>}
+              {c.channel === "email" && role === "admin" && <EmailControls workspaceId={workspaceId} connected={c.status === "connected"} onDone={() => q.refetch()} />}
             </Panel>
           ))}
         </div>
