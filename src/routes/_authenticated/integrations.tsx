@@ -7,6 +7,9 @@ import { ErrorState, ListSkeleton, PageHeader, Panel } from "@/components/states
 import { ToneBadge } from "@/components/kit";
 import { CHANNEL_LABEL, type ChannelType } from "@/lib/domain";
 import { ChannelIcon } from "./inbox";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { MetaConnectForm } from "@/components/admin-connections";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({ meta: [{ title: "Integrations — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Channel connection status." }] }),
@@ -21,7 +24,8 @@ const NEEDS: Record<string, string> = {
 };
 
 function IntegrationsPage() {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, role } = useWorkspace();
+  const [open, setOpen] = useState<string | null>(null);
   const q = useQuery({
     queryKey: ["channels-full", workspaceId],
     queryFn: async () => {
@@ -39,10 +43,12 @@ function IntegrationsPage() {
             <Panel key={c.id} className="p-4">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-lg bg-muted"><ChannelIcon channel={c.channel as ChannelType} className="size-5" /></div>
-                <div className="flex-1"><div className="text-sm font-semibold">{CHANNEL_LABEL[c.channel]}</div>{c.last_error && <div className="text-xs text-destructive">{c.last_error}</div>}</div>
+                <div className="flex-1"><div className="text-sm font-semibold">{CHANNEL_LABEL[c.channel]}</div>{c.display_name && <div className="text-xs text-muted-foreground">{c.display_name}</div>}{c.last_error && <div className="text-xs text-destructive">{c.last_error}</div>}</div>
                 <ToneBadge tone={c.status === "connected" ? "success" : c.status === "error" ? "danger" : "muted"}>{c.status === "connected" ? "Connected" : c.status === "error" ? "Error" : "Not connected"}</ToneBadge>
               </div>
-              {c.status !== "connected" && <p className="mt-3 rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground"><span className="font-semibold text-foreground">Needed for Phase 2:</span> {NEEDS[c.channel]}</p>}
+              {role === "admin" && c.channel !== "email" && <Button size="sm" variant="outline" className="mt-3" onClick={() => setOpen(open === c.channel ? null : c.channel)}>{c.status === "connected" ? "Manage" : "Connect"}</Button>}
+              {open === c.channel && <MetaConnectForm workspaceId={workspaceId} channel={c.channel as "whatsapp"} connected={c.status === "connected"} onDone={() => q.refetch()} />}
+              {c.status !== "connected" && c.channel === "email" && <p className="mt-3 rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground"><span className="font-semibold text-foreground">Needed:</span> {NEEDS[c.channel]}</p>}
             </Panel>
           ))}
         </div>
