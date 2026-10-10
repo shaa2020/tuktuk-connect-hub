@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { aiAsk } from "@/lib/ai.functions";
+import { AiProviderPanel } from "@/components/admin-connections";
 
 export const Route = createFileRoute("/_authenticated/ai")({
   head: () => ({ meta: [{ title: "AI Assistant — Tuk Tuk 24 Lisbon" }, { name: "description", content: "AI drafting and translation settings." }] }),
@@ -65,6 +66,7 @@ function AiPage() {
           {admin ? <Button onClick={() => save()}>Save instructions</Button> : <p className="text-xs text-muted-foreground">Only a Business Admin can change these settings.</p>}
           <p className="text-xs text-muted-foreground">Facts like prices and meeting points come from the <Link to="/knowledge" className="font-medium text-primary">Knowledge Base</Link>. Missing facts appear as placeholders like [confirm price].</p>
         </Panel>
+        {admin && <AiProviderPanel workspaceId={ws.workspaceId} current={s.data ?? null} onSaved={() => s.refetch()} />}
         <Panel className="space-y-3 p-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="size-4 text-primary" />Try it</h2>
           <Textarea rows={3} value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. Write a short reply explaining our sunset tour to a French couple" />

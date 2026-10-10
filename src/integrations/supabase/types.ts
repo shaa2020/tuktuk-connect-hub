@@ -16,20 +16,29 @@ export type Database = {
     Tables: {
       ai_settings: {
         Row: {
+          base_url: string | null
           enabled: boolean
           instructions: string | null
+          model: string | null
+          provider: string
           updated_at: string
           workspace_id: string
         }
         Insert: {
+          base_url?: string | null
           enabled?: boolean
           instructions?: string | null
+          model?: string | null
+          provider?: string
           updated_at?: string
           workspace_id: string
         }
         Update: {
+          base_url?: string | null
           enabled?: boolean
           instructions?: string | null
+          model?: string | null
+          provider?: string
           updated_at?: string
           workspace_id?: string
         }
@@ -314,6 +323,7 @@ export type Database = {
       channel_connections: {
         Row: {
           channel: Database["public"]["Enums"]["channel_type"]
+          config: Json
           created_at: string
           display_name: string | null
           id: string
@@ -324,6 +334,7 @@ export type Database = {
         }
         Insert: {
           channel: Database["public"]["Enums"]["channel_type"]
+          config?: Json
           created_at?: string
           display_name?: string | null
           id?: string
@@ -334,6 +345,7 @@ export type Database = {
         }
         Update: {
           channel?: Database["public"]["Enums"]["channel_type"]
+          config?: Json
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1647,6 +1659,41 @@ export type Database = {
           },
           {
             foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_secrets: {
+        Row: {
+          ciphertext: string
+          hint: string | null
+          kind: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ciphertext: string
+          hint?: string | null
+          kind: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          ciphertext?: string
+          hint?: string | null
+          kind?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_secrets_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
