@@ -17,7 +17,7 @@ export async function encrypt(plain: string) {
   return `${b64(iv)}.${b64(ct)}`;
 }
 export async function decrypt(payload: string) {
-  const [iv, ct] = payload.split(".");
+  const [iv = "", ct = ""] = payload.split(".");
   return dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, await key(), unb64(ct)));
 }
 export const hintOf = (v: string) => (v.length > 8 ? `••••${v.slice(-4)}` : "••••");

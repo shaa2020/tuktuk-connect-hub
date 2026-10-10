@@ -85,7 +85,7 @@ export function MetaConnectForm({ workspaceId, channel, connected, onDone }: { w
   const [verifyToken, setVerifyToken] = useState("");
   const [busy, setBusy] = useState(false);
   const h = (k: string) => hints.data?.find((x) => x.kind === k)?.hint;
-  const help = META_HELP[channel];
+  const help = META_HELP[channel]!;
   const webhook = typeof window !== "undefined" ? `${window.location.origin}/api/public/webhooks/meta/${workspaceId}` : "";
 
   async function submit() {
