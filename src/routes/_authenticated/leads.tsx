@@ -196,7 +196,7 @@ function LeadForm({ lead, defaults, acts, bookings, convs, onSaved, onClose, can
   async function save() {
     setErr(null);
     const p = schema.safeParse(f);
-    if (!p.success) return setErr(p.error.issues[0].message);
+    if (!p.success) return setErr(p.error.issues[0]?.message ?? "Invalid input");
     setBusy(true);
     try {
       const v = emptyToNull({ ...p.data }) as Record<string, string | null>;

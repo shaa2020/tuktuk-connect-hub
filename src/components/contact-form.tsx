@@ -42,7 +42,7 @@ export function ContactFormDialog({
   async function save() {
     setErr(null);
     const p = schema.safeParse(f);
-    if (!p.success) return setErr(p.error.issues[0].message);
+    if (!p.success) return setErr(p.error.issues[0]?.message ?? "Invalid input");
     setBusy(true);
     try {
       const data = emptyToNull({ ...p.data });
@@ -50,7 +50,7 @@ export function ContactFormDialog({
       if (!contactId && (data.email || data.phone)) {
         const ors = [data.email && `email.ilike.${data.email}`, data.phone && `phone.eq.${data.phone}`].filter(Boolean).join(",");
         const { data: dup } = await supabase.from("contacts").select("id, full_name").eq("workspace_id", workspaceId).or(ors).limit(1);
-        if (dup && dup.length && !confirm(`A contact with this email or phone already exists (${dup[0].full_name}). Create anyway?`)) {
+        if (dup && dup.length && !confirm(`A contact with this email or phone already exists (${dup[0]?.full_name}). Create anyway?`)) {
           setBusy(false);
           return;
         }
