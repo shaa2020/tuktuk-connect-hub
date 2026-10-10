@@ -134,7 +134,7 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
   async function save() {
     setErr(null);
     const p = schema.safeParse(f);
-    if (!p.success) return setErr(p.error.issues[0].message);
+    if (!p.success) return setErr(p.error.issues[0]?.message ?? "Invalid input");
     setBusy(true);
     try {
       const v = emptyToNull({ ...f }) as Record<string, string | null>;

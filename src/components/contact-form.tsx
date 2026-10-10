@@ -42,7 +42,7 @@ export function ContactFormDialog({
   async function save() {
     setErr(null);
     const p = schema.safeParse(f);
-    if (!p.success) return setErr(p.error.issues[0].message);
+    if (!p.success) return setErr(p.error.issues[0]?.message ?? "Invalid input");
     setBusy(true);
     try {
       const data = emptyToNull({ ...p.data });

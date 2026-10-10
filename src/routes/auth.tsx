@@ -53,7 +53,7 @@ function AuthPage() {
     e.preventDefault();
     setError(null);
     const em = emailSchema.safeParse(email);
-    if (!em.success) return setError(em.error.issues[0].message);
+    if (!em.success) return setError(em.error.issues[0]?.message ?? "Invalid input");
     setBusy(true);
     try {
       if (mode === "forgot") {
@@ -65,7 +65,7 @@ function AuthPage() {
         return;
       }
       const pw = pwSchema.safeParse(password);
-      if (!pw.success) return setError(pw.error.issues[0].message);
+      if (!pw.success) return setError(pw.error.issues[0]?.message ?? "Invalid input");
       if (mode === "signup") {
         if (!name.trim()) return setError("Please enter your name");
         const { data, error } = await supabase.auth.signUp({

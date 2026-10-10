@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { EmptyState, ErrorState, ListSkeleton, errMsg } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -273,7 +274,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const labels = (v.conversation_tags ?? []).map((x) => x.tags).filter(Boolean) as { id: string; name: string }[];
   const connected = channels.data?.get(v.channel) === "connected";
 
-  async function update(patch: Record<string, unknown>, success?: string) {
+  async function update(patch: Database["public"]["Tables"]["conversations"]["Update"], success?: string) {
     const { error } = await supabase.from("conversations").update(patch).eq("id", id);
     if (error) return toast.error(error.message.includes("Agents can only") ? "Agents can only assign conversations to themselves." : error.message);
     if (success) toast.success(success);
