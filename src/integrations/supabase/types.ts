@@ -1681,6 +1681,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: string }
+      anonymize_contact: { Args: { _id: string }; Returns: undefined }
       can_view_conversation: {
         Args: { _assigned: string; _ws: string }
         Returns: boolean
@@ -1705,6 +1706,10 @@ export type Database = {
       is_member: { Args: { _ws: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       load_demo_data: { Args: { _ws: string }; Returns: undefined }
+      merge_contacts: {
+        Args: { _keep: string; _merge: string }
+        Returns: undefined
+      }
       shares_workspace: { Args: { _other: string }; Returns: boolean }
     }
     Enums: {
