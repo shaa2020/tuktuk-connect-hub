@@ -238,7 +238,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       ]);
       if (m.error) throw m.error;
       if (n.error) throw n.error;
-      const oldest = m.data.length ? m.data[m.data.length - 1].created_at : null;
+      const oldest = m.data.length ? m.data[m.data.length - 1]!.created_at : null;
       const hasMore = (m.count ?? 0) > m.data.length;
       const items: TimelineItem[] = [
         ...m.data.map((x) => ({ kind: "msg" as const, id: x.id, at: x.created_at, direction: x.direction, body: x.body, status: x.status, author: x.author_id, error: x.error_message })),
@@ -314,10 +314,10 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       </header>
 
       <div className="grid grid-cols-3 gap-2 border-b bg-card px-3 py-2">
-        <NativeSelect className="h-9 text-xs" value={v.status} onChange={(e) => update({ status: e.target.value }, "Status updated")} aria-label="Status">
+        <NativeSelect className="h-9 text-xs" value={v.status} onChange={(e) => update({ status: e.target.value as ConversationStatus }, "Status updated")} aria-label="Status">
           {(Object.keys(STATUS_META) as ConversationStatus[]).map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </NativeSelect>
-        <NativeSelect className="h-9 text-xs" value={v.priority} onChange={(e) => update({ priority: e.target.value }, "Priority updated")} aria-label="Priority">
+        <NativeSelect className="h-9 text-xs" value={v.priority} onChange={(e) => update({ priority: e.target.value as Priority }, "Priority updated")} aria-label="Priority">
           {(Object.keys(PRIORITY_META) as Priority[]).map((s) => <option key={s} value={s}>{PRIORITY_META[s].label}</option>)}
         </NativeSelect>
         <NativeSelect className="h-9 text-xs" value={v.assigned_to ?? ""} onChange={(e) => update({ assigned_to: e.target.value || null }, "Assignment updated")} aria-label="Assignee">
