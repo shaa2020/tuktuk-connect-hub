@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { aiAssist } from "@/lib/ai.functions";
+import { sendChannelMessage } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -383,7 +384,9 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
   const ws = useWorkspace();
   const qc = useQueryClient();
   const draftKey = `draft:${conversationId}`;
-  const [mode, setMode] = useState<"log" | "note">("log");
+  const [mode, setMode] = useState<"send" | "log" | "note">(connected ? "send" : "log");
+  useEffect(() => { setMode(connected ? "send" : "log"); }, [connected, conversationId]);
+  const sendFn = useServerFn(sendChannelMessage);
   const [direction, setDirection] = useState<"outbound" | "inbound">("outbound");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -409,7 +412,10 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
     setBusy(true);
     setFailed(null);
     try {
-      if (mode === "note") {
+      if (mode === "send") {
+        const r = await sendFn({ data: { conversationId, body } });
+        if (!r.ok) { qc.invalidateQueries({ queryKey: ["timeline", conversationId] }); throw new Error(r.error); }
+      } else if (mode === "note") {
         const { error } = await supabase.from("internal_notes").insert({ workspace_id: ws.workspaceId, conversation_id: conversationId, body, author_id: ws.userId });
         if (error) throw error;
       } else {
@@ -437,7 +443,8 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         </div>
       )}
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <button onClick={() => setMode("log")} className={cn("h-8 rounded-full px-3 text-xs font-medium", mode === "log" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>Log message</button>
+        {connected && <button onClick={() => setMode("send")} className={cn("flex h-8 items-center gap-1 rounded-full px-3 text-xs font-medium", mode === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}><Send className="size-3" />Reply to customer</button>}
+        <button onClick={() => setMode("log")} className={cn("h-8 rounded-full px-3 text-xs font-medium", mode === "log" ? "bg-navy text-primary-foreground" : "bg-muted text-muted-foreground")}>Log message</button>
         <button onClick={() => setMode("note")} className={cn("flex h-8 items-center gap-1 rounded-full px-3 text-xs font-medium", mode === "note" ? "bg-warning text-primary-foreground" : "bg-muted text-muted-foreground")}><StickyNote className="size-3" />Internal note</button>
         {mode === "log" && (
           <NativeSelect className="ml-auto h-8 w-auto text-xs" value={direction} onChange={(e) => setDirection(e.target.value as typeof direction)} aria-label="Who said it">
@@ -472,16 +479,16 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(); } }}
-          placeholder={mode === "note" ? "Private note — only your team can see this" : direction === "outbound" ? "What did you reply?" : "What did the customer say?"}
+          placeholder={mode === "send" ? `Reply via ${CHANNEL_LABEL[channel]}` : mode === "note" ? "Private note — only your team can see this" : direction === "outbound" ? "What did you reply?" : "What did the customer say?"}
           rows={1}
           className="max-h-40 min-h-9 flex-1 resize-none border-0 bg-transparent p-1.5 shadow-none focus-visible:ring-0"
           aria-label="Message"
         />
-        <Button size="icon" className="size-9 shrink-0" onClick={submit} disabled={busy || !text.trim()} variant={mode === "note" ? "navy" : "default"} aria-label={mode === "note" ? "Add note" : "Log message"}><Send /></Button>
+        <Button size="icon" className="size-9 shrink-0" onClick={submit} disabled={busy || !text.trim()} variant={mode === "note" ? "navy" : "default"} aria-label={mode === "send" ? "Send" : mode === "note" ? "Add note" : "Log message"}><Send /></Button>
       </div>
       <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
         <span>Ctrl/⌘ + Enter to save · Draft is kept on this device</span>
-        {failed && <span className="flex items-center gap-1 text-destructive">Not saved: {failed} <button className="font-semibold underline" onClick={submit}>Retry</button></span>}
+        {failed && <span className="flex items-center gap-1 text-destructive">{mode === "send" ? "Not sent:" : "Not saved:"} {failed} <button className="font-semibold underline" onClick={submit}>Retry</button></span>}
       </div>
     </div>
   );
