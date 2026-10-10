@@ -22,9 +22,6 @@ function instructionsFor(ctx: { instructions: string; kbText: string }) {
   return `${BASE}\n\nBusiness instructions from the owner:\n${ctx.instructions || "(none)"}\n\nBusiness knowledge:\n${ctx.kbText || "(no knowledge documents yet)"}`;
 }
 
-const { generateText } = await import("./ai-gateway.server").catch(() => ({ generateText: null as never }));
-void generateText;
-
 export const aiAssist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
