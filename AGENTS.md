@@ -16,3 +16,5 @@
 - Protected pages live under `src/routes/_authenticated/` (client-only gate, redirect to `/auth`).
 - Sample data is flagged `is_demo` and labelled "[SAMPLE]" — never mixed with real records.
 - tsconfig relaxes exactOptionalPropertyTypes / noPropertyAccessFromIndexSignature / noImplicitReturns — generated DB types are incompatible with them.
+- AI calls go through `src/lib/ai.functions.ts` (requireSupabaseAuth, RLS-scoped reads) → `ai-gateway.server.ts` (streamed Responses API); output is always shown as a labelled suggestion, never auto-sent.
+- Automations are evaluated in a DB trigger on conversation insert and logged to `automation_runs`.
