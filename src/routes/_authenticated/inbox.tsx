@@ -4,9 +4,11 @@ import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, ArrowLeft, Inbox as InboxIcon, Phone, MessageCircle, Instagram, Mail, Facebook, StickyNote,
-  MoreVertical, Send, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen,
+  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { aiAssist } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -389,6 +391,17 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
   useEffect(() => { setText(localStorage.getItem(draftKey) ?? ""); }, [draftKey]);
   useEffect(() => { if (text) localStorage.setItem(draftKey, text); else localStorage.removeItem(draftKey); }, [text, draftKey]);
 
+  const assist = useServerFn(aiAssist);
+  const [ai, setAi] = useState<{ kind: "draft" | "summarize" | "translate"; text: string } | null>(null);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  async function runAi(task: "draft" | "summarize" | "translate") {
+    setAiBusy(task);
+    try {
+      const r = await assist({ data: { conversationId, task, text: text.trim() || undefined } });
+      if (r.ok) setAi({ kind: task, text: r.text }); else toast.error(r.error);
+    } catch (e) { toast.error(errMsg(e)); } finally { setAiBusy(null); }
+  }
+
   async function submit() {
     const body = text.trim();
     if (!body) return;
@@ -432,6 +445,21 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
             <option value="inbound">Customer said</option>
           </NativeSelect>
         )}
+      </div>
+      {ai && (
+        <div className="mb-2 rounded-lg border border-primary/30 bg-primary-soft p-2.5">
+          <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase text-primary">
+            <span>AI {ai.kind === "summarize" ? "summary" : ai.kind === "translate" ? "translation" : "suggested reply"} — review before using</span>
+            <button onClick={() => setAi(null)} aria-label="Dismiss"><X className="size-3.5" /></button>
+          </div>
+          <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-sm">{ai.text}</p>
+          {ai.kind !== "summarize" && <Button size="sm" variant="outline" className="mt-2" onClick={() => { setText(ai.text); setAi(null); }}>Use this text</Button>}
+        </div>
+      )}
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        <Button size="sm" variant="outline" onClick={() => runAi("draft")} disabled={!!aiBusy}>{aiBusy === "draft" ? <Loader2 className="animate-spin" /> : <Sparkles />}Draft reply</Button>
+        <Button size="sm" variant="outline" onClick={() => runAi("summarize")} disabled={!!aiBusy}>{aiBusy === "summarize" ? <Loader2 className="animate-spin" /> : <Sparkles />}Summarize</Button>
+        <Button size="sm" variant="outline" onClick={() => runAi("translate")} disabled={!!aiBusy || !text.trim()} title="Translate the text in the box into the guest's language">{aiBusy === "translate" ? <Loader2 className="animate-spin" /> : <Languages />}Translate</Button>
       </div>
       <div className={cn("flex items-end gap-2 rounded-xl border p-1.5", mode === "note" && "border-note-border bg-note")}>
         <Popover>

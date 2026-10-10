@@ -971,24 +971,30 @@ export type Database = {
       }
       knowledge_documents: {
         Row: {
+          category: string
           content: string | null
           created_at: string
           id: string
           title: string
+          updated_at: string
           workspace_id: string
         }
         Insert: {
+          category?: string
           content?: string | null
           created_at?: string
           id?: string
           title: string
+          updated_at?: string
           workspace_id: string
         }
         Update: {
+          category?: string
           content?: string | null
           created_at?: string
           id?: string
           title?: string
+          updated_at?: string
           workspace_id?: string
         }
         Relationships: [

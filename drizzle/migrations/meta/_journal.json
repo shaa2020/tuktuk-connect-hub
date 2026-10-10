@@ -15,6 +15,13 @@
       "when": 1791651912430,
       "tag": "0001_contact_merge_anonymize",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791652886448,
+      "tag": "0002_phase2_ai_kb_automations",
+      "breakpoints": true
     }
   ]
 }
