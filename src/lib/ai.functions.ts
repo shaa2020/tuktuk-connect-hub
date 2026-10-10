@@ -9,13 +9,13 @@ Never claim a booking or payment is confirmed.`;
 
 async function loadContext(supabase: any, workspaceId: string) {
   const [s, kb] = await Promise.all([
-    supabase.from("ai_settings").select("instructions, enabled").eq("workspace_id", workspaceId).maybeSingle(),
+    supabase.from("ai_settings").select("instructions, enabled, provider, model, base_url").eq("workspace_id", workspaceId).maybeSingle(),
     supabase.from("knowledge_documents").select("title, category, content").eq("workspace_id", workspaceId).order("updated_at", { ascending: false }).limit(40),
   ]);
   const kbText = (kb.data ?? [])
     .map((d: { title: string; category: string; content: string | null }) => `## ${d.title} (${d.category})\n${d.content ?? ""}`)
     .join("\n\n").slice(0, 30000);
-  return { enabled: s.data?.enabled ?? false, instructions: s.data?.instructions ?? "", kbText };
+  return { settings: { provider: (s.data?.provider ?? "lovable") as any, model: s.data?.model ?? null, base_url: s.data?.base_url ?? null }, enabled: s.data?.enabled ?? false, instructions: s.data?.instructions ?? "", kbText };
 }
 
 function instructionsFor(ctx: { instructions: string; kbText: string }) {
@@ -31,7 +31,8 @@ export const aiAssist = createServerFn({ method: "POST" })
     language: z.string().max(40).optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const { generateText, AiError } = await import("./ai-gateway.server");
+    const { AiError } = await import("./ai-gateway.server");
+    const { generate } = await import("./ai-provider.server");
     const supabase = context.supabase;
     // RLS: returns nothing if the caller can't see this conversation
     const { data: conv } = await supabase.from("conversations")
@@ -54,7 +55,7 @@ export const aiAssist = createServerFn({ method: "POST" })
       input = `Translate the following text into ${data.language || guest?.preferred_language || "English"}. Keep the tone. Output only the translation.\n\n${data.text}`;
     }
     try {
-      const text = await generateText({ instructions: instructionsFor(ctx), input });
+      const text = await generate(conv.workspace_id, ctx.settings, { instructions: instructionsFor(ctx), input });
       return { ok: true as const, text };
     } catch (e) {
       const msg = e instanceof AiError ? e.message : "AI request failed";
@@ -67,13 +68,14 @@ export const aiAsk = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ workspaceId: z.string().uuid(), question: z.string().min(1).max(2000) }).parse(d))
   .handler(async ({ data, context }) => {
-    const { generateText, AiError } = await import("./ai-gateway.server");
+    const { AiError } = await import("./ai-gateway.server");
+    const { generate } = await import("./ai-provider.server");
     const { data: ws } = await context.supabase.from("workspaces").select("id").eq("id", data.workspaceId).maybeSingle();
     if (!ws) return { ok: false as const, error: "Workspace not accessible." };
     const ctx = await loadContext(context.supabase, data.workspaceId);
     if (!ctx.enabled) return { ok: false as const, error: "AI assistance is turned off. An admin can enable it above." };
     try {
-      const text = await generateText({ instructions: instructionsFor(ctx), input: data.question });
+      const text = await generate(data.workspaceId, ctx.settings, { instructions: instructionsFor(ctx), input: data.question });
       return { ok: true as const, text };
     } catch (e) {
       return { ok: false as const, error: e instanceof AiError ? e.message : "AI request failed" };
