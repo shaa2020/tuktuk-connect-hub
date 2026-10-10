@@ -9,7 +9,7 @@ import {
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { aiAssist } from "@/lib/ai.functions";
-import { sendChannelMessage } from "@/lib/admin.functions";
+import { sendChannelMessage, syncEmailNow } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -58,8 +58,27 @@ function useChannelStatus() {
   });
 }
 
+/** While the inbox is open, check the business Gmail for new customer emails every minute. */
+function useEmailSync(workspaceId: string, enabled: boolean) {
+  const qc = useQueryClient();
+  const sync = useServerFn(syncEmailNow);
+  useEffect(() => {
+    if (!enabled) return;
+    let stop = false;
+    const run = async () => {
+      const r = await sync({ data: { workspaceId } }).catch(() => null);
+      if (!stop && r?.ok && r.imported > 0) qc.invalidateQueries();
+    };
+    run();
+    const t = setInterval(run, 60_000);
+    return () => { stop = true; clearInterval(t); };
+  }, [workspaceId, enabled, sync, qc]);
+}
+
 function InboxPage() {
   const ws = useWorkspace();
+  const chStatus = useChannelStatus();
+  useEmailSync(ws.workspaceId, chStatus.data?.get("email") === "connected");
   const { c } = Route.useSearch();
   const navigate = useNavigate({ from: "/inbox" });
   const [filter, setFilter] = useState<FilterKey>("all");
