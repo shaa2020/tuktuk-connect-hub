@@ -114,7 +114,7 @@ export const sendChannelMessage = createServerFn({ method: "POST" })
     // RLS: only returns the conversation if the caller may see it
     const { data: conv } = await context.supabase.from("conversations").select("id, workspace_id, channel").eq("id", data.conversationId).maybeSingle();
     if (!conv) return { ok: false as const, error: "Conversation not found or not accessible." };
-    if (!["whatsapp", "messenger", "instagram"].includes(conv.channel)) return { ok: false as const, error: "This channel can't send messages." };
+    if (!["whatsapp", "messenger", "instagram", "email"].includes(conv.channel)) return { ok: false as const, error: "This channel can't send messages." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendMeta } = await import("./channels.server");
     const [{ data: cc }, { data: part }] = await Promise.all([
@@ -125,12 +125,56 @@ export const sendChannelMessage = createServerFn({ method: "POST" })
     const to = (part as any)?.external_identities?.external_id as string | undefined;
     if (!to) return { ok: false as const, error: "No customer address for this conversation." };
     try {
-      const extId = await sendMeta(conv.workspace_id, conv.channel as any, cc.config as Record<string, string>, to, data.body);
+      const extId = conv.channel === "email"
+        ? await (await import("./email-channel.server")).sendEmail(conv.workspace_id, conv.id, to, data.body)
+        : await sendMeta(conv.workspace_id, conv.channel as any, cc.config as Record<string, string>, to, data.body);
       await supabaseAdmin.from("messages").insert({ workspace_id: conv.workspace_id, conversation_id: conv.id, direction: "outbound", body: data.body, status: "sent", external_id: extId ?? null, author_id: context.userId });
       return { ok: true as const };
     } catch (e) {
       const msg = (e as Error).message;
       await supabaseAdmin.from("messages").insert({ workspace_id: conv.workspace_id, conversation_id: conv.id, direction: "outbound", body: data.body, status: "failed", error_message: msg, author_id: context.userId });
       return { ok: false as const, error: msg };
+    }
+  });
+
+/** Admin: verify the linked Gmail account and mark the email channel connected. */
+export const connectEmailChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ workspaceId: z.string().uuid(), connect: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, data.workspaceId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!data.connect) {
+      await supabaseAdmin.from("channel_connections").update({ status: "disconnected", display_name: null, last_error: null }).eq("workspace_id", data.workspaceId).eq("channel", "email");
+      return { ok: true as const };
+    }
+    const { gmailProfile, syncEmail } = await import("./email-channel.server");
+    try {
+      const address = await gmailProfile();
+      await supabaseAdmin.from("channel_connections").upsert({ workspace_id: data.workspaceId, channel: "email", status: "connected", display_name: address, config: { address }, last_error: null, last_checked_at: new Date().toISOString() }, { onConflict: "workspace_id,channel" });
+      const imported = await syncEmail(data.workspaceId, address);
+      return { ok: true as const, address, imported };
+    } catch (e) {
+      const msg = (e as Error).message.slice(0, 300);
+      await supabaseAdmin.from("channel_connections").upsert({ workspace_id: data.workspaceId, channel: "email", status: "error", last_error: msg, last_checked_at: new Date().toISOString() }, { onConflict: "workspace_id,channel" });
+      return { ok: false as const, error: msg };
+    }
+  });
+
+/** Any workspace member: pull new emails into the inbox. */
+export const syncEmailNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ workspaceId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: member } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
+    if (member !== true) return { ok: false as const, error: "Not a member." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cc } = await supabaseAdmin.from("channel_connections").select("status, config").eq("workspace_id", data.workspaceId).eq("channel", "email").maybeSingle();
+    if (cc?.status !== "connected") return { ok: true as const, imported: 0 };
+    try {
+      const { syncEmail } = await import("./email-channel.server");
+      return { ok: true as const, imported: await syncEmail(data.workspaceId, (cc.config as any)?.address ?? "") };
+    } catch (e) {
+      return { ok: false as const, error: (e as Error).message.slice(0, 300) };
     }
   });

@@ -34,13 +34,16 @@ export async function sendMeta(ws: string, channel: MetaChannel, config: Record<
   return (j.messages?.[0]?.id ?? j.message_id) as string;
 }
 
-export async function ingestInbound(ws: string, channel: MetaChannel, ev: { from: string; name?: string; externalMessageId: string; text: string; at?: Date }) {
+export async function ingestInbound(ws: string, channel: MetaChannel | "email", ev: { from: string; name?: string; externalMessageId: string; text: string; at?: Date }) {
   const sb = await db();
   let { data: ident } = await sb.from("external_identities").select("id, contact_id").eq("workspace_id", ws).eq("channel", channel).eq("external_id", ev.from).maybeSingle();
   if (!ident) {
-    const { data: contact } = await sb.from("contacts").insert({
-      workspace_id: ws, full_name: (ev.name || ev.from).slice(0, 200), phone: channel === "whatsapp" ? `+${ev.from}`.slice(0, 40) : null, created_by: null,
-    }).select("id").single();
+    let contact: { id: string } | null = null;
+    if (channel === "email") contact = (await sb.from("contacts").select("id").eq("workspace_id", ws).ilike("email", ev.from).limit(1).maybeSingle()).data;
+    if (!contact) contact = (await sb.from("contacts").insert({
+      workspace_id: ws, full_name: (ev.name || ev.from).slice(0, 200), phone: channel === "whatsapp" ? `+${ev.from}`.slice(0, 40) : null,
+      email: channel === "email" ? ev.from.slice(0, 254) : null, created_by: null,
+    }).select("id").single()).data;
     const r = await sb.from("external_identities").insert({ workspace_id: ws, channel, external_id: ev.from, display_name: ev.name ?? null, contact_id: contact?.id ?? null, verified: true }).select("id, contact_id").single();
     ident = r.data;
   }
