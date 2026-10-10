@@ -128,7 +128,7 @@ function AuthPage() {
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {mode === "signup"
-                  ? "Use the email address your invitation was sent to."
+                  ? "If you were invited, use the email address the invitation was sent to."
                   : mode === "forgot"
                     ? "We'll email you a secure link."
                     : "Welcome back to your team workspace."}

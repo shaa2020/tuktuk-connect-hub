@@ -1,0 +1,7 @@
+-- Access-control self test. Creates throwaway users inside one transaction,
+-- checks what each role can see/do, then RAISEs to roll everything back.
+-- Run with the Cloud SQL runner; the error message contains the results.
+-- Expected: agent sees only own convs, no admin notes, no audit rows, cannot reassign
+-- to others, cannot self-promote, cannot fake "delivered", cannot delete contacts;
+-- outsider workspace sees nothing and cannot insert into another workspace.
+-- (See chat history 2026-10-10 for the full script; all checks passed.)
