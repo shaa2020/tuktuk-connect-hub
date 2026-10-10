@@ -7,5 +7,5 @@
 - [x] Bring-your-own AI model (admin panel, encrypted key)
 - [x] WhatsApp / Messenger / Instagram connect from admin panel (webhook + send)
 - [ ] WAITING: owner to enter Meta credentials and test live
-- [ ] BLOCKED: Email channel — needs email domain/inbox
+- [x] Email channel — Gmail tuktuklisbon24@gmail.com (sync while Inbox open, replies in thread)
 - [ ] BLOCKED: invite emails & push/email reminders — need email domain
