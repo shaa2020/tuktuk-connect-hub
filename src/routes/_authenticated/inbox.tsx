@@ -9,7 +9,6 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { PageContainer } from "@/components/app-shell";
 import { EmptyState, ErrorState, ListSkeleton, errMsg } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -569,5 +568,3 @@ function NewConversationDialog({ onClose, onCreated }: { onClose: () => void; on
   );
 }
 
-// Unused PageContainer import guard for consistent layout in other pages
-void PageContainer;
