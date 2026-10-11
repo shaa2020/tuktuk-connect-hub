@@ -353,6 +353,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <DropdownMenuItem onClick={() => update({ unread: !v.unread }, v.unread ? "Marked as read" : "Marked as unread")}><MailOpen />{v.unread ? "Mark as read" : "Mark as unread"}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => update({ escalated: !v.escalated, priority: v.escalated ? v.priority : "urgent" }, v.escalated ? "Escalation removed" : "Escalated to managers")}><Flag />{v.escalated ? "Remove escalation" : "Escalate"}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDialog("labels")}><Tag />Labels</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => update({ status: "archived" as ConversationStatus }, "Hidden from inbox")}><X />Not a customer — hide</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setDialog("contact")}><User />Link existing contact</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDialog("newcontact")}><Plus />Create new contact</DropdownMenuItem>

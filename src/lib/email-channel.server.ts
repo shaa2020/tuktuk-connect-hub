@@ -2,6 +2,7 @@
 // Credentials stay in server env (LOVABLE_API_KEY + GOOGLE_MAIL_API_KEY); never sent to browsers.
 import { ingestInbound } from "./channels.server";
 import { parseEmailBody } from "./email-format";
+import { shouldImportEmail } from "./email-filter";
 
 const GW = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
 
@@ -48,7 +49,7 @@ export function parseFrom(v: string) {
 /** Pulls recent inbox emails into the unified inbox. Duplicates are skipped. */
 export async function syncEmail(ws: string, self: string) {
   const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
-  const list = await gmail(`/users/me/messages?maxResults=25&q=${encodeURIComponent("in:inbox -from:me newer_than:7d -category:promotions -category:social")}`);
+  const list = await gmail(`/users/me/messages?maxResults=25&q=${encodeURIComponent("in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums")}`);
   const ids: string[] = (list.messages ?? []).map((m: any) => m.id);
   if (!ids.length) return 0;
   const { data: have } = await sb.from("messages").select("external_id").eq("workspace_id", ws).in("external_id", ids.map((i) => `gm:${i}`));
@@ -60,6 +61,10 @@ export async function syncEmail(ws: string, self: string) {
     const from = parseFrom(hdr(m, "From") ?? "");
     if (!from.email || from.email === self.toLowerCase()) continue;
     const subject = hdr(m, "Subject");
+    const headers: Record<string, string> = {};
+    for (const h of m.payload?.headers ?? []) headers[String(h.name).toLowerCase()] = h.value;
+    const { data: known } = await sb.from("contacts").select("id").eq("workspace_id", ws).ilike("email", from.email).limit(1).maybeSingle();
+    if (!shouldImportEmail({ from: from.email, subject: subject ?? "", body: extractBody(m), headers, labels: m.labelIds ?? [] }, !!known)) continue;
     await ingestInbound(ws, "email", {
       from: from.email, name: from.name, externalMessageId: `gm:${id}`,
       text: (subject ? `Subject: ${subject}\n\n` : "") + extractBody(m), at: new Date(Number(m.internalDate)),
