@@ -54,6 +54,15 @@ export async function runOperatorFor(ws: string, opts: { force?: boolean } = {})
       const { data: last } = await sb.from("messages").select("id").eq("conversation_id", c.id).eq("direction", "inbound").order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (!last) continue;
       const { data: mark } = await sb.from("ai_operator_marks").select("*").eq("conversation_id", c.id).maybeSingle();
+      // Human takeover: once a team member has replied in this chat, the operator steps back for good.
+      if (!mark?.handed_off) {
+        const { data: humanMsg } = await sb.from("messages").select("id").eq("conversation_id", c.id).eq("direction", "outbound").not("author_id", "is", null).limit(1);
+        if (humanMsg?.length) {
+          await sb.from("ai_operator_marks").upsert({ conversation_id: c.id, workspace_id: ws, last_inbound_id: last.id, replies: mark?.replies ?? 0, handed_off: true, updated_at: new Date().toISOString() });
+          await log(sb, ws, c.id, "handoff", "A team member replied — the AI Operator stepped back from this chat.");
+          continue;
+        }
+      }
       // A previous handoff never silences the chat: every new guest message gets an answer.
       if (mark?.last_inbound_id === last.id) continue;
       handled++;
