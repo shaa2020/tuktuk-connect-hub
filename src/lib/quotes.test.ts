@@ -34,3 +34,15 @@ describe("quotes", () => {
     expect(q).not.toContain("Pick-up:");
   });
 });
+
+import { parseDurationMinutes as pdm, quoteTotal as qt } from "./quotes";
+describe("website pricing", () => {
+  it("per-person tours multiply by guests", () => {
+    expect(qt({ id: "x", name: "x", durationMinutes: 90, pricePerTuk: 39, maxGuestsPerTuk: 6, pricing: "per_person", highlights: [] }, 3).total).toBe(117);
+  });
+  it("parses website durations", () => {
+    expect(pdm("90 minutes")).toBe(90);
+    expect(pdm("1.5 Hours")).toBe(90);
+    expect(pdm("On-demand")).toBe(0);
+  });
+});

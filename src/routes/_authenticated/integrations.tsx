@@ -14,7 +14,8 @@ import { TemplatesPanel } from "@/components/wa-templates";
 import { useServerFn } from "@tanstack/react-start";
 import { connectEmailChannel, connectGmailAppPassword, disconnectChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+import { Globe, Plus, RefreshCw } from "lucide-react";
+import { syncWebsiteKnowledge, websiteStatus } from "@/lib/website.functions";
 import { toast } from "sonner";
 
 function EmailControls({ workspaceId, connected, onDone }: { workspaceId: string; connected: boolean; onDone: () => void }) {
@@ -71,6 +72,35 @@ function GmailAppForm({ workspaceId, connectionId, initialAddress, initialLabel,
 const META = ["whatsapp", "instagram", "messenger"] as const;
 const ORDER: ChannelType[] = ["whatsapp", "instagram", "messenger", "email"];
 
+function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: boolean }) {
+  const status = useServerFn(websiteStatus);
+  const sync = useServerFn(syncWebsiteKnowledge);
+  const [busy, setBusy] = useState(false);
+  const q = useQuery({ queryKey: ["website-status", workspaceId], queryFn: () => status({ data: { workspaceId } }) });
+  const d = q.data;
+  return (
+    <Panel className="p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-lg bg-muted"><Globe className="size-5" /></div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold">Website · tuktuk24lisbon.com</div>
+          <div className="text-xs text-muted-foreground">
+            {q.isLoading ? "Checking…" : d?.ok ? `${d.tourCount} live tours · ${d.lastSync ? `AI knowledge updated ${new Date(d.lastSync).toLocaleString()}` : "not yet copied to AI knowledge"}` : d?.error}
+          </div>
+        </div>
+        <ToneBadge tone={d?.ok ? "success" : q.isLoading ? "muted" : "danger"}>{d?.ok ? "Connected" : q.isLoading ? "…" : "Error"}</ToneBadge>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">Quote prices come live from your website. Sync copies your tours, prices, policies and FAQs into the AI knowledge so suggested replies stay up to date.</p>
+      {canSync && <Button size="sm" variant="outline" className="mt-2" disabled={busy || !d?.ok} onClick={async () => {
+        setBusy(true);
+        const r = await sync({ data: { workspaceId } });
+        setBusy(false);
+        if (r.ok) { toast.success(`Synced ${r.tours} tours and business info`); q.refetch(); } else toast.error(r.error);
+      }}><RefreshCw className={busy ? "animate-spin" : ""} />Sync now</Button>}
+    </Panel>
+  );
+}
+
 function IntegrationsPage() {
   const { workspaceId, role } = useWorkspace();
   const [open, setOpen] = useState<string | null>(null);
@@ -90,6 +120,7 @@ function IntegrationsPage() {
       <PageHeader title="Integrations" description="Connect as many Gmail inboxes, WhatsApp numbers, Instagram accounts and Facebook Pages as you need. Status shown is the real connection state." />
       {q.isLoading ? <ListSkeleton /> : q.error ? <ErrorState message={(q.error as Error).message} /> : (
         <div className="space-y-4">
+          <WebsitePanel workspaceId={workspaceId} canSync={role === "admin" || role === "manager"} />
           {ORDER.map((ch) => {
             const rows = (q.data ?? []).filter((c) => c.channel === ch);
             const isMeta = (META as readonly string[]).includes(ch);
