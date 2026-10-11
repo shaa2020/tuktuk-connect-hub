@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, ArrowLeft, Inbox as InboxIcon, Phone, MessageCircle, Instagram, Mail, Facebook, StickyNote,
-  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt, SlidersHorizontal,
+  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt, SlidersHorizontal, Check, CheckCheck, PanelRight,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
 import { listWebsiteTours } from "@/lib/website.functions";
@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, Field, NativeSelect, SampleBadge, ToneBadge, fmtDateTime, fmtRelative } from "@/components/kit";
 import { ContactSelect, LeadSelect, BookingSelect } from "@/components/pickers";
 import { ContactFormDialog } from "@/components/contact-form";
@@ -51,6 +52,9 @@ export function ChannelIcon({ channel, className }: { channel: ChannelType; clas
   const I = { whatsapp: MessageCircle, instagram: Instagram, messenger: Facebook, email: Mail, manual: Phone }[channel];
   return <I className={cn("size-3.5", className)} aria-label={CHANNEL_LABEL[channel]} />;
 }
+export const CHANNEL_COLOR: Record<ChannelType, string> = {
+  whatsapp: "text-whatsapp", instagram: "text-instagram", messenger: "text-facebook", email: "text-gmail", manual: "text-muted-foreground",
+};
 
 function useChannelStatus() {
   const { workspaceId } = useWorkspace();
@@ -195,9 +199,9 @@ function InboxPage() {
   });
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem-4rem)] md:h-dvh">
+    <div className={cn("flex md:h-[calc(100dvh-3.5rem)]", c ? "h-[calc(100dvh-3.5rem)]" : "h-[calc(100dvh-3.5rem-4rem)]")}>
       {/* List pane */}
-      <section className={cn("flex w-full flex-col border-r bg-card md:w-[380px] md:shrink-0", c && "hidden md:flex")} aria-label="Conversations">
+      <section className={cn("flex w-full flex-col border-r bg-card md:w-[340px] md:shrink-0 lg:w-[380px]", c && "hidden md:flex")} aria-label="Conversations">
         <div className="space-y-2 border-b px-3 py-2">
           <div className="flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
@@ -249,10 +253,10 @@ function InboxPage() {
                   const labels = (v.conversation_tags ?? []).map((x) => x.tags).filter(Boolean) as { id: string; name: string }[];
                   return (
                     <li key={v.id}>
-                      <button onClick={() => navigate({ search: { c: v.id } })} className={cn("flex w-full gap-2.5 border-b px-3 py-2 text-left transition-colors hover:bg-muted/60", c === v.id && "bg-primary-soft hover:bg-primary-soft")}>
+                      <button onClick={() => navigate({ search: { c: v.id } })} className={cn("relative flex w-full gap-2.5 border-b border-border-subtle px-3 py-2.5 text-left transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none", c === v.id && "bg-primary-soft before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary hover:bg-primary-soft")}>
                         <div className="relative">
                           <Avatar name={v.contacts?.full_name ?? v.subject} />
-                          <span className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border-2 border-card bg-card"><ChannelIcon channel={v.channel} className="size-2.5 text-muted-foreground" /></span>
+                          <span className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border-2 border-card bg-card"><ChannelIcon channel={v.channel} className={cn("size-2.5", CHANNEL_COLOR[v.channel])} /></span>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
@@ -372,10 +376,19 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     qc.invalidateQueries({ queryKey: ["count"] });
   }
 
+  const [details, setDetails] = useState(true);
+  const [detailsSheet, setDetailsSheet] = useState(false);
+  const toggleDetails = () => {
+    if (window.matchMedia("(min-width: 1280px)").matches) setDetails((d) => !d);
+    else setDetailsSheet(true);
+  };
+  const panel = <CustomerPanel v={v} labels={labels} accountName={v.connection_id ? accounts.data?.byId.get(v.connection_id)?.name : undefined} />;
+
   return (
-    <>
-      <header className="flex items-center gap-2 border-b bg-card px-3 py-2.5">
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack} aria-label="Back to list"><ArrowLeft /></Button>
+    <div className="flex min-h-0 flex-1">
+    <div className="flex min-w-0 flex-1 flex-col">
+      <header className="flex items-center gap-2 border-b bg-card px-2 py-2 md:px-3">
+        <Button variant="ghost" size="icon" className="size-11 shrink-0 md:hidden" onClick={onBack} aria-label="Back to list"><ArrowLeft /></Button>
         <Avatar name={v.contacts?.full_name ?? v.subject} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -383,10 +396,11 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               : <span className="truncate text-sm font-semibold">{v.subject ?? "Unknown customer"}</span>}
             <SampleBadge show={v.is_demo} />
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground"><ChannelIcon channel={v.channel} />{CHANNEL_LABEL[v.channel]}{v.connection_id && accounts.data?.byId.get(v.connection_id) ? ` · ${accounts.data.byId.get(v.connection_id)!.name}` : ""}{v.subject && v.contacts ? ` · ${v.subject}` : ""}</div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground"><ChannelIcon channel={v.channel} className={CHANNEL_COLOR[v.channel]} />{CHANNEL_LABEL[v.channel]}{v.connection_id && accounts.data?.byId.get(v.connection_id) ? ` · ${accounts.data.byId.get(v.connection_id)!.name}` : ""}{v.subject && v.contacts ? ` · ${v.subject}` : ""}</div>
         </div>
+        <Button variant="ghost" size="icon" className="size-10 shrink-0" onClick={toggleDetails} aria-label="Customer details" title="Customer details"><PanelRight /></Button>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="Conversation actions"><MoreVertical /></Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="size-10 shrink-0" aria-label="Conversation actions"><MoreVertical /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={() => update({ unread: !v.unread }, v.unread ? "Marked as read" : "Marked as unread")}><MailOpen />{v.unread ? "Mark as read" : "Mark as unread"}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => update({ escalated: !v.escalated, priority: v.escalated ? v.priority : "urgent" }, v.escalated ? "Escalation removed" : "Escalated to managers")}><Flag />{v.escalated ? "Remove escalation" : "Escalate"}</DropdownMenuItem>
@@ -438,12 +452,13 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               </div>
             ) : (
               <div key={it.id} className={cn("flex", it.direction === "outbound" ? "justify-end" : "justify-start")}>
-                <div className={cn("max-w-[85%] rounded-2xl px-3.5 py-2 md:max-w-[70%]", it.direction === "outbound" ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm border bg-card")}>
+                <div className={cn("max-w-[85%] rounded-2xl px-3.5 py-2 md:max-w-[70%]", it.direction === "outbound" ? "rounded-br-md bg-primary text-primary-foreground shadow-card" : "rounded-bl-md border border-border-subtle bg-card shadow-card", it.status === "failed" && "ring-2 ring-destructive/60")}>
                   {v.channel === "email" ? <EmailBody body={it.body} outbound={it.direction === "outbound"} /> : <p className="whitespace-pre-wrap text-sm">{it.body}</p>}
                   <div className={cn("mt-1 flex items-center justify-end gap-1 text-[10px]", it.direction === "outbound" ? "text-primary-foreground/80" : "text-muted-foreground")}>
                     {it.direction === "outbound" && it.author && <span>{ws.memberName(it.author)} ·</span>}
                     <span>{fmtDateTime(it.at)}</span>
-                    <span>· {MESSAGE_STATUS_LABEL[it.status as keyof typeof MESSAGE_STATUS_LABEL]}</span>
+                    {it.direction === "outbound" && (it.status === "read" ? <CheckCheck className="size-3.5 text-info-soft" aria-label="Read" /> : it.status === "delivered" ? <CheckCheck className="size-3.5" aria-label="Delivered" /> : it.status === "sent" ? <Check className="size-3.5" aria-label="Sent" /> : <span>· {MESSAGE_STATUS_LABEL[it.status as keyof typeof MESSAGE_STATUS_LABEL]}</span>)}
+                    {it.direction === "inbound" && it.status !== "received" && <span>· {MESSAGE_STATUS_LABEL[it.status as keyof typeof MESSAGE_STATUS_LABEL]}</span>}
                     {it.status === "failed" && <AlertTriangle className="size-3" />}
                   </div>
                   {it.status === "failed" && it.error && <p className="mt-1 text-[11px]">{it.error}</p>}
@@ -454,6 +469,14 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       </div>
 
       <Composer conversationId={id} channel={v.channel} connected={connected} />
+    </div>
+      {details && <aside className="hidden w-80 shrink-0 overflow-y-auto border-l bg-card xl:block" aria-label="Customer details">{panel}</aside>}
+      <Sheet open={detailsSheet} onOpenChange={setDetailsSheet}>
+        <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto p-0">
+          <SheetHeader className="sr-only"><SheetTitle>Customer details</SheetTitle></SheetHeader>
+          {panel}
+        </SheetContent>
+      </Sheet>
 
       {dialog === "contact" && <LinkDialog title="Link existing contact" onClose={() => setDialog(null)} render={(val, set) => <ContactSelect value={val} onChange={set} />} initial={v.contact_id ?? ""} onSave={(x) => update({ contact_id: x || null }, "Contact linked").then(() => setDialog(null))} />}
       {dialog === "lead" && <LinkDialog title="Link lead" onClose={() => setDialog(null)} render={(val, set) => <LeadSelect value={val} onChange={set} />} initial={v.lead_id ?? ""} onSave={(x) => update({ lead_id: x || null }, "Lead linked").then(() => setDialog(null))} />}
@@ -461,8 +484,68 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {dialog === "newcontact" && <ContactFormDialog open onOpenChange={() => setDialog(null)} onSaved={(cid) => update({ contact_id: cid }, "Contact created and linked")} />}
       {dialog === "task" && <TaskDialog defaults={{ conversation: id, contact: v.contact_id ?? undefined, lead: v.lead_id ?? undefined }} onClose={() => setDialog(null)} />}
       {dialog === "labels" && <LabelsDialog conversationId={id} current={labels} onClose={() => { setDialog(null); conv.refetch(); qc.invalidateQueries({ queryKey: ["conversations"] }); }} />}
-    </>
+    </div>
   );
+}
+
+type ConvRow = {
+  channel: ChannelType; subject: string | null; created_at: string; assigned_to: string | null;
+  contacts: { id: string; full_name: string; email: string | null; phone: string | null; preferred_language: string | null } | null;
+  leads: { id: string; title: string; stage: string } | null;
+  bookings: { id: string; reference: string; tour_name: string | null; status: string; tour_date: string | null } | null;
+};
+
+function CustomerPanel({ v, labels, accountName }: { v: ConvRow; labels: { id: string; name: string }[]; accountName?: string }) {
+  const ws = useWorkspace();
+  const c = v.contacts;
+  return (
+    <div className="space-y-5 p-4">
+      <div className="flex flex-col items-center pt-2 text-center">
+        <Avatar name={c?.full_name ?? v.subject} />
+        <div className="mt-2 max-w-full truncate font-display text-base font-bold">{c?.full_name ?? v.subject ?? "Unknown customer"}</div>
+        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><ChannelIcon channel={v.channel} className={CHANNEL_COLOR[v.channel]} />{CHANNEL_LABEL[v.channel]}{accountName ? ` · ${accountName}` : ""}</div>
+        {c && <Link to="/contacts/$id" params={{ id: c.id }} className="mt-2 text-xs font-semibold text-primary hover:underline">Open full profile</Link>}
+      </div>
+      <PanelSection title="Contact">
+        {c ? (
+          <dl className="space-y-1.5 text-sm">
+            <PanelRow k="Phone" v={c.phone ? <a href={`tel:${c.phone}`} className="text-primary hover:underline">{c.phone}</a> : null} />
+            <PanelRow k="Email" v={c.email ? <a href={`mailto:${c.email}`} className="break-all text-primary hover:underline">{c.email}</a> : null} />
+            <PanelRow k="Language" v={c.preferred_language} />
+          </dl>
+        ) : <p className="text-xs text-muted-foreground">No contact linked. Use the ⋮ menu to link or create one.</p>}
+      </PanelSection>
+      <PanelSection title="Booking">
+        {v.bookings ? (
+          <Link to="/bookings" search={{ b: v.bookings.id }} className="block rounded-lg border border-border-subtle bg-surface-1 p-2.5 text-sm hover:bg-surface-2">
+            <div className="flex items-center gap-1.5 font-semibold"><CalendarCheck className="size-3.5 text-success" />{v.bookings.reference}</div>
+            <div className="mt-0.5 truncate text-xs text-muted-foreground">{[v.bookings.tour_name, v.bookings.tour_date, v.bookings.status].filter(Boolean).join(" · ")}</div>
+          </Link>
+        ) : <p className="text-xs text-muted-foreground">No booking linked.</p>}
+      </PanelSection>
+      <PanelSection title="Lead">
+        {v.leads ? (
+          <Link to="/leads" search={{ l: v.leads.id }} className="block rounded-lg border border-border-subtle bg-surface-1 p-2.5 text-sm hover:bg-surface-2">
+            <div className="flex items-center gap-1.5 font-semibold"><Target className="size-3.5 text-teal" /><span className="truncate">{v.leads.title}</span></div>
+            <div className="mt-0.5 text-xs capitalize text-muted-foreground">{v.leads.stage.replace(/_/g, " ")}</div>
+          </Link>
+        ) : <p className="text-xs text-muted-foreground">No lead linked.</p>}
+      </PanelSection>
+      <PanelSection title="Conversation">
+        <dl className="space-y-1.5 text-sm">
+          <PanelRow k="Assigned" v={v.assigned_to ? ws.memberName(v.assigned_to) : "Unassigned"} />
+          <PanelRow k="Started" v={fmtDateTime(v.created_at)} />
+        </dl>
+        {labels.length > 0 && <div className="mt-2 flex flex-wrap gap-1">{labels.map((t) => <ToneBadge key={t.id} tone="muted">{t.name}</ToneBadge>)}</div>}
+      </PanelSection>
+    </div>
+  );
+}
+function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section><h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>{children}</section>;
+}
+function PanelRow({ k, v }: { k: string; v: React.ReactNode }) {
+  return <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-2"><dt className="text-xs text-muted-foreground">{k}</dt><dd className="min-w-0 truncate">{v ?? <span className="text-muted-foreground">—</span>}</dd></div>;
 }
 
 function EmailBody({ body, outbound }: { body: string; outbound: boolean }) {
@@ -564,9 +647,11 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         </div>
       )}
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        {connected && <button onClick={() => setMode("send")} className={cn("flex h-8 items-center gap-1 rounded-full px-3 text-xs font-medium", mode === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}><Send className="size-3" />Reply to customer</button>}
-        <button onClick={() => setMode("log")} className={cn("h-8 rounded-full px-3 text-xs font-medium", mode === "log" ? "bg-navy text-primary-foreground" : "bg-muted text-muted-foreground")}>Log message</button>
-        <button onClick={() => setMode("note")} className={cn("flex h-8 items-center gap-1 rounded-full px-3 text-xs font-medium", mode === "note" ? "bg-warning text-primary-foreground" : "bg-muted text-muted-foreground")}><StickyNote className="size-3" />Internal note</button>
+        <div role="radiogroup" aria-label="Message type" className="inline-flex rounded-lg bg-surface-2 p-0.5">
+          {connected && <button role="radio" aria-checked={mode === "send"} onClick={() => setMode("send")} className={cn("flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-medium transition-colors", mode === "send" ? "bg-primary text-primary-foreground shadow-card" : "text-muted-foreground hover:text-foreground")}><Send className="size-3" />Reply</button>}
+          <button role="radio" aria-checked={mode === "log"} onClick={() => setMode("log")} className={cn("h-8 rounded-md px-2.5 text-xs font-medium transition-colors", mode === "log" ? "bg-navy text-navy-foreground shadow-card" : "text-muted-foreground hover:text-foreground")}>Log</button>
+          <button role="radio" aria-checked={mode === "note"} onClick={() => setMode("note")} className={cn("flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-medium transition-colors", mode === "note" ? "bg-warning text-primary-foreground shadow-card" : "text-muted-foreground hover:text-foreground")}><StickyNote className="size-3" />Internal note</button>
+        </div>
         {mode === "log" && (
           <NativeSelect className="ml-auto h-8 w-auto text-xs" value={direction} onChange={(e) => setDirection(e.target.value as typeof direction)} aria-label="Who said it">
             <option value="outbound">We replied</option>
