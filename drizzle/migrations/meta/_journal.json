@@ -57,6 +57,13 @@
       "when": 1791690144141,
       "tag": "0007_bookings_delete_all_members",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791712056946,
+      "tag": "0008_website_booking_tombstones",
+      "breakpoints": true
     }
   ]
 }

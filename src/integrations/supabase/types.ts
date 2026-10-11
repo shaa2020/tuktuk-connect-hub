@@ -1701,6 +1701,32 @@ export type Database = {
           },
         ]
       }
+      website_booking_ignores: {
+        Row: {
+          created_at: string
+          external_reference: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_reference: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          external_reference?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_booking_ignores_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_webhook_events: {
         Row: {
           attempts: number
