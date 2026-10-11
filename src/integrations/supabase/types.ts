@@ -1366,6 +1366,7 @@ export type Database = {
           id: string
           kind: string
           link: string | null
+          push_sent_at: string | null
           read_at: string | null
           title: string
           user_id: string
@@ -1377,6 +1378,7 @@ export type Database = {
           id?: string
           kind: string
           link?: string | null
+          push_sent_at?: string | null
           read_at?: string | null
           title: string
           user_id: string
@@ -1388,6 +1390,7 @@ export type Database = {
           id?: string
           kind?: string
           link?: string | null
+          push_sent_at?: string | null
           read_at?: string | null
           title?: string
           user_id?: string
@@ -1454,6 +1457,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          keys: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          keys: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          keys?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {

@@ -78,6 +78,13 @@
       "when": 1791715103854,
       "tag": "0010_cleanup_phonebook_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791724800770,
+      "tag": "0011_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }
