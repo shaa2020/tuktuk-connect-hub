@@ -186,16 +186,6 @@ export const importWebsiteBooking = createServerFn({ method: "POST" })
     } catch (e) { return { ok: false as const, error: (e as Error).message }; }
   });
 
-const STATUS_MAP: Record<string, string> = { new: "inquiry", pending: "tentative", confirmed: "confirmed", done: "completed", completed: "completed", cancelled: "cancelled", canceled: "cancelled" };
-const PAY_MAP: Record<string, string> = { paid: "paid", deposit_paid: "partially_paid", refunded: "refunded", request: "pending", pending: "pending" };
-
-function durationFromTitle(t: string): number | null {
-  const m = t.match(/(\d+(?:\.\d+)?)\s*h\b/i) ?? t.match(/-\s*(\d+(?:\.\d+)?)h/i);
-  if (m?.[1]) return Math.round(parseFloat(m[1]) * 60);
-  const n = t.match(/(\d+)\s*min/i);
-  return n?.[1] ? +n[1] : null;
-}
-
 /** Any member: copy every website booking not yet in the platform onto the calendar. Existing ones are left as the team edited them. */
 export const syncWebsiteBookings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
