@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { syncWebsiteBookings } from "@/lib/website.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ChevronLeft, ChevronRight, Plus, Truck, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Globe, Plus, RefreshCw, Truck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -45,7 +47,7 @@ function DispatchPage() {
     queryKey: ["dispatch", workspaceId, day, end],
     queryFn: async () => {
       const { data, error } = await supabase.from("bookings")
-        .select("id, reference, tour_name, tour_date, start_time, duration_minutes, guests, pickup_location, status, vehicle_id, driver_id, dispatch_status, is_demo, contacts(full_name, phone)")
+        .select("id, reference, tour_name, tour_date, start_time, duration_minutes, guests, pickup_location, status, vehicle_id, driver_id, dispatch_status, is_demo, source_system, external_reference, contacts(full_name, phone)")
         .eq("workspace_id", workspaceId).gte("tour_date", day).lte("tour_date", end)
         .order("tour_date").order("start_time", { nullsFirst: false });
       if (error) throw error;
@@ -63,6 +65,24 @@ function DispatchPage() {
   });
   const conflicts = useMemo(() => findConflicts(tours.data ?? []), [tours.data]);
   const refresh = () => qc.invalidateQueries({ queryKey: ["dispatch", workspaceId] });
+  const syncFn = useServerFn(syncWebsiteBookings);
+  const [syncing, setSyncing] = useState(false);
+  const didSync = useRef(false);
+  async function syncWeb(manual: boolean) {
+    setSyncing(true);
+    const r = await syncFn({ data: { workspaceId } }).catch((e) => ({ ok: false as const, error: (e as Error).message, added: 0 }));
+    setSyncing(false);
+    if (!r.ok) { if (manual) toast.error(`Website: ${r.error}`); return; }
+    if (r.added > 0 || manual) toast.success(r.added ? `${r.added} new website booking${r.added > 1 ? "s" : ""} added` : "Website bookings are up to date");
+    if (r.added > 0) { refresh(); qc.invalidateQueries({ queryKey: ["bookings"] }); }
+  }
+  useEffect(() => {
+    if (!workspaceId || didSync.current) return;
+    didSync.current = true; syncWeb(false);
+    const t = setInterval(() => syncWeb(false), 120_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId]);
 
   async function patch(id: string, values: { vehicle_id?: string | null; driver_id?: string | null; dispatch_status?: string }) {
     const { error } = await supabase.from("bookings").update(values).eq("id", id);
@@ -80,6 +100,7 @@ function DispatchPage() {
         <Input type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)} className="w-auto" />
         <Button size="icon" variant="outline" aria-label="Next" onClick={() => setDay(addDays(day, view === "day" ? 1 : 7))}><ChevronRight /></Button>
         <Button size="sm" variant="ghost" onClick={() => setDay(iso(new Date()))}>Today</Button>
+        <Button size="sm" variant="outline" onClick={() => syncWeb(true)} disabled={syncing}><RefreshCw className={syncing ? "animate-spin" : ""} /> Sync website</Button>
         <div className="ml-auto flex rounded-lg border p-0.5">
           {(["day", "week"] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} className={cn("rounded-md px-3 py-1 text-sm capitalize", view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>{v}</button>
@@ -119,6 +140,7 @@ function DispatchPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <Link to="/bookings" search={{ b: t.id }} className="font-semibold hover:underline">{t.tour_name}</Link> <SampleBadge show={t.is_demo} />
+                              {t.source_system === "website" && <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary"><Globe className="size-3" /> Website {t.external_reference}</span>}
                               <div className="text-sm text-muted-foreground">
                                 {t.contacts?.full_name ?? "Guest"}{t.guests ? ` · ${t.guests} guests` : ""}{t.pickup_location ? ` · ${t.pickup_location}` : ""}
                               </div>

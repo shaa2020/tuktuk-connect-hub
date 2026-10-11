@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, CalendarCheck, Trash2 } from "lucide-react";
@@ -17,7 +17,7 @@ import { Confirm, Field, NativeSelect, SampleBadge, ToneBadge, emptyToNull, fmtD
 import { ContactSelect, LeadSelect } from "@/components/pickers";
 import { BOOKING_STATUS_META, PAYMENT_LABEL, canDeleteBookings, type BookingStatus, type PaymentStatus } from "@/lib/domain";
 import { useServerFn } from "@tanstack/react-start";
-import { createWebsiteBooking, listWebsiteBookings, importWebsiteBooking } from "@/lib/website.functions";
+import { createWebsiteBooking, listWebsiteBookings, importWebsiteBooking, syncWebsiteBookings } from "@/lib/website.functions";
 import { RefreshCw, Globe } from "lucide-react";
 
 function WebsiteBookings({ workspaceId, onOpen }: { workspaceId: string; onOpen: (id: string) => void }) {
@@ -85,6 +85,13 @@ function BookingsPage() {
   const [when, setWhen] = useState<"upcoming" | "past" | "all">("upcoming");
   const [term, setTerm] = useState("");
   const [view, setView] = useState<"team" | "website">("team");
+  const syncFn = useServerFn(syncWebsiteBookings);
+  const qcSync = useQueryClient();
+  useEffect(() => {
+    if (!workspaceId) return;
+    syncFn({ data: { workspaceId } }).then((r) => { if (r.ok && r.added > 0) { toast.success(`${r.added} new website booking${r.added > 1 ? "s" : ""} added`); qcSync.invalidateQueries({ queryKey: ["bookings"] }); qcSync.invalidateQueries({ queryKey: ["dispatch"] }); } }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId]);
 
   const q = useQuery({
     queryKey: ["bookings", workspaceId, status, when],
@@ -230,6 +237,7 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
       }
       qc.invalidateQueries({ queryKey: ["bookings"] });
       qc.invalidateQueries({ queryKey: ["booking"] });
+      qc.invalidateQueries({ queryKey: ["dispatch"] });
     } catch (e) {
       const m = errMsg(e);
       setErr(m.includes("bookings_workspace_id_reference_key") ? "That booking reference is already used." : m);
@@ -241,6 +249,7 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
     if (error) return toast.error(error.message);
     toast.success("Booking deleted");
     qc.invalidateQueries({ queryKey: ["bookings"] });
+    qc.invalidateQueries({ queryKey: ["dispatch"] });
     onClose();
   }
 
