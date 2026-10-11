@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { MessageSquare, MailWarning, Clock, Target, CalendarCheck, AlertTriangle, CheckSquare, Plug, Inbox } from "lucide-react";
+import { MessageSquare, Clock, Target, CalendarCheck, AlertTriangle, CheckSquare, Plug, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { PageContainer } from "@/components/app-shell";
@@ -65,13 +65,79 @@ function Dashboard() {
     },
   });
 
+  const today = useQuery({
+    queryKey: ["dashboard-today", ws.workspaceId],
+    queryFn: async () => {
+      const d = new Date();
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const { data, error } = await supabase.from("bookings")
+        .select("id, tour_name, start_time, guests, pickup_location, driver_id, vehicle_id, status, contacts(full_name, phone)")
+        .eq("workspace_id", ws.workspaceId).eq("tour_date", iso).neq("status", "cancelled")
+        .order("start_time", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
   const s = stats.data;
   const greeting = new Date().getHours() < 12 ? "Bom dia" : new Date().getHours() < 19 ? "Boa tarde" : "Boa noite";
+  const tours = today.data ?? [];
+  const needsAttention = tours.filter((b) => !b.pickup_location || !b.driver_id || !b.vehicle_id || !b.contacts?.phone).length;
+  const guestsToday = tours.reduce((a, b) => a + (b.guests ?? 0), 0);
+  const filtersActive = range !== "30" || channel || assignee || status;
 
   return (
     <PageContainer>
-      <PageHeader title={`${greeting}, ${ws.fullName.split(" ")[0]}`} description={`${ws.workspaceName} overview`} />
-      <div className="mb-5 grid grid-cols-2 gap-2 md:grid-cols-4">
+      <PageHeader title={`${greeting}, ${ws.fullName.split(" ")[0]}`} description={new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })} />
+
+      {/* Today command center */}
+      <div className="mb-5 grid min-w-0 gap-3 lg:grid-cols-3">
+        <div className="min-w-0 rounded-2xl bg-navy p-4 text-navy-foreground shadow-pop lg:col-span-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">Today's tours</h2>
+            <Link to="/dispatch" className="shrink-0 text-xs font-medium text-navy-foreground/80 underline-offset-2 hover:underline">Open calendar</Link>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <MiniStat label="Tours" value={today.isLoading ? "…" : tours.length} />
+            <MiniStat label="Guests" value={today.isLoading ? "…" : guestsToday} />
+            <MiniStat label="Need info" value={today.isLoading ? "…" : needsAttention} warn={needsAttention > 0} />
+          </div>
+          {!today.isLoading && (tours.length ? (
+            <ul className="mt-3 space-y-1.5">
+              {tours.slice(0, 4).map((b) => {
+                const missing = !b.pickup_location || !b.driver_id || !b.vehicle_id || !b.contacts?.phone;
+                return (
+                  <li key={b.id}>
+                    <Link to="/dispatch" className="flex min-w-0 items-center gap-3 rounded-xl bg-navy-foreground/10 px-3 py-2 hover:bg-navy-foreground/15">
+                      <span className="w-11 shrink-0 font-display text-sm font-bold">{b.start_time?.slice(0, 5) ?? "—"}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{b.tour_name}</span>
+                        <span className="block truncate text-[11px] text-navy-foreground/70">{b.contacts?.full_name ?? "Guest"} · {b.guests ?? "?"} pax</span>
+                      </span>
+                      {missing && <AlertTriangle className="size-4 shrink-0 text-warning" aria-label="Missing details" />}
+                    </Link>
+                  </li>
+                );
+              })}
+              {tours.length > 4 && <li className="text-center text-[11px] text-navy-foreground/70">+{tours.length - 4} more today</li>}
+            </ul>
+          ) : <p className="mt-3 text-sm text-navy-foreground/70">No tours booked for today.</p>)}
+        </div>
+        <div className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-1">
+          <QuickLink to="/inbox" icon={<Inbox />} label="Unread messages" value={s?.unread} tone="primary" />
+          <QuickLink to="/inbox" icon={<Clock />} label="Awaiting reply" value={s?.awaiting} tone={s && s.awaiting > 0 ? "warning" : undefined} />
+          <QuickLink to="/tasks" icon={<CheckSquare />} label="Overdue tasks" value={s?.overdue_tasks} tone={s?.overdue_tasks ? "danger" : undefined} className="col-span-2 lg:col-span-1" />
+        </div>
+      </div>
+
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold">Performance <span className="font-normal text-muted-foreground">· {RANGES[range]}</span></h2>
+        <button onClick={() => setShowFilters((v) => !v)} className="rounded-full border bg-card px-3 py-1 text-xs font-medium md:hidden">
+          {showFilters ? "Hide filters" : filtersActive ? "Filters •" : "Filters"}
+        </button>
+      </div>
+      <div className={`mb-5 grid-cols-2 gap-2 md:grid md:grid-cols-4 ${showFilters ? "grid" : "hidden"}`}>
         <NativeSelect value={range} onChange={(e) => setRange(e.target.value as keyof typeof RANGES)} aria-label="Date range">{Object.entries(RANGES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</NativeSelect>
         <NativeSelect value={channel} onChange={(e) => setChannel(e.target.value)} aria-label="Channel"><option value="">All channels</option>{(Object.keys(CHANNEL_LABEL) as ChannelType[]).map((c) => <option key={c} value={c}>{CHANNEL_LABEL[c]}</option>)}</NativeSelect>
         <NativeSelect value={assignee} onChange={(e) => setAssignee(e.target.value)} aria-label="Team member"><option value="">All team members</option>{ws.members.map((m) => <option key={m.user_id} value={m.user_id}>{m.full_name || m.email}</option>)}</NativeSelect>
@@ -83,8 +149,6 @@ function Dashboard() {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat icon={<MessageSquare />} label="Conversations" value={s?.total} hint={RANGES[range]} />
             <Stat icon={<Inbox />} label="Open" value={s?.open} />
-            <Stat icon={<MailWarning />} label="Unread" value={s?.unread} tone="primary" />
-            <Stat icon={<Clock />} label="Awaiting reply" value={s?.awaiting} tone={s && s.awaiting > 0 ? "warning" : undefined} />
             <Stat icon={<Clock />} label="Avg. first response" value={s ? (s.frt_samples ? fmtMinutes(s.avg_frt_minutes) : "Not enough data") : undefined} hint={s?.frt_samples ? `${s.frt_samples} conversations` : "Needs logged customer messages and replies"} small />
             <Stat icon={<CheckSquare />} label="Avg. resolution" value={s ? (s.res_samples ? fmtMinutes(s.avg_res_minutes) : "Not enough data") : undefined} hint={s?.res_samples ? `${s.res_samples} resolved` : undefined} small />
             <Stat icon={<Target />} label="New leads" value={s?.new_leads} hint={s?.followup_leads ? `${s.followup_leads} need follow-up` : "No follow-ups due"} />
@@ -164,6 +228,28 @@ function Dashboard() {
         </>
       )}
     </PageContainer>
+  );
+}
+
+function MiniStat({ label, value, warn }: { label: string; value: number | string; warn?: boolean }) {
+  return (
+    <div className="rounded-xl bg-navy-foreground/10 px-3 py-2">
+      <div className={`font-display text-xl font-bold ${warn ? "text-warning" : ""}`}>{value}</div>
+      <div className="text-[11px] text-navy-foreground/70">{label}</div>
+    </div>
+  );
+}
+
+function QuickLink({ to, icon, label, value, tone, className }: { to: "/inbox" | "/tasks"; icon: React.ReactNode; label: string; value: number | undefined; tone?: "primary" | "warning" | "danger"; className?: string }) {
+  const color = tone === "primary" ? "text-primary" : tone === "warning" ? "text-warning" : tone === "danger" ? "text-destructive" : "text-foreground";
+  return (
+    <Link to={to} className={`flex min-w-0 items-center gap-3 rounded-2xl border bg-card p-4 shadow-card transition-colors hover:bg-muted/50 ${className ?? ""}`}>
+      <span className={`flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted [&_svg]:size-4 ${color}`}>{icon}</span>
+      <span className="min-w-0">
+        {value === undefined ? <Skeleton className="h-6 w-8" /> : <span className={`block font-display text-xl font-bold ${color}`}>{value}</span>}
+        <span className="block truncate text-[11px] text-muted-foreground">{label}</span>
+      </span>
+    </Link>
   );
 }
 
