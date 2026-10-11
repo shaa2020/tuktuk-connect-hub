@@ -107,3 +107,81 @@ export const createWebsiteBooking = createServerFn({ method: "POST" })
       return { ok: true as const, reference: String(r.reference) };
     } catch (e) { return { ok: false as const, error: (e as Error).message }; }
   });
+
+export type WebsiteBooking = {
+  id: string; reference: string; tour_title: string; tour_slug: string; customer_name: string; email: string; phone: string;
+  travel_date: string | null; travel_time: string | null; guests: number; notes: string | null; status: string; payment_status: string;
+  source: string; created_at: string; imported_booking_id: string | null;
+};
+
+/** Any member: live bookings from the website, marked when already copied into this platform. */
+export const listWebsiteBookings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => ws.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: member } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
+    if (member !== true) return { ok: false as const, error: "Not a member.", bookings: [] as WebsiteBooking[] };
+    try {
+      const { websiteGet } = await import("./website-api.server");
+      const rows = await websiteGet<any[]>("/booking-requests?limit=100");
+      const refs = rows.map((r) => String(r.id).slice(0, 8).toUpperCase());
+      const { data: local } = await context.supabase.from("bookings").select("id, external_reference").eq("workspace_id", data.workspaceId).in("external_reference", refs.length ? refs : ["-"]);
+      const map = new Map((local ?? []).map((l) => [l.external_reference, l.id]));
+      const bookings: WebsiteBooking[] = rows.map((r) => {
+        const reference = String(r.id).slice(0, 8).toUpperCase();
+        return {
+          id: String(r.id), reference, tour_title: String(r.tour_title ?? "Tour"), tour_slug: String(r.tour_slug ?? ""),
+          customer_name: String(r.customer_name ?? ""), email: String(r.email ?? ""), phone: String(r.phone ?? ""),
+          travel_date: r.travel_date ?? null, travel_time: r.travel_time ?? null, guests: Number(r.guests ?? 1),
+          notes: r.notes ?? null, status: String(r.status ?? "new"), payment_status: String(r.payment_status ?? ""),
+          source: String(r.source ?? ""), created_at: String(r.created_at ?? ""), imported_booking_id: map.get(reference) ?? null,
+        };
+      });
+      return { ok: true as const, bookings };
+    } catch (e) { return { ok: false as const, error: (e as Error).message, bookings: [] as WebsiteBooking[] }; }
+  });
+
+const importInput = z.object({ workspaceId: z.string().uuid(), websiteId: z.string().min(1).max(100) });
+
+/** Any member: copy one website booking into the platform (contact + booking) so it can be dispatched. */
+export const importWebsiteBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => importInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+    const { data: member } = await sb.rpc("is_member", { _ws: data.workspaceId });
+    if (member !== true) return { ok: false as const, error: "Not a member." };
+    try {
+      const { websiteGet } = await import("./website-api.server");
+      const rows = await websiteGet<any[]>("/booking-requests?limit=100");
+      const r = rows.find((x) => String(x.id) === data.websiteId);
+      if (!r) return { ok: false as const, error: "Booking not found on the website." };
+      const reference = String(r.id).slice(0, 8).toUpperCase();
+      const { data: existing } = await sb.from("bookings").select("id").eq("workspace_id", data.workspaceId).eq("external_reference", reference).maybeSingle();
+      if (existing) return { ok: true as const, bookingId: existing.id };
+      const email = r.email ? String(r.email).toLowerCase() : null;
+      const phone = r.phone ? String(r.phone) : null;
+      let contactId: string | null = null;
+      if (email || phone) {
+        let cq = sb.from("contacts").select("id").eq("workspace_id", data.workspaceId).is("merged_into", null).limit(1);
+        cq = email && phone ? cq.or(`email.eq.${email},phone.eq.${phone}`) : email ? cq.eq("email", email) : cq.eq("phone", phone!);
+        const { data: c } = await cq.maybeSingle();
+        contactId = c?.id ?? null;
+      }
+      if (!contactId) {
+        const { data: c, error } = await sb.from("contacts").insert({ workspace_id: data.workspaceId, full_name: String(r.customer_name || "Website guest").slice(0, 200), email, phone, created_by: context.userId }).select("id").single();
+        if (error) throw new Error("Could not create the guest contact.");
+        contactId = c.id;
+      }
+      const time = typeof r.travel_time === "string" && /^\d{1,2}:\d{2}/.test(r.travel_time) ? r.travel_time.slice(0, 5) : null;
+      const pickup = typeof r.notes === "string" ? (r.notes.match(/Pickup: (.+)/)?.[1] ?? null) : null;
+      const { data: b, error } = await sb.from("bookings").insert({
+        workspace_id: data.workspaceId, contact_id: contactId, tour_name: String(r.tour_title || "Website booking").slice(0, 200),
+        tour_date: r.travel_date ?? null, start_time: time, guests: Math.max(1, Math.min(500, Number(r.guests) || 1)),
+        pickup_location: pickup ? pickup.slice(0, 300) : null, status: "tentative", source_system: "website",
+        external_reference: reference, notes: typeof r.notes === "string" ? r.notes.slice(0, 5000) : null, created_by: context.userId,
+      } as any).select("id").single();
+      if (error) throw new Error("Could not save the booking.");
+      return { ok: true as const, bookingId: b.id };
+    } catch (e) { return { ok: false as const, error: (e as Error).message }; }
+  });
