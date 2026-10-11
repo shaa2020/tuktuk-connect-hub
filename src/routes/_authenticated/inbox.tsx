@@ -565,6 +565,40 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
   );
 }
 
+function QuoteButton({ onInsert }: { onInsert: (quote: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [pkgId, setPkgId] = useState(TOUR_PACKAGES[0]!.id);
+  const [guests, setGuests] = useState("2");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [pickup, setPickup] = useState("");
+  const pkg = TOUR_PACKAGES.find((p) => p.id === pkgId) ?? TOUR_PACKAGES[0]!;
+  const g = Math.max(1, Number(guests) || 1);
+  const { tuks, total } = quoteTotal(pkg, g);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" title="Build a tour quote to send to the guest"><Receipt />Quote</Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-3" align="start">
+        <div className="space-y-2">
+          <NativeSelect aria-label="Tour" value={pkgId} onChange={(e) => setPkgId(e.target.value)}>
+            {TOUR_PACKAGES.map((p) => <option key={p.id} value={p.id}>{p.name} · €{p.pricePerTuk}/tuk tuk</option>)}
+          </NativeSelect>
+          <div className="grid grid-cols-2 gap-2">
+            <Input type="number" min={1} max={40} value={guests} onChange={(e) => setGuests(e.target.value)} aria-label="Guests" placeholder="Guests" />
+            <Input value={pickup} onChange={(e) => setPickup(e.target.value)} aria-label="Pick-up" placeholder="Pick-up (optional)" />
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" />
+          </div>
+          <p className="text-xs text-muted-foreground">{g} guests · {tuks} tuk tuk{tuks > 1 ? "s" : ""} · <span className="font-semibold text-foreground">€{total} total</span></p>
+          <Button size="sm" className="w-full" onClick={() => { onInsert(formatQuote(pkg, g, date, time, pickup.trim())); setOpen(false); }}>Insert quote into reply</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function LinkDialog({ title, initial, render, onSave, onClose }: { title: string; initial: string; render: (v: string, set: (v: string) => void) => React.ReactNode; onSave: (v: string) => Promise<unknown>; onClose: () => void }) {
   const [v, setV] = useState(initial);
   return (
