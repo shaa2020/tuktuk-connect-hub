@@ -575,7 +575,7 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         <Button size="sm" variant="outline" onClick={() => runAi("draft")} disabled={!!aiBusy}>{aiBusy === "draft" ? <Loader2 className="animate-spin" /> : <Sparkles />}Draft reply</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("summarize")} disabled={!!aiBusy}>{aiBusy === "summarize" ? <Loader2 className="animate-spin" /> : <Sparkles />}Summarize</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("translate")} disabled={!!aiBusy || !text.trim()} title="Translate the text in the box into the guest's language">{aiBusy === "translate" ? <Loader2 className="animate-spin" /> : <Languages />}Translate</Button>
-        <QuoteButton onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
+        <QuoteButton workspaceId={workspaceId ?? undefined} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
         {waTemplates && <TemplateSender workspaceId={ws.workspaceId} conversationId={conversationId} highlight={waClosed} />}
       </div>
       <div className={cn("flex items-end gap-2 rounded-xl border p-1.5", mode === "note" && "border-note-border bg-note")}>
