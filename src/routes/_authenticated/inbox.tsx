@@ -4,8 +4,9 @@ import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, ArrowLeft, Inbox as InboxIcon, Phone, MessageCircle, Instagram, Mail, Facebook, StickyNote,
-  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen,
+  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt,
 } from "lucide-react";
+import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { aiAssist } from "@/lib/ai.functions";
@@ -537,6 +538,7 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         <Button size="sm" variant="outline" onClick={() => runAi("draft")} disabled={!!aiBusy}>{aiBusy === "draft" ? <Loader2 className="animate-spin" /> : <Sparkles />}Draft reply</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("summarize")} disabled={!!aiBusy}>{aiBusy === "summarize" ? <Loader2 className="animate-spin" /> : <Sparkles />}Summarize</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("translate")} disabled={!!aiBusy || !text.trim()} title="Translate the text in the box into the guest's language">{aiBusy === "translate" ? <Loader2 className="animate-spin" /> : <Languages />}Translate</Button>
+        <QuoteButton onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
       </div>
       <div className={cn("flex items-end gap-2 rounded-xl border p-1.5", mode === "note" && "border-note-border bg-note")}>
         <Popover>
@@ -561,6 +563,40 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         {failed && <span className="flex items-center gap-1 text-destructive">{mode === "send" ? "Not sent:" : "Not saved:"} {failed} <button className="font-semibold underline" onClick={submit}>Retry</button></span>}
       </div>
     </div>
+  );
+}
+
+function QuoteButton({ onInsert }: { onInsert: (quote: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [pkgId, setPkgId] = useState(TOUR_PACKAGES[0]!.id);
+  const [guests, setGuests] = useState("2");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [pickup, setPickup] = useState("");
+  const pkg = TOUR_PACKAGES.find((p) => p.id === pkgId) ?? TOUR_PACKAGES[0]!;
+  const g = Math.max(1, Number(guests) || 1);
+  const { tuks, total } = quoteTotal(pkg, g);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" title="Build a tour quote to send to the guest"><Receipt />Quote</Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-3" align="start">
+        <div className="space-y-2">
+          <NativeSelect aria-label="Tour" value={pkgId} onChange={(e) => setPkgId(e.target.value)}>
+            {TOUR_PACKAGES.map((p) => <option key={p.id} value={p.id}>{p.name} · €{p.pricePerTuk}/tuk tuk</option>)}
+          </NativeSelect>
+          <div className="grid grid-cols-2 gap-2">
+            <Input type="number" min={1} max={40} value={guests} onChange={(e) => setGuests(e.target.value)} aria-label="Guests" placeholder="Guests" />
+            <Input value={pickup} onChange={(e) => setPickup(e.target.value)} aria-label="Pick-up" placeholder="Pick-up (optional)" />
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" />
+          </div>
+          <p className="text-xs text-muted-foreground">{g} guests · {tuks} tuk tuk{tuks > 1 ? "s" : ""} · <span className="font-semibold text-foreground">€{total} total</span></p>
+          <Button size="sm" className="w-full" onClick={() => { onInsert(formatQuote(pkg, g, date, time, pickup.trim())); setOpen(false); }}>Insert quote into reply</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

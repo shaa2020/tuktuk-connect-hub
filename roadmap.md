@@ -13,3 +13,4 @@
 ## Done
 - Invite-only access: public sign-ups off; accounts only via admin invitation links (Team page); invitees set their own password by email.
 - [x] Tour calendar & fleet dispatch (/dispatch)
+- [x] Quick tour quotes in inbox composer (packages, guests → tuk tuks, € total, insert into reply)
