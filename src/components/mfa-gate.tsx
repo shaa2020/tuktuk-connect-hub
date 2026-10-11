@@ -207,7 +207,7 @@ export function MfaSettingsPanel() {
       <p className="text-sm text-muted-foreground">
         Your account is protected with an authenticator app. To switch phones, turn this off and set it up again on the new phone.
       </p>
-      <Button variant="outline" className="text-destructive" onClick={() => disable(verified[0].id)}>
+      <Button variant="outline" className="text-destructive" onClick={() => disable(verified[0]!.id)}>
         Turn off two-step sign-in
       </Button>
     </div>
