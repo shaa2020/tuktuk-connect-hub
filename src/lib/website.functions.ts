@@ -191,9 +191,9 @@ const PAY_MAP: Record<string, string> = { paid: "paid", deposit_paid: "partially
 
 function durationFromTitle(t: string): number | null {
   const m = t.match(/(\d+(?:\.\d+)?)\s*h\b/i) ?? t.match(/-\s*(\d+(?:\.\d+)?)h/i);
-  if (m) return Math.round(parseFloat(m[1]) * 60);
+  if (m?.[1]) return Math.round(parseFloat(m[1]) * 60);
   const n = t.match(/(\d+)\s*min/i);
-  return n ? +n[1] : null;
+  return n?.[1] ? +n[1] : null;
 }
 
 /** Any member: copy every website booking not yet in the platform onto the calendar. Existing ones are left as the team edited them. */
