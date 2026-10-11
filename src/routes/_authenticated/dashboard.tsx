@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { MessageSquare, MailWarning, Clock, Target, CalendarCheck, AlertTriangle, CheckSquare, Plug, Inbox } from "lucide-react";
+import { MessageSquare, Clock, Target, CalendarCheck, AlertTriangle, CheckSquare, Plug, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { PageContainer } from "@/components/app-shell";
@@ -149,8 +149,6 @@ function Dashboard() {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat icon={<MessageSquare />} label="Conversations" value={s?.total} hint={RANGES[range]} />
             <Stat icon={<Inbox />} label="Open" value={s?.open} />
-            <Stat icon={<MailWarning />} label="Unread" value={s?.unread} tone="primary" />
-            <Stat icon={<Clock />} label="Awaiting reply" value={s?.awaiting} tone={s && s.awaiting > 0 ? "warning" : undefined} />
             <Stat icon={<Clock />} label="Avg. first response" value={s ? (s.frt_samples ? fmtMinutes(s.avg_frt_minutes) : "Not enough data") : undefined} hint={s?.frt_samples ? `${s.frt_samples} conversations` : "Needs logged customer messages and replies"} small />
             <Stat icon={<CheckSquare />} label="Avg. resolution" value={s ? (s.res_samples ? fmtMinutes(s.avg_res_minutes) : "Not enough data") : undefined} hint={s?.res_samples ? `${s.res_samples} resolved` : undefined} small />
             <Stat icon={<Target />} label="New leads" value={s?.new_leads} hint={s?.followup_leads ? `${s.followup_leads} need follow-up` : "No follow-ups due"} />
@@ -230,6 +228,28 @@ function Dashboard() {
         </>
       )}
     </PageContainer>
+  );
+}
+
+function MiniStat({ label, value, warn }: { label: string; value: number | string; warn?: boolean }) {
+  return (
+    <div className="rounded-xl bg-navy-foreground/10 px-3 py-2">
+      <div className={`font-display text-xl font-bold ${warn ? "text-warning" : ""}`}>{value}</div>
+      <div className="text-[11px] text-navy-foreground/70">{label}</div>
+    </div>
+  );
+}
+
+function QuickLink({ to, icon, label, value, tone, className }: { to: "/inbox" | "/tasks"; icon: React.ReactNode; label: string; value: number | undefined; tone?: "primary" | "warning" | "danger"; className?: string }) {
+  const color = tone === "primary" ? "text-primary" : tone === "warning" ? "text-warning" : tone === "danger" ? "text-destructive" : "text-foreground";
+  return (
+    <Link to={to} className={`flex min-w-0 items-center gap-3 rounded-2xl border bg-card p-4 shadow-card transition-colors hover:bg-muted/50 ${className ?? ""}`}>
+      <span className={`flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted [&_svg]:size-4 ${color}`}>{icon}</span>
+      <span className="min-w-0">
+        {value === undefined ? <Skeleton className="h-6 w-8" /> : <span className={`block font-display text-xl font-bold ${color}`}>{value}</span>}
+        <span className="block truncate text-[11px] text-muted-foreground">{label}</span>
+      </span>
+    </Link>
   );
 }
 
