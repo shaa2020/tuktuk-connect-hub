@@ -249,7 +249,7 @@ function InboxPage() {
                   const labels = (v.conversation_tags ?? []).map((x) => x.tags).filter(Boolean) as { id: string; name: string }[];
                   return (
                     <li key={v.id}>
-                      <button onClick={() => navigate({ search: { c: v.id } })} className={cn("flex w-full gap-3 border-b px-3 py-3 text-left transition-colors hover:bg-muted/60", c === v.id && "bg-primary-soft hover:bg-primary-soft")}>
+                      <button onClick={() => navigate({ search: { c: v.id } })} className={cn("flex w-full gap-2.5 border-b px-3 py-2 text-left transition-colors hover:bg-muted/60", c === v.id && "bg-primary-soft hover:bg-primary-soft")}>
                         <div className="relative">
                           <Avatar name={v.contacts?.full_name ?? v.subject} />
                           <span className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border-2 border-card bg-card"><ChannelIcon channel={v.channel} className="size-2.5 text-muted-foreground" /></span>
@@ -260,7 +260,7 @@ function InboxPage() {
                             <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">{fmtRelative(v.last_message_at)}</span>
                           </div>
                           <div className={cn("truncate text-xs", v.unread ? "text-foreground" : "text-muted-foreground")}>{v.last_message_preview ?? "No messages yet"}</div>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                          <div className="mt-1 flex items-center gap-1 overflow-hidden [&>*]:shrink-0">
                             <ToneBadge tone={STATUS_META[v.status].tone}>{STATUS_META[v.status].label}</ToneBadge>
                             {(v.priority === "high" || v.priority === "urgent") && <ToneBadge tone={PRIORITY_META[v.priority].tone}>{PRIORITY_META[v.priority].label}</ToneBadge>}
                             {v.escalated && <ToneBadge tone="danger">Escalated</ToneBadge>}
@@ -269,7 +269,7 @@ function InboxPage() {
                             {v.booking_id && <CalendarCheck className="size-3 text-success" aria-label="Has booking" />}
                             {labels.slice(0, 2).map((t) => <ToneBadge key={t.id} tone="muted">{t.name}</ToneBadge>)}
                             <SampleBadge show={v.is_demo} />
-                            <span className="ml-auto truncate text-[11px] text-muted-foreground">{v.assigned_to ? ws.memberName(v.assigned_to) : "Unassigned"}</span>
+                            <span className="ml-auto !shrink truncate text-[11px] text-muted-foreground">{v.assigned_to ? ws.memberName(v.assigned_to) : "Unassigned"}</span>
                           </div>
                         </div>
                         {v.unread && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" aria-label="Unread" />}
