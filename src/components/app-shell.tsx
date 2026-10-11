@@ -103,7 +103,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const signOut = useSignOut();
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const items = NAV.filter((n) => !n.audit || canViewAudit(ws.role));
+  const platformAdmin = useQuery({
+    queryKey: ["is_platform_admin", ws.userId],
+    queryFn: async () => (await supabase.rpc("is_platform_admin")).data === true,
+    staleTime: 300_000,
+  });
+  const items = NAV.filter((n) => (!n.audit || canViewAudit(ws.role)) && (!n.platform || platformAdmin.data));
   const isActive = (to: string) => loc.pathname === to || loc.pathname.startsWith(to + "/");
   const countFor = (b?: NavItem["badge"]) => (b === "inbox" ? counts.inbox : b === "notif" ? counts.notif : 0);
 
