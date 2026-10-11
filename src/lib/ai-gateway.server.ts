@@ -3,7 +3,7 @@ export class AiError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
 
-export async function generateText(opts: { instructions: string; input: string }): Promise<string> {
+export async function generateText(opts: { instructions: string; input: string; jsonSchema?: { name: string; schema: Record<string, unknown> } }): Promise<string> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new AiError("AI is not configured on the server.", 500);
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
@@ -16,6 +16,8 @@ export async function generateText(opts: { instructions: string; input: string }
       reasoning: { effort: "low" },
       store: false,
       stream: true,
+      // Strict structured output: the model's answer is guaranteed to match the schema.
+      ...(opts.jsonSchema ? { text: { format: { type: "json_schema", name: opts.jsonSchema.name, strict: true, schema: opts.jsonSchema.schema } } } : {}),
     }),
   });
   if (!res.ok || !res.body) {
