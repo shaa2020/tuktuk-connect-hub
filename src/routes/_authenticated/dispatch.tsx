@@ -52,6 +52,15 @@ function DispatchPage() {
       return data;
     },
   });
+  const undated = useQuery({
+    queryKey: ["dispatch", workspaceId, "undated"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("bookings").select("id, reference, tour_name, contacts(full_name)")
+        .eq("workspace_id", workspaceId).is("tour_date", null).neq("status", "cancelled").limit(100);
+      if (error) throw error;
+      return data;
+    },
+  });
   const conflicts = useMemo(() => findConflicts(tours.data ?? []), [tours.data]);
   const refresh = () => qc.invalidateQueries({ queryKey: ["dispatch", workspaceId] });
 
@@ -65,7 +74,7 @@ function DispatchPage() {
 
   return (
     <PageContainer>
-      <PageHeader title="Tour Calendar" description="Assign tuk tuks and drivers, and move each tour through its day." />
+      <PageHeader title="Tour Calendar" description="Tap a tour to edit or delete it. Assign tuk tuks and drivers." actions={<Button asChild size="sm"><Link to="/bookings" search={{ new: true }}><Plus /> New booking</Link></Button>} />
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button size="icon" variant="outline" aria-label="Previous" onClick={() => setDay(addDays(day, view === "day" ? -1 : -7))}><ChevronLeft /></Button>
         <Input type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)} className="w-auto" />
@@ -137,6 +146,20 @@ function DispatchPage() {
             );
           })}
         </div>
+      )}
+
+      {(undated.data?.length ?? 0) > 0 && (
+        <Panel className="mt-6 p-4">
+          <h2 className="mb-2 font-semibold">Bookings without a date ({undated.data!.length})</h2>
+          <ul className="divide-y">
+            {undated.data!.map((u) => (
+              <li key={u.id} className="py-2 text-sm">
+                <Link to="/bookings" search={{ b: u.id }} className="font-medium hover:underline">{u.tour_name}</Link>
+                <span className="text-muted-foreground"> · {u.reference}{u.contacts?.full_name ? ` · ${u.contacts.full_name}` : ""} · add a date to place it on the calendar</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
       )}
 
       <Fleet canEdit={canFleet} rows={vehicles.data ?? []} onChange={() => qc.invalidateQueries({ queryKey: ["vehicles", workspaceId] })} />
