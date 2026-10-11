@@ -4,8 +4,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Home, Inbox, Users, Target, CalendarCheck, CheckSquare, Workflow, Sparkles, BarChart3,
   UsersRound, Truck, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
-  CalendarClock, ShieldCheck,
+  CalendarClock, ShieldCheck, Search,
 } from "lucide-react";
+import { CommandPalette } from "@/components/command-palette";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { canViewAudit, ROLE_LABEL, initials } from "@/lib/domain";
@@ -105,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const signOut = useSignOut();
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const platformAdmin = useQuery({
     queryKey: ["is_platform_admin", ws.userId],
     queryFn: async () => (await supabase.rpc("is_platform_admin")).data === true,
@@ -151,7 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       title={collapsed ? n.label : undefined}
                       className={cn(
                         "relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                        active ? "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:-left-2.5 before:h-5 before:w-1 before:rounded-r-full before:bg-sidebar-primary" : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                        active ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-elev before:absolute before:-left-2.5 before:h-5 before:w-1 before:rounded-r-full before:bg-sidebar-primary" : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                       )}
                     >
                       <n.icon className="size-4 shrink-0" />
@@ -187,22 +192,59 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <OfflineBanner />
+        {/* Desktop top bar */}
+        <header className="sticky top-0 z-30 hidden h-14 items-center gap-4 border-b border-border-subtle bg-card/85 px-6 backdrop-blur-md md:flex">
+          <h2 className="min-w-0 truncate font-display text-[15px] font-bold tracking-tight">{pageTitle}</h2>
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="ml-auto flex h-9 w-72 items-center gap-2 rounded-lg border bg-surface-2 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Search className="size-4" />
+            <span className="flex-1 text-left">Jump to…</span>
+            <kbd className="rounded border bg-card px-1.5 text-[10px] font-semibold">Ctrl K</kbd>
+          </button>
+          <Link to="/notifications" className="relative flex size-9 items-center justify-center rounded-lg hover:bg-accent" aria-label="Notifications">
+            <Bell className="size-[18px]" />
+            {counts.notif > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-card" />}
+          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg p-1 pr-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Account menu">
+              <span className="flex size-7 items-center justify-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">{initials(ws.fullName)}</span>
+              <span className="max-w-32 truncate text-sm font-medium">{ws.fullName}</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="truncate text-sm font-semibold">{ws.fullName}</div>
+                <div className="truncate text-xs text-muted-foreground">{ROLE_LABEL[ws.role]} · {ws.workspaceName}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild><Link to="/settings"><Settings className="mr-2 size-4" />Settings</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/team"><UsersRound className="mr-2 size-4" />Team</Link></DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={signOut} className="text-destructive"><LogOut className="mr-2 size-4" />Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
         {/* Mobile top bar */}
         <header className="sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-card/90 px-4 backdrop-blur-md md:hidden">
           <div className="min-w-0">
             <div className="truncate font-display text-[16px] font-bold tracking-tight">{pageTitle}</div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <Link to="/notifications" className="relative flex size-10 items-center justify-center rounded-full hover:bg-accent" aria-label="Notifications">
+            <button onClick={() => setSearchOpen(true)} className="pressable flex size-11 items-center justify-center rounded-full hover:bg-accent" aria-label="Search pages">
+              <Search className="size-5" />
+            </button>
+            <Link to="/notifications" className="pressable relative flex size-11 items-center justify-center rounded-full hover:bg-accent" aria-label="Notifications">
               <Bell className="size-5" />
-              {counts.notif > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-card" />}
+              {counts.notif > 0 && <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-destructive ring-2 ring-card" />}
             </Link>
-            <button onClick={() => setMoreOpen(true)} className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-[11px] font-bold text-primary" aria-label="Account and menu">
-              {initials(ws.fullName)}
+            <button onClick={() => setMoreOpen(true)} className="pressable flex size-11 items-center justify-center" aria-label="Account and menu">
+              <span className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">{initials(ws.fullName)}</span>
             </button>
           </div>
         </header>
         <main className="min-w-0 flex-1 overflow-x-hidden pb-24 md:pb-0">{children}</main>
+        <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} items={items} groups={GROUPS} />
       </div>
 
       {/* Mobile bottom nav */}
@@ -213,7 +255,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             const active = isActive(to);
             const c = countFor(n.badge);
             return (
-              <Link key={to} to={to} className={cn("relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-primary" : "text-muted-foreground")}>
+              <Link key={to} to={to} className={cn("pressable relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-primary" : "text-muted-foreground")}>
                 <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", active && "bg-primary-soft")}>
                   <n.icon className="size-5" />
                 </span>
@@ -222,7 +264,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          <button onClick={() => setMoreOpen(true)} className={cn("flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", !MOBILE_MAIN.some(isActive) ? "text-primary" : "text-muted-foreground")}>
+          <button onClick={() => setMoreOpen(true)} className={cn("pressable flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", !MOBILE_MAIN.some(isActive) ? "text-primary" : "text-muted-foreground")}>
             <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !MOBILE_MAIN.some(isActive) && "bg-primary-soft")}><MoreHorizontal className="size-5" /></span>
             More
           </button>
@@ -248,7 +290,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{g}</div>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {groupItems.map((n) => (
-                    <Link key={n.to} to={n.to} className={cn("relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-2xl border p-2 text-center text-[11px] font-medium leading-tight", isActive(n.to) ? "border-primary bg-primary-soft text-primary" : "bg-card")}>
+                    <Link key={n.to} to={n.to} className={cn("pressable relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-2xl border p-2 text-center text-[11px] font-medium leading-tight", isActive(n.to) ? "border-primary bg-primary-soft text-primary" : "bg-card")}>
                       <n.icon className="size-5" />
                       {n.label}
                       {countFor(n.badge) > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-primary" />}

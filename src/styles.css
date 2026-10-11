@@ -68,6 +68,14 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --shadow-card: 0 1px 2px oklch(0.25 0.06 265 / 0.04), 0 1px 3px oklch(0.25 0.06 265 / 0.06);
   --shadow-pop: 0 10px 30px -10px oklch(0.25 0.06 265 / 0.25);
+  --shadow-elev: 0 1px 0 oklch(0.25 0.06 265 / 0.03), 0 4px 12px -4px oklch(0.25 0.06 265 / 0.10);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-border-subtle: var(--border-subtle);
+  --color-whatsapp: var(--whatsapp);
+  --color-gmail: var(--gmail);
+  --color-instagram: var(--instagram);
+  --color-facebook: var(--facebook);
 }
 
 :root {
@@ -119,6 +127,13 @@
   --sidebar-accent-foreground: oklch(0.99 0 0);
   --sidebar-border: oklch(0.32 0.05 265);
   --sidebar-ring: oklch(0.546 0.215 262.9);
+  --surface-1: oklch(0.99 0.003 274);
+  --surface-2: oklch(0.965 0.007 270);
+  --border-subtle: oklch(0.95 0.005 264);
+  --whatsapp: oklch(0.6 0.15 150);
+  --gmail: oklch(0.58 0.19 27);
+  --instagram: oklch(0.6 0.22 0);
+  --facebook: oklch(0.55 0.18 258);
 }
 
 @layer base {
@@ -149,4 +164,15 @@
 @utility scrollbar-none {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
+}
+@utility pressable {
+  transition: transform 120ms ease, background-color 150ms ease, color 150ms ease;
+  &:active { transform: scale(0.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
