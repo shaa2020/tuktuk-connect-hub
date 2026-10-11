@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
+- App branding uses shared BrandMark/BrandLockup components backed by CDN asset pointers; install icons use real versioned public files to prevent stale cached artwork.
 - Business data is scoped by `workspace_id`; access is enforced by RLS helpers (`is_member`, `has_ws_role`, `can_view_conversation`) — UI checks in `src/lib/domain.ts` only mirror them.
 - CRUD runs from the browser client under RLS; multi-row or privileged operations are SECURITY DEFINER RPCs that check the caller's role first — keeps logic atomic and server-enforced.
 - The app may only insert messages with status `logged`; channel delivery statuses come solely from server-side webhook handlers — prevents fake delivery states.
