@@ -69,21 +69,17 @@ async function processRow(row: Row): Promise<"done" | "pending"> {
     return "done";
   }
   if (row.event === "whatsapp.smb_app_state_sync") {
-    // Phone contacts: fill in names for known numbers, create contacts for new ones.
+    // Phone address book: only fill in names for numbers that already talk to the business.
+    // Never create contacts here — personal phone contacts must not enter the CRM.
     const sb = await db();
     for (const s of v.state_sync ?? []) {
       const c = s.contact;
       const digits = String(c?.phone_number ?? "").replace(/\D/g, "");
       if (!digits || s.action === "remove") continue;
       const name = String(c.full_name ?? c.first_name ?? "").trim().slice(0, 200);
+      if (!name) continue;
       const { data: ident } = await sb.from("external_identities").select("id, contact_id").eq("workspace_id", ws).eq("channel", "whatsapp").eq("external_id", digits).maybeSingle();
-      if (ident?.contact_id) {
-        if (name) await sb.from("contacts").update({ full_name: name }).eq("id", ident.contact_id).eq("full_name", digits);
-        continue;
-      }
-      const { data: contact } = await sb.from("contacts").insert({ workspace_id: ws, full_name: name || digits, phone: `+${digits}`, created_by: null }).select("id").single();
-      if (ident) await sb.from("external_identities").update({ contact_id: contact?.id ?? null, display_name: name || null }).eq("id", ident.id);
-      else await sb.from("external_identities").insert({ workspace_id: ws, channel: "whatsapp", external_id: digits, display_name: name || null, contact_id: contact?.id ?? null, verified: true });
+      if (ident?.contact_id) await sb.from("contacts").update({ full_name: name }).eq("id", ident.contact_id).eq("full_name", digits);
     }
     return "done";
   }

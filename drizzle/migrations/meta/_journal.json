@@ -71,6 +71,13 @@
       "when": 1791712088808,
       "tag": "0009_background_sync_token",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791715103854,
+      "tag": "0010_cleanup_phonebook_contacts",
+      "breakpoints": true
     }
   ]
 }
