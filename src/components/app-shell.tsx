@@ -132,9 +132,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pageTitle = NAV.find((n) => isActive(n.to))?.label ?? "TeamInbox";
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-dvh w-full">
       {/* Desktop sidebar */}
-      <aside className={cn("sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] md:flex", collapsed ? "w-[68px]" : "w-60")}>
+      <aside className={cn("sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] md:flex", collapsed ? "w-[68px]" : "w-60")}>
         <div className="flex h-16 items-center justify-between px-3.5">
           {collapsed ? <BrandMark /> : <BrandLockup light />}
         </div>

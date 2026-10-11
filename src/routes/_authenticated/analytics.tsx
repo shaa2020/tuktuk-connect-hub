@@ -44,7 +44,7 @@ function AnalyticsPage() {
         const k = c.assigned_to ?? "none";
         const e = perAgent.get(k) ?? { n: 0, frt: [] };
         e.n++;
-        if (c.first_inbound_at && c.first_response_at) e.frt.push((+new Date(c.first_response_at) - +new Date(c.first_inbound_at)) / 60000);
+        if (c.first_inbound_at && c.first_response_at && c.first_response_at >= c.first_inbound_at) e.frt.push((+new Date(c.first_response_at) - +new Date(c.first_inbound_at)) / 60000);
         perAgent.set(k, e);
       }
       return {
