@@ -51,7 +51,7 @@ export function replyAllowed(repliesSoFar: number, max: number) {
 export function decisionFromRaw(raw: string): OperatorDecision {
   const d = parseDecision(raw);
   const text = raw.trim();
-  if (d.action === "handoff" && d.alert === PARSE_FAIL_ALERT && text && !/\{[\s\S]*\}/.test(text)) {
+  if (d.action === "handoff" && d.alert === PARSE_FAIL_ALERT && text && !text.includes("{")) {
     return { ...d, action: "reply", reply: text.slice(0, 1500), alert: "" };
   }
   return d;
