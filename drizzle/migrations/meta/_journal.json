@@ -36,6 +36,13 @@
       "when": 1791680773393,
       "tag": "0004_fleet_dispatch",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791681141161,
+      "tag": "0005_multi_account_channels",
+      "breakpoints": true
     }
   ]
 }

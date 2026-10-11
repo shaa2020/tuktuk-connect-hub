@@ -345,6 +345,8 @@ export type Database = {
       }
       channel_connections: {
         Row: {
+          account_id: string | null
+          account_label: string | null
           channel: Database["public"]["Enums"]["channel_type"]
           config: Json
           created_at: string
@@ -356,6 +358,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          account_id?: string | null
+          account_label?: string | null
           channel: Database["public"]["Enums"]["channel_type"]
           config?: Json
           created_at?: string
@@ -367,6 +371,8 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          account_id?: string | null
+          account_label?: string | null
           channel?: Database["public"]["Enums"]["channel_type"]
           config?: Json
           created_at?: string
@@ -688,6 +694,7 @@ export type Database = {
           awaiting_reply: boolean
           booking_id: string | null
           channel: Database["public"]["Enums"]["channel_type"]
+          connection_id: string | null
           contact_id: string | null
           created_at: string
           created_by: string | null
@@ -712,6 +719,7 @@ export type Database = {
           awaiting_reply?: boolean
           booking_id?: string | null
           channel?: Database["public"]["Enums"]["channel_type"]
+          connection_id?: string | null
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -736,6 +744,7 @@ export type Database = {
           awaiting_reply?: boolean
           booking_id?: string | null
           channel?: Database["public"]["Enums"]["channel_type"]
+          connection_id?: string | null
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -768,6 +777,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "channel_connections"
             referencedColumns: ["id"]
           },
           {
