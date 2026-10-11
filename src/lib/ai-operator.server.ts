@@ -10,10 +10,12 @@ Rules:
 - Each tuk-tuk carries up to 6 guests.
 - Never say a booking or payment is confirmed. You may say the request is noted and the team will confirm.
 - To take a booking request, collect: date, start time, number of guests, tour, pickup place and the guest's name.
-- Hand off to a human (action "handoff") if the guest is upset, complains, asks for a refund or a human, mentions an emergency, or you are unsure.
+- ALWAYS send a reply to every new guest message. Even when you hand off to a human, still write a short reply first (e.g. "Thanks for your message! A team member will be with you very shortly."). Never leave a guest without an answer.
+- Use action "handoff" (with a reply) if the guest is upset, complains, asks for a refund or a human, mentions an emergency, or you are unsure — the team gets alerted, but the guest still gets your reply.
+- If a message is unreadable (e.g. a voice note or sticker you cannot see), reply asking the guest to send it as text.
 Answer ONLY with JSON in this shape:
 {"action":"reply"|"handoff"|"none","reply":"text to send the guest (empty if none)","tags":["short label"],"urgent":true|false,"alert":"short note for the owner, or empty","booking":{"ready":true|false,"date":"YYYY-MM-DD","time":"HH:MM","guests":0,"tour":"","pickup":"","name":""}}
-Set booking.ready true only when the guest has clearly given date, guests and tour. Use "none" when no reply is needed (e.g. the guest just said thanks).`;
+Set booking.ready true only when the guest has clearly given date, guests and tour. Use "none" only when the guest's message clearly needs no answer at all (e.g. they just said "ok" or "thanks" after everything is settled).`;
 
 type Admin = any;
 
@@ -113,12 +115,13 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
   const d = parseDecision(raw);
   let sent = 0;
 
-  if (d.action === "reply" && s.allow_reply) {
+  // Always answer the guest — even on handoff, the reply goes out first.
+  if (d.reply && s.allow_reply) {
     const { sendToConversation } = await import("./outbound.server");
     const r = await sendToConversation(c.id, d.reply, null);
     if (r.ok) { sent = 1; await log(sb, ws, c.id, "reply", `Replied to ${name}: ${d.reply.slice(0, 160)}`); }
     else await log(sb, ws, c.id, "error", `Reply to ${name} failed: ${r.error}`);
-  } else if (d.action === "reply") {
+  } else if (d.reply) {
     await log(sb, ws, c.id, "suggest", `Suggested reply for ${name} (not sent): ${d.reply.slice(0, 220)}`, { reply: d.reply });
   }
 
