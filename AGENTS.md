@@ -23,3 +23,4 @@
 - Email channel uses the linked Gmail connector server-side (email-channel.server.ts); inbox polls syncEmailNow while open since Gmail push needs Pub/Sub — keeps setup credential-free.
 
 - Invite-only access: public signup disabled (auth config); /auth is sign-in + reset only; new accounts are created server-side by redeemInvitation (src/lib/invite.functions.ts) when a valid invitation token is opened, then the invitee sets their password via a reset email.
+- Tour dispatch: vehicles table + bookings.vehicle_id/driver_id/dispatch_status; conflict detection is pure client logic in src/lib/dispatch.ts (tested) — keeps warnings instant without extra queries.
