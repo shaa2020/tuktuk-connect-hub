@@ -70,15 +70,43 @@ function useEmailSync(workspaceId: string, enabled: boolean) {
       if (!stop && r?.ok && r.imported > 0) qc.invalidateQueries();
     };
     run();
-    const t = setInterval(run, 60_000);
-    return () => { stop = true; clearInterval(t); };
+    const t = setInterval(() => { if (document.visibilityState === "visible") run(); }, 20_000);
+    const onVis = () => { if (document.visibilityState === "visible") run(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stop = true; clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
   }, [workspaceId, enabled, sync, qc]);
+}
+
+/** Live-refresh the conversation list when any conversation or message changes in this workspace. */
+function useInboxRealtime(workspaceId: string) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!workspaceId) return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ["conversations"] });
+        qc.invalidateQueries({ queryKey: ["count"] });
+      }, 300);
+    };
+    const ch = supabase.channel(`inbox-${workspaceId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversations", filter: `workspace_id=eq.${workspaceId}` }, (p) => {
+        refresh();
+        const id = (p.new as { id?: string })?.id;
+        if (id) qc.invalidateQueries({ queryKey: ["conversation", id] });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `workspace_id=eq.${workspaceId}` }, refresh)
+      .subscribe();
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(ch); };
+  }, [workspaceId, qc]);
 }
 
 function InboxPage() {
   const ws = useWorkspace();
   const chStatus = useChannelStatus();
   useEmailSync(ws.workspaceId, chStatus.data?.get("email") === "connected");
+  useInboxRealtime(ws.workspaceId);
   const { c } = Route.useSearch();
   const navigate = useNavigate({ from: "/inbox" });
   const [filter, setFilter] = useState<FilterKey>("all");
