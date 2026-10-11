@@ -170,6 +170,7 @@ export const sendChannelMessage = createServerFn({ method: "POST" })
         ? await (await import("./email-channel.server")).sendEmail(conv.workspace_id, conv.id, to, data.body)
         : await sendMeta(conv.workspace_id, conv.channel as any, cc.config as Record<string, string>, to, data.body, cc.id);
       await supabaseAdmin.from("messages").insert({ workspace_id: conv.workspace_id, conversation_id: conv.id, direction: "outbound", body: data.body, status: "sent", external_id: extId ?? null, author_id: context.userId });
+      if (conv.channel === "whatsapp") await (await import("./whatsapp-inbox.server")).recover().catch(() => {}); // apply early delivery callbacks
       return { ok: true as const };
     } catch (e) {
       const msg = (e as Error).message;
