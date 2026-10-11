@@ -225,7 +225,7 @@ function DispatchPage() {
                               {c && <div className="mt-2 flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive"><AlertTriangle className="size-3.5 shrink-0" /> Overlap: same {c.join(" & ")} as another tour at this time</div>}
                               {t.status !== "cancelled" && tourIssues(t).length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1.5">
-                                  {tourIssues(t).map((m) => <span key={m} className="inline-flex items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-[11px] font-semibold text-warning-foreground"><AlertTriangle className="size-3 shrink-0" /> {m}</span>)}
+                                  {tourIssues(t).map((m) => <span key={m} className="inline-flex items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-[11px] font-semibold text-warning"><AlertTriangle className="size-3 shrink-0" /> {m}</span>)}
                                 </div>
                               )}
                             </div>
