@@ -24,3 +24,4 @@
 
 - Invite-only access: public signup disabled (auth config); /auth is sign-in + reset only; new accounts are created server-side by redeemInvitation (src/lib/invite.functions.ts) when a valid invitation token is opened, then the invitee sets their password via a reset email.
 - Tour dispatch: vehicles table + bookings.vehicle_id/driver_id/dispatch_status; conflict detection is pure client logic in src/lib/dispatch.ts (tested) — keeps warnings instant without extra queries.
+- Channels are multi-account: one channel_connections row per account (unique workspace+channel+account_id); conversations.connection_id records the receiving account; Meta tokens are stored per connection as `<channel>_token:<connectionId>` — so replies always leave from the account the guest contacted.
