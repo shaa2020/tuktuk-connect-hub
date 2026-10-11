@@ -1,8 +1,43 @@
 // Server-only: the AI Operator ("Away mode"). Runs from the 5-minute background job or "Run now".
 // Bounded per run, single-flight lock in the database, idempotent per guest message, pauses on credit/permission errors.
-import { parseDecision, replyAllowed, vehiclesFor } from "./ai-operator";
+import { decisionFromRaw, PARSE_FAIL_ALERT, replyAllowed, vehiclesFor } from "./ai-operator";
 
 const BATCH = 5;
+// Strict structured output so the model's decision is always parseable JSON.
+const DECISION_SCHEMA = {
+  name: "operator_decision",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["action", "reply", "tags", "urgent", "alert", "booking"],
+    properties: {
+      action: { type: "string", enum: ["reply", "handoff", "none"] },
+      reply: { type: "string" },
+      tags: { type: "array", items: { type: "string" } },
+      urgent: { type: "boolean" },
+      alert: { type: "string" },
+      booking: {
+        anyOf: [
+          { type: "null" },
+          {
+            type: "object",
+            additionalProperties: false,
+            required: ["ready", "date", "time", "guests", "tour", "pickup", "name"],
+            properties: {
+              ready: { type: "boolean" },
+              date: { type: "string" },
+              time: { type: "string" },
+              guests: { type: "integer" },
+              tour: { type: "string" },
+              pickup: { type: "string" },
+              name: { type: "string" },
+            },
+          },
+        ],
+      },
+    },
+  },
+};
 const RULES = `You are the AI Operator for Tuk Tuk 24 Lisbon, a tuk-tuk tour company in Lisbon, Portugal. The team is away and you handle guest chats on their behalf.
 Rules:
 - Be warm, short and professional. Reply in the language the guest writes in.

@@ -44,6 +44,19 @@ export function replyAllowed(repliesSoFar: number, max: number) {
   return repliesSoFar < max;
 }
 
+/**
+ * Parse the model's answer, with a fallback: if the answer is not JSON at all but
+ * contains readable text, send that text as the guest reply instead of a silent hand-off.
+ */
+export function decisionFromRaw(raw: string): OperatorDecision {
+  const d = parseDecision(raw);
+  const text = raw.trim();
+  if (d.action === "handoff" && d.alert === PARSE_FAIL_ALERT && text && !/\{[\s\S]*\}/.test(text)) {
+    return { ...d, action: "reply", reply: text.slice(0, 1500), alert: "" };
+  }
+  return d;
+}
+
 /** Tuk-tuks needed: each vehicle carries up to 6 guests. */
 export function vehiclesFor(guests: number) {
   return Math.max(1, Math.ceil(guests / 6));
