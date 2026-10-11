@@ -28,6 +28,7 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
         const { ingestInbound, applyStatus, findConnection } = await import("@/lib/channels.server");
         let body: any;
         try { body = JSON.parse(raw); } catch { return new Response("Bad request", { status: 400 }); }
+        let gotInbound = false;
         try {
           if (body.object === "whatsapp_business_account") {
             for (const e of body.entry ?? []) for (const ch of e.changes ?? []) {
