@@ -14,6 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_operator_log: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          summary: string
+          workspace_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          summary: string
+          workspace_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          summary?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_operator_log_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_operator_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_operator_marks: {
+        Row: {
+          conversation_id: string
+          handed_off: boolean
+          last_inbound_id: string | null
+          replies: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          conversation_id: string
+          handed_off?: boolean
+          last_inbound_id?: string | null
+          replies?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          conversation_id?: string
+          handed_off?: boolean
+          last_inbound_id?: string | null
+          replies?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_operator_marks_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_operator_marks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_operator_settings: {
+        Row: {
+          allow_alert: boolean
+          allow_assign: boolean
+          allow_booking: boolean
+          allow_reply: boolean
+          away_mode: boolean
+          default_assignee: string | null
+          last_run_at: string | null
+          lock_until: string | null
+          max_replies: number
+          notes: string
+          paused_reason: string | null
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          allow_alert?: boolean
+          allow_assign?: boolean
+          allow_booking?: boolean
+          allow_reply?: boolean
+          away_mode?: boolean
+          default_assignee?: string | null
+          last_run_at?: string | null
+          lock_until?: string | null
+          max_replies?: number
+          notes?: string
+          paused_reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          allow_alert?: boolean
+          allow_assign?: boolean
+          allow_booking?: boolean
+          allow_reply?: boolean
+          away_mode?: boolean
+          default_assignee?: string | null
+          last_run_at?: string | null
+          lock_until?: string | null
+          max_replies?: number
+          notes?: string
+          paused_reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_operator_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_settings: {
         Row: {
           base_url: string | null
