@@ -43,6 +43,13 @@
       "when": 1791681141161,
       "tag": "0005_multi_account_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791686763774,
+      "tag": "0006_migration",
+      "breakpoints": true
     }
   ]
 }

@@ -26,3 +26,4 @@
 - Tour dispatch: vehicles table + bookings.vehicle_id/driver_id/dispatch_status; conflict detection is pure client logic in src/lib/dispatch.ts (tested) — keeps warnings instant without extra queries.
 - Channels are multi-account: one channel_connections row per account (unique workspace+channel+account_id); conversations.connection_id records the receiving account; Meta tokens are stored per connection as `<channel>_token:<connectionId>` — so replies always leave from the account the guest contacted.
 - Extra Gmail inboxes use IMAP/SMTP over node:tls with a Gmail App Password stored encrypted as gmail_pass:<connectionId>; rows have config.mode='imap' — the Lovable Gmail connector only supports one account.
+- WhatsApp primary number uses the Lovable WhatsApp connector (config.mode='connector'): sends via connector gateway, receives at /api/public/whatsapp/webhook into the durable whatsapp_webhook_events inbox with bounded retry — no Meta tokens stored.
