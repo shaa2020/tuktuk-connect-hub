@@ -72,3 +72,22 @@ export async function syncAllEmailFor(ws: string) {
   }
   return imported;
 }
+
+/** Alerts admins/managers once per day per broken channel (integration health). */
+export async function alertBrokenChannels(ws: string) {
+  const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
+  const { data: broken } = await sb.from("channel_connections").select("id, channel, account_label, display_name, last_error").eq("workspace_id", ws).not("last_error", "is", null);
+  if (!broken?.length) return 0;
+  const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+  const { data: recent } = await sb.from("notifications").select("body").eq("workspace_id", ws).eq("kind", "integration").gte("created_at", since);
+  const seen = new Set((recent ?? []).map((r) => r.body));
+  const { data: admins } = await sb.from("workspace_members").select("user_id").eq("workspace_id", ws).eq("active", true).in("role", ["admin", "manager"]);
+  let n = 0;
+  for (const c of broken) {
+    const body = `${c.account_label || c.display_name || c.channel}: ${String(c.last_error).slice(0, 160)}`;
+    if (seen.has(body)) continue;
+    for (const a of admins ?? []) await sb.from("notifications").insert({ workspace_id: ws, user_id: a.user_id, kind: "integration", title: `${c.channel} connection has a problem`, body, link: "/integrations" });
+    n++;
+  }
+  return n;
+}
