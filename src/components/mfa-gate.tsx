@@ -162,7 +162,17 @@ export function MfaGate({ children }: { children: ReactNode }) {
       </div>
     );
   }
-  if (state.isError) return <>{children}</>; // fail open on lookup errors; RLS still protects data
+  if (state.isError) {
+    // Fail closed: never show the app when two-step status can't be confirmed.
+    return (
+      <MfaScreen title="Couldn't check your security status" description="Check your internet connection and try again.">
+        <Button className="w-full" size="lg" onClick={() => state.refetch()} disabled={state.isFetching}>
+          {state.isFetching && <Loader2 className="animate-spin" />} Try again
+        </Button>
+        <Button variant="ghost" className="mt-2 w-full" onClick={() => supabase.auth.signOut()}>Sign out</Button>
+      </MfaScreen>
+    );
+  }
 
   const { needsVerify, verified } = state.data;
 
@@ -189,11 +199,14 @@ export function MfaSettingsPanel() {
   const state = useMfaState();
   const qc = useQueryClient();
   const verified = state.data?.verified ?? [];
+  const [adding, setAdding] = useState(false);
 
-  async function disable(factorId: string) {
+  // Two-step sign-in is mandatory: a phone can only be removed while another verified one remains.
+  async function remove(factorId: string) {
+    if (verified.length < 2) return toast.error("Add your new phone first, then remove the old one.");
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) return toast.error(error.message);
-    toast.success("Two-step sign-in turned off");
+    toast.success("Old phone removed");
     qc.invalidateQueries({ queryKey: ["mfa-state"] });
   }
 
@@ -212,11 +225,23 @@ export function MfaSettingsPanel() {
     <div className="space-y-3">
       <p className="flex items-center gap-2 text-sm font-medium text-teal"><ShieldCheck className="size-4" /> Two-step sign-in is on</p>
       <p className="text-sm text-muted-foreground">
-        Your account is protected with an authenticator app. To switch phones, turn this off and set it up again on the new phone.
+        Two-step sign-in is required for every team account. To switch phones, add the new phone first, then remove the old one. Lost your phone? Ask a Business Admin to reset it from the Team page.
       </p>
-      <Button variant="outline" className="text-destructive" onClick={() => disable(verified[0]!.id)}>
-        Turn off two-step sign-in
-      </Button>
+      <ul className="space-y-2">
+        {verified.map((f) => (
+          <li key={f.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
+            <span className="min-w-0 truncate">{f.friendly_name ?? "Authenticator app"}</span>
+            {verified.length > 1 && (
+              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}>Remove</Button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {adding ? (
+        <MfaEnrollment onDone={() => setAdding(false)} />
+      ) : (
+        <Button variant="outline" onClick={() => setAdding(true)}>Add a new phone</Button>
+      )}
     </div>
   );
 }

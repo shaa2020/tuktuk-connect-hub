@@ -285,3 +285,21 @@ export const connectGmailAppPassword = createServerFn({ method: "POST" })
     try { imported = await syncImap(data.workspaceId, id, data.address, data.appPassword); } catch { /* shown on next sync */ }
     return { ok: true as const, imported };
   });
+
+/** Lost phone: an admin resets a teammate's two-step sign-in; they must set it up again at next sign-in. */
+export const resetMemberMfa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ workspaceId: z.string().uuid(), userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, data.workspaceId);
+    if (data.userId === context.userId) throw new Error("Use Settings to change your own phone.");
+    const { data: member } = await context.supabase.from("workspace_members").select("id").eq("workspace_id", data.workspaceId).eq("user_id", data.userId).maybeSingle();
+    if (!member) throw new Error("That person isn't in this workspace.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: list, error } = await supabaseAdmin.auth.admin.mfa.listFactors({ userId: data.userId });
+    if (error) throw new Error("Could not read two-step settings.");
+    for (const f of list?.factors ?? []) await supabaseAdmin.auth.admin.mfa.deleteFactor({ userId: data.userId, id: f.id });
+    await supabaseAdmin.auth.admin.signOut(data.userId).catch(() => {});
+    await supabaseAdmin.from("audit_logs").insert({ workspace_id: data.workspaceId, actor_id: context.userId, action: "mfa_reset", entity_type: "profiles", entity_id: data.userId, details: { factors_removed: list?.factors?.length ?? 0 } });
+    return { ok: true };
+  });

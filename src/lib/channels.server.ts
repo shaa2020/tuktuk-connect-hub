@@ -56,7 +56,7 @@ export async function sendMeta(ws: string, channel: MetaChannel, config: Record<
   return (j.messages?.[0]?.id ?? j.message_id) as string;
 }
 
-export async function ingestInbound(ws: string, channel: MetaChannel | "email", ev: { from: string; name?: string; externalMessageId: string; text: string; at?: Date; connectionId?: string | null }) {
+export async function ingestInbound(ws: string, channel: MetaChannel | "email", ev: { from: string; name?: string; externalMessageId: string; text: string; at?: Date; connectionId?: string | null; direction?: "inbound" | "outbound" }) {
   const sb = await db();
   let { data: ident } = await sb.from("external_identities").select("id, contact_id").eq("workspace_id", ws).eq("channel", channel).eq("external_id", ev.from).maybeSingle();
   if (!ident) {
@@ -81,8 +81,8 @@ export async function ingestInbound(ws: string, channel: MetaChannel | "email", 
     await sb.from("conversation_participants").insert({ conversation_id: convId, external_identity_id: ident.id, workspace_id: ws });
   }
   const { error } = await sb.from("messages").insert({
-    workspace_id: ws, conversation_id: convId, direction: "inbound", body: (ev.text || "(unsupported message type)").slice(0, 10000),
-    status: "delivered", external_id: ev.externalMessageId, author_id: null, ...(ev.at ? { created_at: ev.at.toISOString() } : {}),
+    workspace_id: ws, conversation_id: convId, direction: ev.direction ?? "inbound", body: (ev.text || "(unsupported message type)").slice(0, 10000),
+    status: ev.direction === "outbound" ? "sent" : "delivered", external_id: ev.externalMessageId, author_id: null, ...(ev.at ? { created_at: ev.at.toISOString() } : {}),
   });
   if (error && error.code !== "23505") throw error; // duplicate webhook delivery is fine
 }

@@ -10,6 +10,8 @@ import { PageHeader, Panel, errMsg } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, Confirm, Field, NativeSelect, ToneBadge, fmtDate } from "@/components/kit";
+import { useServerFn } from "@tanstack/react-start";
+import { resetMemberMfa } from "@/lib/admin.functions";
 import { ROLE_LABEL, canManageTeam, type AppRole } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/team")({
@@ -23,6 +25,7 @@ function TeamPage() {
   const admin = canManageTeam(ws.role);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<AppRole>("agent");
+  const resetMfa = useServerFn(resetMemberMfa);
   const invites = useQuery({
     queryKey: ["invites", ws.workspaceId],
     enabled: admin,
@@ -94,6 +97,9 @@ function TeamPage() {
                   {m.active ? (
                     <Confirm trigger={<Button size="sm" variant="outline">Deactivate</Button>} title={`Deactivate ${m.full_name || m.email}?`} description="They'll immediately lose access to all workspace data. You can reactivate them later." confirmLabel="Deactivate" onConfirm={() => updateMember(m.id, { active: false })} />
                   ) : <Button size="sm" variant="outline" onClick={() => updateMember(m.id, { active: true })}>Reactivate</Button>}
+                  {m.user_id !== ws.userId && (
+                    <Confirm trigger={<Button size="sm" variant="ghost">Reset 2-step</Button>} title={`Reset two-step sign-in for ${m.full_name || m.email}?`} description="Use this only if they lost their phone. They'll be signed out and must set up an authenticator app again." confirmLabel="Reset" onConfirm={async () => { try { await resetMfa({ data: { workspaceId: ws.workspaceId, userId: m.user_id } }); toast.success("Two-step sign-in reset"); } catch (e) { toast.error((e as Error).message); } }} />
+                  )}
                 </div>
               ) : <ToneBadge tone="secondary">{ROLE_LABEL[m.role]}</ToneBadge>}
             </li>
