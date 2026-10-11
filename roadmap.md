@@ -4,9 +4,9 @@
 - [x] T2 No self-disable; add-new-phone flow; admin reset (audited)
 - [x] T3 WhatsApp phone-app replies shown in inbox
 - [x] T4 Stuck webhook events capped at 10 attempts
-- [ ] T5 Scheduled background sync (Gmail/website) with app closed
-- [ ] T6 Deleted website bookings must not return
-- [ ] T7 Phone check of every page
+- [x] T5 Background sync every 5 min (live after publish)
+- [x] T6 Deleted website bookings stay deleted
+- [ ] T7 BLOCKED: automated phone check stops at mandatory two-step sign-in; owner to check pages on phone
 - [ ] T8 BLOCKED: Agent-role test needs a second invited account
 - [ ] T9–T19 see archived audit plan (social comments/posting, Meta, AI key, email domain, prices)
 - [x] Knowledge Base
@@ -29,4 +29,4 @@
 - Multiple Gmail inboxes via App Password (IMAP/SMTP) — done
 - [x] WhatsApp message templates (follow up after 24h window)
 - [x] Mandatory two-step sign-in (authenticator app) for all team accounts
-- [ ] Fix Inbox translate (must)
+- [x] Inbox translate: guest messages + my reply, language picker
