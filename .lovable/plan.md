@@ -12,7 +12,19 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 - **Workspace switcher** — users belonging to several businesses can switch between them.
 - **Onboarding wizard** — after signup: connect first channel, invite team, load sample data, done checklist.
 
-## Phase 2 — New features that make it sellable
+## Phase 2 — Full social media control (your top priority)
+
+Everything from one place, for every connected account:
+
+- **Publishing & scheduling** — create posts (photo, video, carousel, story, reel) for Instagram, Facebook Page, and TikTok; schedule on a content calendar; best-time suggestions; draft → approve → publish flow with audit log.
+- **Comments management** — Instagram and Facebook comments arrive in the shared inbox like messages; reply, hide, or delete; assign to team members; auto-hide spam/profanity rules.
+- **Mentions & DMs** — story mentions, tags, and all DMs in the same inbox (DMs already work for WhatsApp/Gmail; this extends to Instagram/Messenger once Meta approves).
+- **Google Business Profile** — read and reply to reviews, answer Q&A, update hours/photos.
+- **Social inbox unified view** — one stream: DMs, comments, mentions, reviews — filterable by channel, account, assignee.
+- **Analytics per channel** — followers, reach, engagement, top posts; monthly owner report.
+- **Honest limit:** Meta requires app review for posting/comments permissions (days to weeks, needs your Meta app). TikTok has its own approval. I build everything; Meta's approval is the only gate.
+
+## Phase 3 — New features that make it sellable
 
 - **Public booking page per business** — guests book tours directly (date, guests, tour, pay deposit); lands in the calendar and inbox automatically. Biggest value-add for tour operators.
 - **Online payments for bookings** — PayPal checkout / deposit links on bookings; payment status tracked on the booking via PayPal webhooks.
