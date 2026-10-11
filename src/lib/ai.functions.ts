@@ -50,12 +50,18 @@ export const aiAssist = createServerFn({ method: "POST" })
       input = `Write the next reply from the team to the guest${guest?.preferred_language ? ` in ${guest.preferred_language}` : " in the language the guest uses"}. Output only the reply text.\n\nConversation:\n${transcript || "(no messages yet)"}${data.text ? `\n\nTeam's notes for the reply: ${data.text}` : ""}`;
     } else if (data.task === "summarize") {
       input = `Summarise this conversation for a teammate in 3-5 short bullet points in English: what the guest wants, details they gave (date, group size, tour), and what's still open. Mark anything uncertain. Conversation:\n${transcript || "(no messages yet)"}`;
+    } else if (!data.text?.trim()) {
+      // Translate what the guest wrote for the team.
+      const recent = (msgs ?? []).filter((m: { direction: string }) => m.direction === "inbound").slice(0, 5).reverse().map((m: { body: string }) => m.body).join("\n---\n");
+      if (!recent) return { ok: false as const, error: "There are no guest messages to translate yet." };
+      input = `Translate these guest messages into ${data.language || "English"}. Keep "---" separators between messages. Output only the translation.\n\n${recent}`;
     } else {
-      if (!data.text?.trim()) return { ok: false as const, error: "Nothing to translate." };
-      input = `Translate the following text into ${data.language || guest?.preferred_language || "English"}. Keep the tone. Output only the translation.\n\n${data.text}`;
+      const target = data.language || guest?.preferred_language || "the language the guest writes in (detect it from the guest's messages below; if unclear, English)";
+      input = `Translate the team's reply into ${target}. Keep the tone, names, prices and placeholders unchanged. Output only the translated reply.\n\nReply:\n${data.text}\n\nGuest's recent messages (for language detection only):\n${transcript.split("\n").filter((l) => l.startsWith("Guest:")).slice(-5).join("\n") || "(none)"}`;
     }
     try {
-      const text = await generate(conv.workspace_id, ctx.settings, { instructions: instructionsFor(ctx), input });
+      const instructions = data.task === "translate" ? "You are a professional translator for Tuk Tuk 24 Lisbon, a tour company. Translate accurately and naturally." : instructionsFor(ctx);
+      const text = await generate(conv.workspace_id, ctx.settings, { instructions, input });
       return { ok: true as const, text };
     } catch (e) {
       const msg = e instanceof AiError ? e.message : "AI request failed";
