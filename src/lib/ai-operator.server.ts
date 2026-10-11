@@ -119,8 +119,7 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     if (r.ok) { sent = 1; await log(sb, ws, c.id, "reply", `Replied to ${name}: ${d.reply.slice(0, 160)}`); }
     else await log(sb, ws, c.id, "error", `Reply to ${name} failed: ${r.error}`);
   } else if (d.action === "reply") {
-    await sb.from("internal_notes").insert({ workspace_id: ws, conversation_id: c.id, body: `AI Operator suggested reply (not sent):\n${d.reply}` }).then(() => {}, () => {});
-    await log(sb, ws, c.id, "suggest", `Suggested a reply for ${name} (auto-reply is off).`);
+    await log(sb, ws, c.id, "suggest", `Suggested reply for ${name} (not sent): ${d.reply.slice(0, 220)}`, { reply: d.reply });
   }
 
   if (s.allow_assign) {
