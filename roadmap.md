@@ -17,3 +17,4 @@
 
 - [x] Multiple accounts per channel (WhatsApp/Instagram/Messenger), account names, inbox filter + badges, replies sent from the receiving account
 - Multiple Gmail inboxes via App Password (IMAP/SMTP) — done
+- [x] WhatsApp message templates (follow up after 24h window)

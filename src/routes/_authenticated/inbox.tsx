@@ -7,6 +7,8 @@ import {
   MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
+import { windowOpen } from "@/lib/wa-templates";
+import { TemplateSender } from "@/components/wa-templates";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { aiAssist } from "@/lib/ai.functions";
@@ -480,6 +482,12 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
   const [mode, setMode] = useState<"send" | "log" | "note">(connected ? "send" : "log");
   useEffect(() => { setMode(connected ? "send" : "log"); }, [connected, conversationId]);
   const sendFn = useServerFn(sendChannelMessage);
+  const waTemplates = channel === "whatsapp" && connected;
+  const lastIn = useQuery({
+    queryKey: ["last-inbound", conversationId], enabled: waTemplates, refetchInterval: 60_000,
+    queryFn: async () => (await supabase.from("messages").select("created_at").eq("conversation_id", conversationId).eq("direction", "inbound").neq("status", "logged").order("created_at", { ascending: false }).limit(1).maybeSingle()).data?.created_at ?? null,
+  });
+  const waClosed = waTemplates && lastIn.isSuccess && !windowOpen(lastIn.data);
   const [direction, setDirection] = useState<"outbound" | "inbound">("outbound");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -535,6 +543,12 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
           </span>
         </div>
       )}
+      {waClosed && mode === "send" && (
+        <div className="mb-2 flex items-start gap-2 rounded-lg bg-warning-soft px-3 py-2 text-xs text-warning">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          <span>The guest's last WhatsApp message was over 24 hours ago, so normal replies won't go through. Tap <b>Template</b> to send an approved message — once they reply, normal chat opens again.</span>
+        </div>
+      )}
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         {connected && <button onClick={() => setMode("send")} className={cn("flex h-8 items-center gap-1 rounded-full px-3 text-xs font-medium", mode === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}><Send className="size-3" />Reply to customer</button>}
         <button onClick={() => setMode("log")} className={cn("h-8 rounded-full px-3 text-xs font-medium", mode === "log" ? "bg-navy text-primary-foreground" : "bg-muted text-muted-foreground")}>Log message</button>
@@ -561,6 +575,7 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         <Button size="sm" variant="outline" onClick={() => runAi("summarize")} disabled={!!aiBusy}>{aiBusy === "summarize" ? <Loader2 className="animate-spin" /> : <Sparkles />}Summarize</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("translate")} disabled={!!aiBusy || !text.trim()} title="Translate the text in the box into the guest's language">{aiBusy === "translate" ? <Loader2 className="animate-spin" /> : <Languages />}Translate</Button>
         <QuoteButton onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
+        {waTemplates && <TemplateSender workspaceId={ws.workspaceId} conversationId={conversationId} highlight={waClosed} />}
       </div>
       <div className={cn("flex items-end gap-2 rounded-xl border p-1.5", mode === "note" && "border-note-border bg-note")}>
         <Popover>

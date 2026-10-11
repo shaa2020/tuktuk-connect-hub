@@ -27,3 +27,4 @@
 - Channels are multi-account: one channel_connections row per account (unique workspace+channel+account_id); conversations.connection_id records the receiving account; Meta tokens are stored per connection as `<channel>_token:<connectionId>` — so replies always leave from the account the guest contacted.
 - Extra Gmail inboxes use IMAP/SMTP over node:tls with a Gmail App Password stored encrypted as gmail_pass:<connectionId>; rows have config.mode='imap' — the Lovable Gmail connector only supports one account.
 - WhatsApp primary number uses the Lovable WhatsApp connector (config.mode='connector'): sends via connector gateway, receives at /api/public/whatsapp/webhook into the durable whatsapp_webhook_events inbox with bounded retry — no Meta tokens stored.
+- WhatsApp templates are read live from the connector (/message_templates) and sent only if APPROVED; the 24h-window check (src/lib/wa-templates.ts) is UI guidance — Meta remains the enforcer.
