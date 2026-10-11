@@ -49,3 +49,7 @@
 - [x] WhatsApp message templates (follow up after 24h window)
 - [x] Mandatory two-step sign-in (authenticator app) for all team accounts
 - [x] Inbox translate: guest messages + my reply, language picker
+
+## AI Operator (Away mode)
+- [x] Away-mode AI Operator: replies, tentative bookings, tags/assign, alerts, activity log
+- [ ] Owner to test live after publishing (runs every 5 min on live app)
