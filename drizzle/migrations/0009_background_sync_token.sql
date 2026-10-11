@@ -1,0 +1,8 @@
+create table public.internal_job_tokens (
+  name text primary key,
+  token text not null default encode(gen_random_bytes(32), 'hex'),
+  created_at timestamptz not null default now()
+);
+grant all on public.internal_job_tokens to service_role;
+alter table public.internal_job_tokens enable row level security;
+insert into public.internal_job_tokens(name) values ('background_sync') on conflict do nothing;

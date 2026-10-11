@@ -509,13 +509,14 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
   useEffect(() => { if (text) localStorage.setItem(draftKey, text); else localStorage.removeItem(draftKey); }, [text, draftKey]);
 
   const assist = useServerFn(aiAssist);
-  const [ai, setAi] = useState<{ kind: "draft" | "summarize" | "translate"; text: string } | null>(null);
+  const [ai, setAi] = useState<{ kind: "draft" | "summarize" | "translate"; text: string; incoming?: boolean } | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
-  async function runAi(task: "draft" | "summarize" | "translate") {
+  const [trLang, setTrLang] = useState("");
+  async function runAi(task: "draft" | "summarize" | "translate", opts?: { incoming?: boolean }) {
     setAiBusy(task);
     try {
-      const r = await assist({ data: { conversationId, task, text: text.trim() || undefined } });
-      if (r.ok) setAi({ kind: task, text: r.text }); else toast.error(r.error);
+      const r = await assist({ data: { conversationId, task, text: opts?.incoming ? undefined : text.trim() || undefined, language: task === "translate" ? (opts?.incoming ? trLang || "English" : trLang || undefined) : undefined } });
+      if (r.ok) setAi({ kind: task, text: r.text, incoming: !!opts?.incoming }); else toast.error(r.error);
     } catch (e) { toast.error(errMsg(e)); } finally { setAiBusy(null); }
   }
 
@@ -580,13 +581,28 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
             <button onClick={() => setAi(null)} aria-label="Dismiss"><X className="size-3.5" /></button>
           </div>
           <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-sm">{ai.text}</p>
-          {ai.kind !== "summarize" && <Button size="sm" variant="outline" className="mt-2" onClick={() => { setText(ai.text); setAi(null); }}>Use this text</Button>}
+          {ai.kind !== "summarize" && !(ai.kind === "translate" && ai.incoming) && <Button size="sm" variant="outline" className="mt-2" onClick={() => { setText(ai.text); setAi(null); }}>Use this text</Button>}
         </div>
       )}
       <div className="mb-2 flex flex-wrap gap-1.5">
         <Button size="sm" variant="outline" onClick={() => runAi("draft")} disabled={!!aiBusy}>{aiBusy === "draft" ? <Loader2 className="animate-spin" /> : <Sparkles />}Draft reply</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("summarize")} disabled={!!aiBusy}>{aiBusy === "summarize" ? <Loader2 className="animate-spin" /> : <Sparkles />}Summarize</Button>
-        <Button size="sm" variant="outline" onClick={() => runAi("translate")} disabled={!!aiBusy || !text.trim()} title="Translate the text in the box into the guest's language">{aiBusy === "translate" ? <Loader2 className="animate-spin" /> : <Languages />}Translate</Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" disabled={!!aiBusy}>{aiBusy === "translate" ? <Loader2 className="animate-spin" /> : <Languages />}Translate</Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 space-y-2 p-3">
+            <label className="block text-xs font-medium text-muted-foreground">Language
+              <NativeSelect className="mt-1 h-9 w-full" value={trLang} onChange={(e) => setTrLang(e.target.value)}>
+                <option value="">Auto (guest's language / English)</option>
+                {["English", "Portuguese", "Spanish", "French", "German", "Italian", "Dutch", "Japanese", "Chinese", "Korean", "Russian", "Arabic", "Hindi", "Polish", "Turkish"].map((l) => <option key={l} value={l}>{l}</option>)}
+              </NativeSelect>
+            </label>
+            <Button size="sm" className="w-full" onClick={() => runAi("translate", { incoming: true })}>Translate guest's messages</Button>
+            <Button size="sm" variant="outline" className="w-full" disabled={!text.trim()} onClick={() => runAi("translate")}>Translate my reply</Button>
+            {!text.trim() && <p className="text-[11px] text-muted-foreground">Type a reply in the box to translate it into the guest's language.</p>}
+          </PopoverContent>
+        </Popover>
         <QuoteButton workspaceId={ws.workspaceId} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
         {waTemplates && <TemplateSender workspaceId={ws.workspaceId} conversationId={conversationId} highlight={waClosed} />}
       </div>

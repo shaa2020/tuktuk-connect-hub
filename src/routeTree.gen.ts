@@ -31,6 +31,7 @@ import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/t
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts.index'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
+import { Route as ApiPublicHooksBackgroundSyncRouteImport } from './routes/api/public/hooks/background-sync'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicWebhooksMetaWorkspaceIdRouteImport } from './routes/api/public/webhooks/meta.$workspaceId'
 
@@ -147,6 +148,12 @@ const AuthenticatedContactsIdRoute = AuthenticatedContactsIdRouteImport.update({
   path: '/contacts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksBackgroundSyncRoute =
+  ApiPublicHooksBackgroundSyncRouteImport.update({
+    id: '/api/public/hooks/background-sync',
+    path: '/api/public/hooks/background-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof InviteTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
@@ -207,6 +215,7 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof InviteTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
+  '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
@@ -234,6 +243,7 @@ export interface FileRoutesById {
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/contacts/$id'
     | '/contacts/'
+    | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
     | '/api/public/webhooks/meta/$workspaceId'
   fileRoutesByTo: FileRoutesByTo
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/contacts/$id'
     | '/contacts'
+    | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
     | '/api/public/webhooks/meta/$workspaceId'
   id:
@@ -312,6 +324,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contacts/'
+    | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
     | '/api/public/webhooks/meta/$workspaceId'
   fileRoutesById: FileRoutesById
@@ -322,6 +335,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicHooksBackgroundSyncRoute: typeof ApiPublicHooksBackgroundSyncRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicWebhooksMetaWorkspaceIdRoute: typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
@@ -482,6 +496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContactsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/background-sync': {
+      id: '/api/public/hooks/background-sync'
+      path: '/api/public/hooks/background-sync'
+      fullPath: '/api/public/hooks/background-sync'
+      preLoaderRoute: typeof ApiPublicHooksBackgroundSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -548,6 +569,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicHooksBackgroundSyncRoute: ApiPublicHooksBackgroundSyncRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicWebhooksMetaWorkspaceIdRoute: ApiPublicWebhooksMetaWorkspaceIdRoute,
 }
