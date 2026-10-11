@@ -79,3 +79,31 @@ export const syncWebsiteKnowledge = createServerFn({ method: "POST" })
       return { ok: true as const, tours: tours.length };
     } catch (e) { return { ok: false as const, error: (e as Error).message }; }
   });
+
+const bookingInput = z.object({
+  workspaceId: z.string().uuid(),
+  customer_name: z.string().trim().min(1).max(200),
+  phone: z.string().trim().min(5).max(40),
+  email: z.string().trim().email().max(200),
+  tour_title: z.string().trim().min(1).max(200),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  time: z.string().trim().max(20).optional(),
+  party_size: z.number().int().min(1).max(60),
+  pickup_location: z.string().trim().max(300).optional(),
+  notes: z.string().trim().max(4000).optional(),
+});
+
+/** Any member: create a booking request on the website. Returns the website reference. */
+export const createWebsiteBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => bookingInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: member } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
+    if (member !== true) return { ok: false as const, error: "Not a member." };
+    try {
+      const { websitePost } = await import("./website-api.server");
+      const { workspaceId: _w, ...body } = data;
+      const r = await websitePost<{ reference: string }>("/booking-requests", { ...body, source: "team_platform" });
+      return { ok: true as const, reference: String(r.reference) };
+    } catch (e) { return { ok: false as const, error: (e as Error).message }; }
+  });
