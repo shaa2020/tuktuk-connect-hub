@@ -12,7 +12,19 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 - **Workspace switcher** — users belonging to several businesses can switch between them.
 - **Onboarding wizard** — after signup: connect first channel, invite team, load sample data, done checklist.
 
-## Phase 2 — New features that make it sellable
+## Phase 2 — Full social media control (your top priority)
+
+Everything from one place, for every connected account:
+
+- **Publishing & scheduling** — create posts (photo, video, carousel, story, reel) for Instagram, Facebook Page, and TikTok; schedule on a content calendar; best-time suggestions; draft → approve → publish flow with audit log.
+- **Comments management** — Instagram and Facebook comments arrive in the shared inbox like messages; reply, hide, or delete; assign to team members; auto-hide spam/profanity rules.
+- **Mentions & DMs** — story mentions, tags, and all DMs in the same inbox (DMs already work for WhatsApp/Gmail; this extends to Instagram/Messenger once Meta approves).
+- **Google Business Profile** — read and reply to reviews, answer Q&A, update hours/photos.
+- **Social inbox unified view** — one stream: DMs, comments, mentions, reviews — filterable by channel, account, assignee.
+- **Analytics per channel** — followers, reach, engagement, top posts; monthly owner report.
+- **Honest limit:** Meta requires app review for posting/comments permissions (days to weeks, needs your Meta app). TikTok has its own approval. I build everything; Meta's approval is the only gate.
+
+## Phase 3 — New features that make it sellable
 
 - **Public booking page per business** — guests book tours directly (date, guests, tour, pay deposit); lands in the calendar and inbox automatically. Biggest value-add for tour operators.
 - **Online payments for bookings** — PayPal checkout / deposit links on bookings; payment status tracked on the booking via PayPal webhooks.
@@ -22,7 +34,7 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 - **SLA & business-hours rules** — auto-reply outside hours, escalation when a conversation waits too long.
 - **Reports export (PDF/CSV)** — owner-ready monthly summaries: response times, bookings, revenue, channel mix.
 
-## Phase 3 — Platform polish
+## Phase 4 — Platform polish
 
 - **Platform admin console** (for you as the SaaS owner) — list all businesses, plans, usage, health; impersonate for support; platform_admins table already exists.
 - **White-label options** — each business picks its name, logo, brand color for their booking page and widget.
@@ -32,10 +44,11 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 
 ## Suggested order
 
-1. Phase 1 (signup, plans, billing) — nothing else works as a product without it.
-2. Public booking page + payments — the feature tour operators will pay for.
-3. Review requests + chat widget — retention and daily-value features.
-4. Platform admin console — needed once real customers exist.
+1. Phase 2 (full social control) — your priority; start Meta app review early since it's the long pole.
+2. Phase 1 (signup, plans, PayPal billing) — nothing else works as a product without it.
+3. Public booking page + payments — the feature tour operators will pay for.
+4. Review requests + chat widget — retention and daily-value features.
+5. Platform admin console — needed once real customers exist.
 
 ## Technical notes
 
