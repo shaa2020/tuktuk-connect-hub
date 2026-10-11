@@ -9,3 +9,6 @@
 - [ ] WAITING: owner to enter Meta credentials and test live
 - [x] Email channel — Gmail tuktuklisbon24@gmail.com (sync while Inbox open, replies in thread)
 - [ ] BLOCKED: invite emails & push/email reminders — need email domain
+
+## Done
+- Invite-only access: public sign-ups off; accounts only via admin invitation links (Team page); invitees set their own password by email.
