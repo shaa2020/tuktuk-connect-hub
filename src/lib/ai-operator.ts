@@ -12,9 +12,11 @@ export type OperatorDecision = {
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^\d{2}:\d{2}$/;
 
+export const PARSE_FAIL_ALERT = "The AI could not understand this conversation.";
+
 /** Parse the model's JSON answer defensively; anything malformed becomes a safe hand-off. */
 export function parseDecision(raw: string): OperatorDecision {
-  const safe: OperatorDecision = { action: "handoff", reply: "", tags: [], urgent: false, alert: "The AI could not understand this conversation.", booking: null };
+  const safe: OperatorDecision = { action: "handoff", reply: "", tags: [], urgent: false, alert: PARSE_FAIL_ALERT, booking: null };
   const m = /\{[\s\S]*\}/.exec(raw);
   if (!m) return safe;
   let j: any;
