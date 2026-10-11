@@ -8,14 +8,14 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 
 - **Self-serve signup with workspace creation** — today only the first user bootstraps a workspace and everyone else is invite-only. Add a "Start your business" flow: sign up, name the company, become its admin. Keep the current invite-only mode as an option per workspace.
 - **Per-workspace plan & limits** — plans table (e.g. Free / Pro / Business): max team members, connected channels, AI usage, message volume. Enforced server-side.
-- **Billing** — Stripe subscriptions: checkout, plan upgrades/downgrades, invoices, cancel. Webhook updates the workspace's plan automatically.
+- **Billing via PayPal** (you already use PayPal) — PayPal Subscriptions API: plan checkout, upgrades/downgrades, cancel. A signed PayPal webhook updates the workspace's plan automatically. Note: Lovable's built-in one-click payments are Stripe/Paddle only, so PayPal is a custom integration using your own PayPal Business account credentials (stored encrypted, never exposed). PayPal also covers guest booking deposits.
 - **Workspace switcher** — users belonging to several businesses can switch between them.
 - **Onboarding wizard** — after signup: connect first channel, invite team, load sample data, done checklist.
 
 ## Phase 2 — New features that make it sellable
 
 - **Public booking page per business** — guests book tours directly (date, guests, tour, pay deposit); lands in the calendar and inbox automatically. Biggest value-add for tour operators.
-- **Online payments for bookings** — Stripe payment links / deposits on bookings; payment status tracked on the booking.
+- **Online payments for bookings** — PayPal checkout / deposit links on bookings; payment status tracked on the booking via PayPal webhooks.
 - **Review requests** — automatic WhatsApp/email after a completed tour asking for a Google/TripAdvisor review.
 - **Customer-facing live chat widget** — embeddable on the business's own website; chats arrive in the shared inbox.
 - **Canned replies / quick replies library** — shared per workspace, insertable in the composer.
@@ -40,7 +40,7 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 ## Technical notes
 
 - The data model is already workspace-scoped with RLS everywhere, so multi-tenancy is mostly additive: signup flow, plans table, billing webhook, and per-plan limit checks.
-- Billing via Stripe (Lovable-managed integration); subscription state stored on the workspace, updated by a signed webhook under /api/public/.
+- Billing via PayPal Subscriptions (your existing PayPal Business account); subscription state stored on the workspace, updated by a verified PayPal webhook under /api/public/. Requires your PayPal app's Client ID and Secret, stored as encrypted server secrets.
 - Your own Tuk Tuk 24 Lisbon workspace stays untouched and gets an unlimited internal plan.
 - No changes to existing channels, inbox, or security model (MFA, invite-only team access, encrypted secrets all stay).
 
