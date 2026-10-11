@@ -16,6 +16,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Confirm, Field, NativeSelect, SampleBadge, ToneBadge, emptyToNull, fmtDate } from "@/components/kit";
 import { ContactSelect, LeadSelect } from "@/components/pickers";
 import { BOOKING_STATUS_META, PAYMENT_LABEL, canDeleteBookings, type BookingStatus, type PaymentStatus } from "@/lib/domain";
+import { useServerFn } from "@tanstack/react-start";
+import { createWebsiteBooking } from "@/lib/website.functions";
 
 type Booking = Database["public"]["Tables"]["bookings"]["Row"];
 
@@ -126,6 +128,8 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
     notes: b?.notes ?? "", external_reference: b?.external_reference ?? "",
   });
   const [err, setErr] = useState<string | null>(null);
+  const [web, setWeb] = useState({ on: false, name: "", phone: "", email: "" });
+  const createWebsite = useServerFn(createWebsiteBooking);
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((p) => ({ ...p, [k]: e.target.value }));
   const setV = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
@@ -149,7 +153,19 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
         if (error) throw error;
         toast.success("Booking saved");
       } else {
-        const { error } = await supabase.from("bookings").insert({ ...payload, reference: v.reference ?? "", workspace_id: ws.workspaceId });
+        let extRef = payload.external_reference;
+        if (web.on) {
+          if (!web.name.trim() || !web.phone.trim() || !web.email.trim()) throw new Error("Website booking needs guest name, phone and email.");
+          const r = await createWebsite({ data: {
+            workspaceId: ws.workspaceId, customer_name: web.name, phone: web.phone, email: web.email, tour_title: payload.tour_name,
+            date: payload.tour_date ?? undefined, time: payload.start_time ?? undefined, party_size: payload.guests ?? 2,
+            pickup_location: payload.pickup_location ?? undefined, notes: payload.notes ?? undefined,
+          } });
+          if (!r.ok) throw new Error(`Website: ${r.error}`);
+          extRef = `WEB-${r.reference}`;
+          toast.success(`Created on website (${r.reference})`);
+        }
+        const { error } = await supabase.from("bookings").insert({ ...payload, external_reference: extRef, reference: v.reference ?? "", workspace_id: ws.workspaceId });
         if (error) throw error;
         toast.success("Booking created");
         onClose();
@@ -195,6 +211,22 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
         <Field label="External reference" htmlFor="b-ext"><Input id="b-ext" value={f.external_reference} onChange={set("external_reference")} /></Field>
         <Field label="Notes" htmlFor="b-notes" className="sm:col-span-2"><Textarea id="b-notes" rows={3} value={f.notes} onChange={set("notes")} /></Field>
       </div>
+      {!b && (
+        <div className="space-y-3 rounded-lg border p-3">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={web.on} onChange={(e) => setWeb((p) => ({ ...p, on: e.target.checked }))} />
+            Also create this booking on tuktuk24lisbon.com
+          </label>
+          {web.on && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Guest name *" htmlFor="w-name" className="sm:col-span-2"><Input id="w-name" value={web.name} onChange={(e) => setWeb((p) => ({ ...p, name: e.target.value }))} /></Field>
+              <Field label="Phone *" htmlFor="w-phone"><Input id="w-phone" type="tel" value={web.phone} onChange={(e) => setWeb((p) => ({ ...p, phone: e.target.value }))} /></Field>
+              <Field label="Email *" htmlFor="w-email"><Input id="w-email" type="email" value={web.email} onChange={(e) => setWeb((p) => ({ ...p, email: e.target.value }))} /></Field>
+              <p className="text-xs text-muted-foreground sm:col-span-2">Sent to the website as a booking request — confirm it in the website admin.</p>
+            </div>
+          )}
+        </div>
+      )}
       {b && <p className="text-xs text-muted-foreground">Source: {b.source_system} · Tour date {fmtDate(b.tour_date)}</p>}
       {err && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">{err}</p>}
       <div className="flex gap-2">
