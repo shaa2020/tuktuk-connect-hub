@@ -1,4 +1,12 @@
 # Roadmap
+## SaaS + full social media control (plan approved 2026-10-11)
+- [x] social_posts table + Social Planner page (/social) — draft & schedule posts
+- [x] workspaces.plan + Platform console (/platform) — owner sees all businesses, sets plans
+- [ ] Self-serve signup + workspace creation flow
+- [ ] PayPal billing (needs owner's PayPal app Client ID/Secret)
+- [ ] Social publishing/comments live — BLOCKED on Meta app credentials + Meta app review
+- [ ] Public booking page + PayPal deposits
+- [ ] Review requests, chat widget, canned replies UI, SLA rules, reports export
 ## Current branding request
 - [x] Replace shared branding and install icons with the uploaded logo, preserving proportions.
 - [x] Verify new artwork loads and fits the sign-in screen.

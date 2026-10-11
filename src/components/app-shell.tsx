@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Home, Inbox, Users, Target, CalendarCheck, CheckSquare, Workflow, Sparkles, BarChart3,
   UsersRound, Truck, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
+  CalendarClock, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -14,7 +15,7 @@ import { OfflineBanner } from "@/components/states";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-type NavItem = { to: string; label: string; icon: typeof Home; badge?: "inbox" | "notif"; audit?: boolean };
+type NavItem = { to: string; label: string; icon: typeof Home; badge?: "inbox" | "notif"; audit?: boolean; platform?: boolean };
 
 export const NAV: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: Home },
@@ -26,6 +27,7 @@ export const NAV: NavItem[] = [
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/automations", label: "Automations", icon: Workflow },
   { to: "/ai", label: "AI Assistant", icon: Sparkles },
+  { to: "/social", label: "Social Planner", icon: CalendarClock },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/team", label: "Team", icon: UsersRound },
   { to: "/integrations", label: "Integrations", icon: Plug },
@@ -33,6 +35,7 @@ export const NAV: NavItem[] = [
   { to: "/notifications", label: "Notifications", icon: Bell, badge: "notif" },
   { to: "/settings", label: "Settings", icon: Settings },
   { to: "/audit", label: "Audit Log", icon: ScrollText, audit: true },
+  { to: "/platform", label: "Platform", icon: ShieldCheck, platform: true },
 ];
 const MOBILE_MAIN = ["/dashboard", "/inbox", "/contacts", "/leads"];
 
@@ -100,7 +103,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const signOut = useSignOut();
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const items = NAV.filter((n) => !n.audit || canViewAudit(ws.role));
+  const platformAdmin = useQuery({
+    queryKey: ["is_platform_admin", ws.userId],
+    queryFn: async () => (await supabase.rpc("is_platform_admin")).data === true,
+    staleTime: 300_000,
+  });
+  const items = NAV.filter((n) => (!n.audit || canViewAudit(ws.role)) && (!n.platform || platformAdmin.data));
   const isActive = (to: string) => loc.pathname === to || loc.pathname.startsWith(to + "/");
   const countFor = (b?: NavItem["badge"]) => (b === "inbox" ? counts.inbox : b === "notif" ? counts.notif : 0);
 

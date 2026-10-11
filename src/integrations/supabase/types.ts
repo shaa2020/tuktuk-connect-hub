@@ -1540,6 +1540,62 @@ export type Database = {
           },
         ]
       }
+      social_posts: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          media_urls: string[]
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+          targets: Json
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          media_urls?: string[]
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          targets?: Json
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          media_urls?: string[]
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          targets?: Json
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
           color: string
@@ -1896,6 +1952,8 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          plan: string
+          plan_limits: Json
           timezone: string
           updated_at: string
         }
@@ -1904,6 +1962,8 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          plan?: string
+          plan_limits?: Json
           timezone?: string
           updated_at?: string
         }
@@ -1912,6 +1972,8 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          plan?: string
+          plan_limits?: Json
           timezone?: string
           updated_at?: string
         }
