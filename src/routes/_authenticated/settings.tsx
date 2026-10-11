@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Confirm, Field } from "@/components/kit";
+import { MfaSettingsPanel } from "@/components/mfa-gate";
 import { ROLE_LABEL, canManageWorkspace } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -67,6 +68,10 @@ function SettingsPage() {
             <Field label="New password"><Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" /></Field>
           </div>
           <Button variant="outline" onClick={changePw}>Update password</Button>
+        </Panel>
+        <Panel className="space-y-3 p-4">
+          <h2 className="text-sm font-semibold">Two-step sign-in</h2>
+          <MfaSettingsPanel />
         </Panel>
         {admin && (
           <>

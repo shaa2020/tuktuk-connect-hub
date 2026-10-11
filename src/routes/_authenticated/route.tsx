@@ -3,6 +3,7 @@ import { ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkspaceProvider } from "@/hooks/use-workspace";
 import { AppShell, useSignOut } from "@/components/app-shell";
+import { MfaGate } from "@/components/mfa-gate";
 import { ErrorState, FullScreenLoader } from "@/components/states";
 import { Button } from "@/components/ui/button";
 
@@ -40,9 +41,11 @@ function AuthenticatedLayout() {
       noAccess={<NoAccess />}
       error={(m, retry) => <div className="mx-auto max-w-md p-8"><ErrorState message={m} onRetry={retry} /></div>}
     >
-      <AppShell>
-        <Outlet />
-      </AppShell>
+      <MfaGate>
+        <AppShell>
+          <Outlet />
+        </AppShell>
+      </MfaGate>
     </WorkspaceProvider>
   );
 }
