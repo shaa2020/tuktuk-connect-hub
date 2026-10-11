@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Trash2, Merge, EyeOff, MessageSquare, Target, CalendarCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Merge, EyeOff, MessageSquare, Target, CalendarCheck, ShieldCheck, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -56,6 +56,27 @@ function ContactDetail() {
     qc.invalidateQueries({ queryKey: ["contacts"] });
     navigate({ to: "/contacts" });
   }
+  // Guest data request (GDPR): everything this contact has, readable under the caller's access rules.
+  async function exportData() {
+    const [contact, convs, leads, bookings, consents] = await Promise.all([
+      supabase.from("contacts").select("*").eq("id", id).maybeSingle(),
+      supabase.from("conversations").select("id, channel, subject, status, created_at").eq("contact_id", id),
+      supabase.from("leads").select("*").eq("contact_id", id),
+      supabase.from("bookings").select("*").eq("contact_id", id),
+      supabase.from("contact_consents").select("*").eq("contact_id", id),
+    ]);
+    const ids = (convs.data ?? []).map((c) => c.id);
+    const msgs = ids.length ? (await supabase.from("messages").select("conversation_id, direction, body, created_at").in("conversation_id", ids).order("created_at")).data : [];
+    const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), contact: contact.data, consents: consents.data, conversations: convs.data, messages: msgs, leads: leads.data, bookings: bookings.data }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `guest-data-${id.slice(0, 8)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    await supabase.from("audit_logs").insert({ workspace_id: ws.workspaceId, actor_id: ws.userId, action: "export", entity_type: "contacts", entity_id: id, details: {} });
+    toast.success("Guest data downloaded");
+  }
+
   async function anonymize() {
     const { error } = await supabase.rpc("anonymize_contact", { _id: id });
     if (error) return toast.error(error.message);
@@ -85,6 +106,7 @@ function ContactDetail() {
         <div className="flex flex-wrap gap-2">
           {!c.anonymized_at && <Button variant="outline" size="sm" onClick={() => setEdit(true)}><Pencil /> Edit</Button>}
           {canDel && <Button variant="outline" size="sm" onClick={() => setMerge(true)}><Merge /> Merge duplicate</Button>}
+          {canDel && <Button variant="outline" size="sm" onClick={exportData}><Download /> Export data</Button>}
           {canDel && !c.anonymized_at && (
             <Confirm trigger={<Button variant="outline" size="sm"><EyeOff /> Anonymize</Button>} title="Anonymize this contact?"
               description="Name, email, phone, country and notes will be permanently removed. Conversations and bookings stay for reporting." confirmLabel="Anonymize" onConfirm={anonymize} />
