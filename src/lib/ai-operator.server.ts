@@ -147,6 +147,7 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     raw = await generate(ws, { provider: ai.provider ?? "lovable", model: ai.model, base_url: ai.base_url }, {
       instructions: `${RULES}\n\nToday in Lisbon: ${today}.\n\nOwner instructions:\n${ai.instructions || "(none)"}\n${s.notes ? `\nAway-mode notes from the owner:\n${s.notes}` : ""}\n\nBusiness knowledge:\n${kb || "(none)"}`,
       input: `Guest name: ${name}. Channel: ${c.channel}.\nConversation (oldest first):\n${transcript}`,
+      jsonSchema: DECISION_SCHEMA,
     });
   } catch (e) {
     const status = e instanceof AiError ? e.status : 500;
@@ -162,7 +163,10 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     return { replies, handedOff: false, stop: true };
   }
 
-  const d = parseDecision(raw);
+  const d = decisionFromRaw(raw);
+  if (d.action === "handoff" && d.alert === PARSE_FAIL_ALERT) {
+    await log(sb, ws, c.id, "error", `AI answer was not readable; handed to the team. Excerpt: ${raw.slice(0, 160)}`);
+  }
   let sent = 0;
 
   // Always answer the guest — even on handoff, the reply goes out first.
