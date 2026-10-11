@@ -75,11 +75,12 @@ const META_HELP: Record<string, { idLabel: string; tokenLabel: string; steps: st
   instagram: { idLabel: "Instagram account ID", tokenLabel: "Page access token (with instagram_manage_messages)", steps: "Meta app → Instagram → link your Professional account. Subscribe to “messages”." },
 };
 
-export function MetaConnectForm({ workspaceId, channel, connected, onDone }: { workspaceId: string; channel: "whatsapp" | "messenger" | "instagram"; connected: boolean; onDone: () => void }) {
+export function MetaConnectForm({ workspaceId, channel, connected, onDone, connectionId, initialLabel, initialAccountId }: { workspaceId: string; channel: "whatsapp" | "messenger" | "instagram"; connected: boolean; onDone: () => void; connectionId?: string; initialLabel?: string | null; initialAccountId?: string | null }) {
   const hints = useCredentialHints(workspaceId);
   const connect = useServerFn(connectMetaChannel);
   const disconnect = useServerFn(disconnectChannel);
-  const [accountId, setAccountId] = useState("");
+  const [accountId, setAccountId] = useState(initialAccountId ?? "");
+  const [label, setLabel] = useState(initialLabel ?? "");
   const [token, setToken] = useState("");
   const [appSecret, setAppSecret] = useState("");
   const [verifyToken, setVerifyToken] = useState("");
@@ -91,7 +92,7 @@ export function MetaConnectForm({ workspaceId, channel, connected, onDone }: { w
   async function submit() {
     setBusy(true);
     try {
-      const r = await connect({ data: { workspaceId, channel, accountId, token, appSecret, verifyToken } });
+      const r = await connect({ data: { workspaceId, channel, connectionId, label, accountId, token, appSecret, verifyToken } });
       if (r.ok) { toast.success(`Connected: ${r.name}`); setToken(""); setAppSecret(""); setVerifyToken(""); hints.refetch(); onDone(); }
       else { toast.error(r.error); onDone(); }
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
@@ -104,13 +105,14 @@ export function MetaConnectForm({ workspaceId, channel, connected, onDone }: { w
         <div className="text-xs font-semibold">Webhook address (paste into Meta)</div>
         <div className="flex gap-2"><Input readOnly value={webhook} className="text-xs" /><Button size="icon" variant="outline" aria-label="Copy" onClick={() => { navigator.clipboard.writeText(webhook); toast.success("Copied"); }}><Copy /></Button></div>
       </div>
+      <Field label="Account name (e.g. Main Line, Alfama Desk)"><Input value={label} maxLength={60} onChange={(e) => setLabel(e.target.value)} /></Field>
       <Field label={help.idLabel}><Input value={accountId} onChange={(e) => setAccountId(e.target.value)} inputMode="numeric" /></Field>
-      <Field label={h(`${channel}_token`) ? `${help.tokenLabel} (saved ${h(`${channel}_token`)})` : help.tokenLabel}><Input type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} /></Field>
+      <Field label={(connectionId && h(`${channel}_token:${connectionId}`)) ? `${help.tokenLabel} (saved ${h(`${channel}_token:${connectionId}`)})` : help.tokenLabel}><Input type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} /></Field>
       <Field label={h("meta_app_secret") ? `Meta app secret (saved ${h("meta_app_secret")})` : "Meta app secret"}><Input type="password" autoComplete="off" value={appSecret} onChange={(e) => setAppSecret(e.target.value)} /></Field>
       <Field label={h("meta_verify_token") ? `Webhook verify token (saved ${h("meta_verify_token")})` : "Webhook verify token — make one up (12+ chars) and enter the same in Meta"}><Input type="password" autoComplete="off" value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} /></Field>
       <div className="flex flex-wrap gap-2">
         <Button onClick={submit} disabled={busy || !accountId.trim()}>{busy && <Loader2 className="animate-spin" />}Test & connect</Button>
-        {connected && <Button variant="outline" onClick={async () => { await disconnect({ data: { workspaceId, channel } }); toast.success("Disconnected"); hints.refetch(); onDone(); }}>Disconnect</Button>}
+        {connected && connectionId && <Button variant="outline" onClick={async () => { await disconnect({ data: { workspaceId, connectionId } }); toast.success("Disconnected"); hints.refetch(); onDone(); }}>Disconnect</Button>}
       </div>
       <p className="text-[11px] text-muted-foreground">Saved secrets are encrypted and never shown again. Leave a field empty to keep the saved value.</p>
     </div>

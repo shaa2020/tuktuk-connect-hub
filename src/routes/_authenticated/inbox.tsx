@@ -55,7 +55,22 @@ function useChannelStatus() {
     queryKey: ["channels", workspaceId],
     queryFn: async () => {
       const { data } = await supabase.from("channel_connections").select("channel, status").eq("workspace_id", workspaceId);
-      return new Map((data ?? []).map((r) => [r.channel, r.status]));
+      const m = new Map<string, string>();
+      for (const r of data ?? []) if (m.get(r.channel) !== "connected") m.set(r.channel, r.status);
+      return m;
+    },
+  });
+}
+
+/** Connected accounts (several WhatsApp numbers, Instagram accounts…) with their friendly names. */
+function useAccounts() {
+  const { workspaceId } = useWorkspace();
+  return useQuery({
+    queryKey: ["channel-accounts", workspaceId],
+    queryFn: async () => {
+      const { data } = await supabase.from("channel_connections").select("id, channel, status, account_label, display_name").eq("workspace_id", workspaceId).order("created_at");
+      const rows = (data ?? []).filter((r) => r.account_label || r.display_name).map((r) => ({ id: r.id, channel: r.channel as ChannelType, connected: r.status === "connected", name: (r.account_label || r.display_name) as string }));
+      return { rows, byId: new Map(rows.map((r) => [r.id, r])) };
     },
   });
 }
@@ -122,6 +137,7 @@ function InboxPage() {
   const [newOpen, setNewOpen] = useState(false);
   useEffect(() => { const t = setTimeout(() => setDebounced(term.trim().replace(/[%,()]/g, "")), 300); return () => clearTimeout(t); }, [term]);
 
+  const accounts = useAccounts();
   const tags = useQuery({
     queryKey: ["tags", ws.workspaceId],
     queryFn: async () => (await supabase.from("tags").select("id, name").eq("workspace_id", ws.workspaceId).order("name")).data ?? [],
@@ -131,7 +147,7 @@ function InboxPage() {
     queryKey: ["conversations", ws.workspaceId, filter, channel, assignee, label, since, debounced, limit],
     queryFn: async () => {
       let r = supabase.from("conversations")
-        .select("id, channel, subject, status, priority, assigned_to, unread, last_message_at, last_message_preview, lead_id, booking_id, escalated, is_demo, contacts(full_name), conversation_tags(tags(id, name))", { count: "exact" })
+        .select("id, channel, connection_id, subject, status, priority, assigned_to, unread, last_message_at, last_message_preview, lead_id, booking_id, escalated, is_demo, contacts(full_name), conversation_tags(tags(id, name))", { count: "exact" })
         .eq("workspace_id", ws.workspaceId).order("last_message_at", { ascending: false }).range(0, limit - 1);
       if (filter === "mine") r = r.eq("assigned_to", ws.userId);
       if (filter === "unassigned") r = r.is("assigned_to", null);
@@ -144,7 +160,8 @@ function InboxPage() {
         const { data: f } = await supabase.from("messages").select("conversation_id").eq("workspace_id", ws.workspaceId).eq("status", "failed").limit(500);
         r = r.in("id", [...new Set((f ?? []).map((x) => x.conversation_id)), "00000000-0000-0000-0000-000000000000"]);
       }
-      if (channel) r = r.eq("channel", channel as ChannelType);
+      if (channel.startsWith("acct:")) r = r.eq("connection_id", channel.slice(5));
+      else if (channel) r = r.eq("channel", channel as ChannelType);
       if (assignee) r = r.eq("assigned_to", assignee);
       if (since) r = r.gte("last_message_at", new Date(since).toISOString());
       if (label) {
@@ -192,6 +209,9 @@ function InboxPage() {
             <NativeSelect value={channel} onChange={(e) => setChannel(e.target.value)} aria-label="Channel" className="h-9 text-xs">
               <option value="">All channels</option>
               {(Object.keys(CHANNEL_LABEL) as ChannelType[]).map((k) => <option key={k} value={k}>{CHANNEL_LABEL[k]}</option>)}
+              {(accounts.data?.rows.length ?? 0) > 0 && <optgroup label="Accounts">
+                {accounts.data!.rows.map((a) => <option key={a.id} value={`acct:${a.id}`}>{CHANNEL_LABEL[a.channel]} · {a.name}</option>)}
+              </optgroup>}
             </NativeSelect>
             <NativeSelect value={assignee} onChange={(e) => setAssignee(e.target.value)} aria-label="Assignee" className="h-9 text-xs">
               <option value="">Any assignee</option>
@@ -229,6 +249,7 @@ function InboxPage() {
                             <ToneBadge tone={STATUS_META[v.status].tone}>{STATUS_META[v.status].label}</ToneBadge>
                             {(v.priority === "high" || v.priority === "urgent") && <ToneBadge tone={PRIORITY_META[v.priority].tone}>{PRIORITY_META[v.priority].label}</ToneBadge>}
                             {v.escalated && <ToneBadge tone="danger">Escalated</ToneBadge>}
+                            {v.connection_id && accounts.data?.byId.get(v.connection_id) && <ToneBadge tone="muted">{accounts.data.byId.get(v.connection_id)!.name}</ToneBadge>}
                             {v.lead_id && <Target className="size-3 text-teal" aria-label="Has lead" />}
                             {v.booking_id && <CalendarCheck className="size-3 text-success" aria-label="Has booking" />}
                             {labels.slice(0, 2).map((t) => <ToneBadge key={t.id} tone="muted">{t.name}</ToneBadge>)}
@@ -267,6 +288,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const ws = useWorkspace();
   const qc = useQueryClient();
   const channels = useChannelStatus();
+  const accounts = useAccounts();
   const [msgLimit, setMsgLimit] = useState(MSG_PAGE);
   const [dialog, setDialog] = useState<null | "contact" | "newcontact" | "lead" | "booking" | "task" | "labels">(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -346,7 +368,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               : <span className="truncate text-sm font-semibold">{v.subject ?? "Unknown customer"}</span>}
             <SampleBadge show={v.is_demo} />
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground"><ChannelIcon channel={v.channel} />{CHANNEL_LABEL[v.channel]}{v.subject && v.contacts ? ` · ${v.subject}` : ""}</div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground"><ChannelIcon channel={v.channel} />{CHANNEL_LABEL[v.channel]}{v.connection_id && accounts.data?.byId.get(v.connection_id) ? ` · ${accounts.data.byId.get(v.connection_id)!.name}` : ""}{v.subject && v.contacts ? ` · ${v.subject}` : ""}</div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="Conversation actions"><MoreVertical /></Button></DropdownMenuTrigger>

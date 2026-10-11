@@ -25,28 +25,32 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
         const appSecret = await getSecret(ws, "meta_app_secret");
         const sig = request.headers.get("x-hub-signature-256") ?? "";
         if (!appSecret || !safeEqual(sig, `sha256=${await hmacSha256Hex(appSecret, raw)}`)) return new Response("Forbidden", { status: 403 });
-        const { ingestInbound, applyStatus } = await import("@/lib/channels.server");
+        const { ingestInbound, applyStatus, findConnection } = await import("@/lib/channels.server");
         let body: any;
         try { body = JSON.parse(raw); } catch { return new Response("Bad request", { status: 400 }); }
         try {
           if (body.object === "whatsapp_business_account") {
             for (const e of body.entry ?? []) for (const ch of e.changes ?? []) {
               const v = ch.value ?? {};
+              const connectionId = await findConnection(ws, "whatsapp", v.metadata?.phone_number_id);
               const names: Record<string, string> = Object.fromEntries((v.contacts ?? []).map((c: any) => [c.wa_id, c.profile?.name]));
               for (const m of v.messages ?? []) {
                 const text = m.text?.body ?? m.button?.text ?? m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title ?? (m.type ? `[${m.type} received — open WhatsApp to view]` : "");
-                await ingestInbound(ws, "whatsapp", { from: m.from, name: names[m.from], externalMessageId: m.id, text, at: m.timestamp ? new Date(Number(m.timestamp) * 1000) : undefined });
+                await ingestInbound(ws, "whatsapp", { from: m.from, name: names[m.from], externalMessageId: m.id, text, at: m.timestamp ? new Date(Number(m.timestamp) * 1000) : undefined, connectionId });
               }
               for (const s of v.statuses ?? []) await applyStatus(ws, s.id, s.status, `${s.id}:${s.status}`, s.errors?.[0]?.title);
             }
           } else if (body.object === "page" || body.object === "instagram") {
             const channel = body.object === "page" ? "messenger" : "instagram";
-            for (const e of body.entry ?? []) for (const ev of e.messaging ?? []) {
+            for (const e of body.entry ?? []) {
+              const connectionId = await findConnection(ws, channel, e.id);
+              for (const ev of e.messaging ?? []) {
               if (ev.message && !ev.message.is_echo) {
                 const text = ev.message.text ?? (ev.message.attachments?.length ? "[attachment received — open the app to view]" : "");
-                await ingestInbound(ws, channel, { from: ev.sender.id, externalMessageId: ev.message.mid, text, at: ev.timestamp ? new Date(ev.timestamp) : undefined });
+                await ingestInbound(ws, channel, { from: ev.sender.id, externalMessageId: ev.message.mid, text, at: ev.timestamp ? new Date(ev.timestamp) : undefined, connectionId });
               }
               for (const mid of ev.delivery?.mids ?? []) await applyStatus(ws, mid, "delivered", `${mid}:delivered`);
+              }
             }
           }
         } catch (err) {
