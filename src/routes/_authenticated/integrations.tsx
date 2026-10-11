@@ -11,7 +11,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MetaConnectForm } from "@/components/admin-connections";
 import { useServerFn } from "@tanstack/react-start";
-import { connectEmailChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
+import { connectEmailChannel, connectGmailAppPassword, disconnectChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
+import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +40,33 @@ function EmailControls({ workspaceId, connected, onDone }: { workspaceId: string
   );
 }
 
+function GmailAppForm({ workspaceId, connectionId, initialAddress, initialLabel, onDone }: { workspaceId: string; connectionId?: string; initialAddress?: string | null; initialLabel?: string | null; onDone: () => void }) {
+  const connect = useServerFn(connectGmailAppPassword);
+  const [address, setAddress] = useState(initialAddress ?? "");
+  const [label, setLabel] = useState(initialLabel ?? "");
+  const [pass, setPass] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <form className="mt-3 space-y-2 rounded-lg border bg-muted/40 p-3" onSubmit={async (e) => {
+      e.preventDefault(); setBusy(true);
+      try {
+        const r = await connect({ data: { workspaceId, connectionId, address, appPassword: pass, label } });
+        if (r.ok) { toast.success(`Connected — ${r.imported} email(s) imported`); setPass(""); onDone(); } else toast.error(r.error);
+      } catch (err) { toast.error((err as Error).message.slice(0, 200)); } finally { setBusy(false); }
+    }}>
+      <ol className="list-decimal space-y-1 pl-4 text-xs text-muted-foreground">
+        <li>In that Gmail, turn on 2-Step Verification (Google Account → Security).</li>
+        <li>Open <a className="text-primary underline" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer">myaccount.google.com/apppasswords</a>, create one named "Tuk Tuk 24".</li>
+        <li>Paste the 16-letter code below. It's stored encrypted and never shown again.</li>
+      </ol>
+      <Input type="email" required placeholder="other@gmail.com" value={address} onChange={(e) => setAddress(e.target.value)} disabled={!!connectionId} />
+      <Input placeholder="Account name (e.g. Bookings Desk)" maxLength={60} value={label} onChange={(e) => setLabel(e.target.value)} />
+      <Input type="password" required autoComplete="new-password" placeholder="App password (16 letters)" value={pass} onChange={(e) => setPass(e.target.value)} />
+      <Button size="sm" type="submit" disabled={busy}>{busy ? "Checking…" : "Connect this Gmail"}</Button>
+    </form>
+  );
+}
+
 const META = ["whatsapp", "instagram", "messenger"] as const;
 const ORDER: ChannelType[] = ["whatsapp", "instagram", "messenger", "email"];
 
@@ -46,6 +74,7 @@ function IntegrationsPage() {
   const { workspaceId, role } = useWorkspace();
   const [open, setOpen] = useState<string | null>(null);
   const rename = useServerFn(renameConnection);
+  const disconnect = useServerFn(disconnectChannel);
   const q = useQuery({
     queryKey: ["channels-full", workspaceId],
     queryFn: async () => {
@@ -57,7 +86,7 @@ function IntegrationsPage() {
   const isAdmin = role === "admin";
   return (
     <PageContainer className="max-w-3xl">
-      <PageHeader title="Integrations" description="Connect as many WhatsApp numbers, Instagram accounts and Facebook Pages as you need. Status shown is the real connection state." />
+      <PageHeader title="Integrations" description="Connect as many Gmail inboxes, WhatsApp numbers, Instagram accounts and Facebook Pages as you need. Status shown is the real connection state." />
       {q.isLoading ? <ListSkeleton /> : q.error ? <ErrorState message={(q.error as Error).message} /> : (
         <div className="space-y-4">
           {ORDER.map((ch) => {
@@ -93,7 +122,14 @@ function IntegrationsPage() {
                         </div>
                       )}
                       {open === c.id && isMeta && <MetaConnectForm workspaceId={workspaceId} channel={ch as "whatsapp"} connectionId={c.id} initialLabel={c.account_label} initialAccountId={c.account_id} connected={c.status === "connected"} onDone={() => q.refetch()} />}
-                      {ch === "email" && isAdmin && <EmailControls workspaceId={workspaceId} connected={c.status === "connected"} onDone={() => q.refetch()} />}
+                      {ch === "email" && isAdmin && (c.config as any)?.mode === "imap" && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setOpen(open === c.id ? null : c.id)}>{c.status === "connected" ? "Update password" : "Reconnect"}</Button>
+                          {c.status === "connected" && <Button size="sm" variant="ghost" onClick={async () => { const r = await disconnect({ data: { workspaceId, connectionId: c.id } }); if (r.ok) { toast.success("Disconnected"); q.refetch(); } else toast.error(r.error); }}>Disconnect</Button>}
+                        </div>
+                      )}
+                      {open === c.id && ch === "email" && <GmailAppForm workspaceId={workspaceId} connectionId={c.id} initialAddress={c.account_id} initialLabel={c.account_label} onDone={() => { q.refetch(); setOpen(null); }} />}
+                      {ch === "email" && isAdmin && (c.config as any)?.mode !== "imap" && <EmailControls workspaceId={workspaceId} connected={c.status === "connected"} onDone={() => q.refetch()} />}
                     </div>
                   ))}
                   {rows.length === 0 && ch === "email" && isAdmin && <EmailControls workspaceId={workspaceId} connected={false} onDone={() => q.refetch()} />}
@@ -104,7 +140,12 @@ function IntegrationsPage() {
                     {open === `new-${ch}` && <MetaConnectForm workspaceId={workspaceId} channel={ch as "whatsapp"} connected={false} onDone={() => { q.refetch(); setOpen(null); }} />}
                   </>
                 )}
-                {ch === "email" && <p className="mt-2 text-xs text-muted-foreground">Have other Gmail addresses? Set them to forward to the connected Gmail and those emails will show here too.</p>}
+                {ch === "email" && isAdmin && (
+                  <>
+                    <Button size="sm" variant="secondary" className="mt-2" onClick={() => setOpen(open === "new-gmail" ? null : "new-gmail")}><Plus />Add another Gmail</Button>
+                    {open === "new-gmail" && <GmailAppForm workspaceId={workspaceId} onDone={() => { q.refetch(); setOpen(null); }} />}
+                  </>
+                )}
               </Panel>
             );
           })}
