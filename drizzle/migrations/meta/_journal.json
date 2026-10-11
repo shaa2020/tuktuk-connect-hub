@@ -64,6 +64,13 @@
       "when": 1791712056946,
       "tag": "0008_website_booking_tombstones",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791712088808,
+      "tag": "0009_background_sync_token",
+      "breakpoints": true
     }
   ]
 }
