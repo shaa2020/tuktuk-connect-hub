@@ -4,8 +4,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Home, Inbox, Users, Target, CalendarCheck, CheckSquare, Workflow, Sparkles, BarChart3,
   UsersRound, Truck, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
-  CalendarClock, ShieldCheck,
+  CalendarClock, ShieldCheck, Search,
 } from "lucide-react";
+import { CommandPalette } from "@/components/command-palette";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { canViewAudit, ROLE_LABEL, initials } from "@/lib/domain";
@@ -105,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const signOut = useSignOut();
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const platformAdmin = useQuery({
     queryKey: ["is_platform_admin", ws.userId],
     queryFn: async () => (await supabase.rpc("is_platform_admin")).data === true,
@@ -151,7 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       title={collapsed ? n.label : undefined}
                       className={cn(
                         "relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                        active ? "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:-left-2.5 before:h-5 before:w-1 before:rounded-r-full before:bg-sidebar-primary" : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                        active ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-elev before:absolute before:-left-2.5 before:h-5 before:w-1 before:rounded-r-full before:bg-sidebar-primary" : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                       )}
                     >
                       <n.icon className="size-4 shrink-0" />
@@ -250,7 +255,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             const active = isActive(to);
             const c = countFor(n.badge);
             return (
-              <Link key={to} to={to} className={cn("relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-primary" : "text-muted-foreground")}>
+              <Link key={to} to={to} className={cn("pressable relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-primary" : "text-muted-foreground")}>
                 <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", active && "bg-primary-soft")}>
                   <n.icon className="size-5" />
                 </span>
@@ -259,7 +264,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          <button onClick={() => setMoreOpen(true)} className={cn("flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", !MOBILE_MAIN.some(isActive) ? "text-primary" : "text-muted-foreground")}>
+          <button onClick={() => setMoreOpen(true)} className={cn("pressable flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", !MOBILE_MAIN.some(isActive) ? "text-primary" : "text-muted-foreground")}>
             <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !MOBILE_MAIN.some(isActive) && "bg-primary-soft")}><MoreHorizontal className="size-5" /></span>
             More
           </button>
@@ -285,7 +290,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{g}</div>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {groupItems.map((n) => (
-                    <Link key={n.to} to={n.to} className={cn("relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-2xl border p-2 text-center text-[11px] font-medium leading-tight", isActive(n.to) ? "border-primary bg-primary-soft text-primary" : "bg-card")}>
+                    <Link key={n.to} to={n.to} className={cn("pressable relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-2xl border p-2 text-center text-[11px] font-medium leading-tight", isActive(n.to) ? "border-primary bg-primary-soft text-primary" : "bg-card")}>
                       <n.icon className="size-5" />
                       {n.label}
                       {countFor(n.badge) > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-primary" />}
