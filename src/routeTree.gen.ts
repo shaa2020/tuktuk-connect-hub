@@ -26,6 +26,7 @@ import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
@@ -122,6 +123,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSocialRoute = AuthenticatedSocialRouteImport.update({
+  id: '/social',
+  path: '/social',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notifications'
     | '/settings'
+    | '/social'
     | '/tasks'
     | '/team'
     | '/invite/$token'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notifications'
     | '/settings'
+    | '/social'
     | '/tasks'
     | '/team'
     | '/invite/$token'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
+    | '/_authenticated/social'
     | '/_authenticated/tasks'
     | '/_authenticated/team'
     | '/invite/$token'
@@ -461,6 +473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/social': {
+      id: '/_authenticated/social'
+      path: '/social'
+      fullPath: '/social'
+      preLoaderRoute: typeof AuthenticatedSocialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tasks': {
       id: '/_authenticated/tasks'
       path: '/tasks'
@@ -534,6 +553,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedContactsIdRoute: typeof AuthenticatedContactsIdRoute
@@ -554,6 +574,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSocialRoute: AuthenticatedSocialRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedContactsIdRoute: AuthenticatedContactsIdRoute,
