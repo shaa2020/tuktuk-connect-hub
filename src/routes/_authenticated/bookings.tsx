@@ -17,7 +17,55 @@ import { Confirm, Field, NativeSelect, SampleBadge, ToneBadge, emptyToNull, fmtD
 import { ContactSelect, LeadSelect } from "@/components/pickers";
 import { BOOKING_STATUS_META, PAYMENT_LABEL, canDeleteBookings, type BookingStatus, type PaymentStatus } from "@/lib/domain";
 import { useServerFn } from "@tanstack/react-start";
-import { createWebsiteBooking } from "@/lib/website.functions";
+import { createWebsiteBooking, listWebsiteBookings, importWebsiteBooking } from "@/lib/website.functions";
+import { RefreshCw, Globe } from "lucide-react";
+
+function WebsiteBookings({ workspaceId, onOpen }: { workspaceId: string; onOpen: (id: string) => void }) {
+  const list = useServerFn(listWebsiteBookings);
+  const imp = useServerFn(importWebsiteBooking);
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState<string | null>(null);
+  const q = useQuery({ queryKey: ["website-bookings", workspaceId], queryFn: () => list({ data: { workspaceId } }), refetchInterval: 60_000 });
+  async function add(id: string) {
+    setBusy(id);
+    const r = await imp({ data: { workspaceId, websiteId: id } });
+    setBusy(null);
+    if (!r.ok) return toast.error(r.error);
+    toast.success("Added to our bookings — you can now assign a tuk tuk and driver.");
+    qc.invalidateQueries({ queryKey: ["website-bookings"] });
+    qc.invalidateQueries({ queryKey: ["bookings"] });
+    onOpen(r.bookingId);
+  }
+  const rows = q.data?.bookings ?? [];
+  return (
+    <Panel>
+      <div className="flex items-center justify-between border-b px-4 py-2 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5"><Globe className="size-3.5" /> Live from tuktuk24lisbon.com</span>
+        <Button size="sm" variant="ghost" onClick={() => q.refetch()} disabled={q.isFetching}><RefreshCw className={q.isFetching ? "animate-spin" : ""} /> Refresh</Button>
+      </div>
+      {q.isLoading ? <ListSkeleton /> : q.error || (q.data && !q.data.ok) ? <div className="p-4"><ErrorState message={q.data && !q.data.ok ? q.data.error : (q.error as Error).message} onRetry={() => q.refetch()} /></div> :
+        !rows.length ? <EmptyState icon={<Globe />} title="No website bookings yet" description="New bookings made on your website will show up here." /> : (
+          <ul className="divide-y">
+            {rows.map((b) => (
+              <li key={b.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-14 shrink-0 rounded-lg bg-primary-soft py-1.5 text-center text-primary">
+                  {b.travel_date ? <><div className="text-[10px] font-semibold uppercase">{new Date(b.travel_date + "T00:00").toLocaleDateString(undefined, { month: "short" })}</div><div className="font-display text-lg font-bold leading-none">{new Date(b.travel_date + "T00:00").getDate()}</div></> : <div className="text-[10px] font-semibold">No date</div>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">{b.tour_title}</div>
+                  <div className="truncate text-xs text-muted-foreground"><span className="font-mono">{b.reference}</span> · {b.customer_name}{b.travel_time ? ` · ${b.travel_time.slice(0, 5)}` : ""} · {b.guests} guests</div>
+                  <div className="truncate text-xs text-muted-foreground">{b.phone}{b.email ? ` · ${b.email}` : ""} · <span className="capitalize">{b.status}</span></div>
+                </div>
+                {b.imported_booking_id
+                  ? <Button size="sm" variant="outline" onClick={() => onOpen(b.imported_booking_id!)}>Open</Button>
+                  : <Button size="sm" onClick={() => add(b.id)} disabled={busy === b.id}>{busy === b.id ? "Adding…" : "Add"}</Button>}
+              </li>
+            ))}
+          </ul>
+        )}
+    </Panel>
+  );
+}
 
 type Booking = Database["public"]["Tables"]["bookings"]["Row"];
 
@@ -36,6 +84,7 @@ function BookingsPage() {
   const [status, setStatus] = useState("");
   const [when, setWhen] = useState<"upcoming" | "past" | "all">("upcoming");
   const [term, setTerm] = useState("");
+  const [view, setView] = useState<"team" | "website">("team");
 
   const q = useQuery({
     queryKey: ["bookings", workspaceId, status, when],
@@ -59,6 +108,14 @@ function BookingsPage() {
   return (
     <PageContainer>
       <PageHeader title="Bookings" description="Inquiries, quotes and confirmed tours." actions={<Button size="sm" onClick={() => navigate({ search: { new: true } })}><Plus /> New booking</Button>} />
+      <div className="mb-3 inline-flex rounded-lg border bg-card p-1" role="tablist">
+        {(["team", "website"] as const).map((v) => (
+          <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 text-sm font-medium ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+            {v === "team" ? "Our bookings" : "Website bookings"}
+          </button>
+        ))}
+      </div>
+      {view === "website" ? <WebsiteBookings workspaceId={workspaceId} onOpen={(id) => navigate({ search: { b: id } })} /> : <>
       <div className="mb-3 flex flex-wrap gap-2">
         <Input className="max-w-xs" placeholder="Search reference, tour or guest" value={term} onChange={(e) => setTerm(e.target.value)} aria-label="Search bookings" />
         <NativeSelect className="w-auto" value={when} onChange={(e) => setWhen(e.target.value as typeof when)} aria-label="Date range">
@@ -91,6 +148,7 @@ function BookingsPage() {
             </ul>
           )}
       </Panel>
+      </>}
       <Sheet open={sheetOpen} onOpenChange={(v) => !v && close()}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {sheetOpen && <BookingEditor key={search.b ?? "new"} id={search.b} defaults={{ lead_id: search.lead, contact_id: search.contact }} onClose={close} />}
