@@ -1,4 +1,7 @@
 # Roadmap
+## Current branding request
+- [x] Replace shared branding and install icons with the uploaded logo, preserving proportions.
+- [x] Verify new artwork loads and fits the sign-in screen.
 ## Audit backlog (2026-10-11)
 - [x] T1 Two-step gate fails closed
 - [x] T2 No self-disable; add-new-phone flow; admin reset (audited)
