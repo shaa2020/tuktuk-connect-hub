@@ -164,7 +164,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {counts.notif > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive" />}
           </Link>
         </header>
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden pb-20 md:pb-0">{children}</main>
       </div>
 
       {/* Mobile bottom nav */}
