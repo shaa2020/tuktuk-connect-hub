@@ -1,6 +1,7 @@
 // Server-only: Gmail (tuktuklisbon24@gmail.com) channel via the Lovable connector gateway.
 // Credentials stay in server env (LOVABLE_API_KEY + GOOGLE_MAIL_API_KEY); never sent to browsers.
 import { ingestInbound } from "./channels.server";
+import { parseEmailBody } from "./email-format";
 
 const GW = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
 
@@ -36,9 +37,8 @@ function findPart(p: any, mime: string): string | null {
 export function extractBody(m: any) {
   let t: string = findPart(m.payload, "text/plain") ?? "";
   if (!t) { const h = findPart(m.payload, "text/html"); t = h ? h.replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/[ \t]+/g, " ") : m.snippet ?? ""; }
-  // Drop quoted history from replies
-  const cut = t.search(/\n(On .{5,200}wrote:|-{2,} ?Original Message|>.*\n>)/);
-  return (cut > 0 ? t.slice(0, cut) : t).trim();
+  // Drop quoted history from replies (handles wrapped "On … wrote:" lines and other languages)
+  return parseEmailBody(t).main;
 }
 export function parseFrom(v: string) {
   const m = v.match(/^\s*"?([^"<]*)"?\s*<([^>]+)>/);

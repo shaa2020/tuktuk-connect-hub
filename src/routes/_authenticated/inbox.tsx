@@ -399,7 +399,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             ) : (
               <div key={it.id} className={cn("flex", it.direction === "outbound" ? "justify-end" : "justify-start")}>
                 <div className={cn("max-w-[85%] rounded-2xl px-3.5 py-2 md:max-w-[70%]", it.direction === "outbound" ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm border bg-card")}>
-                  <p className="whitespace-pre-wrap text-sm">{it.body}</p>
+                  {v.channel === "email" ? <EmailBody body={it.body} outbound={it.direction === "outbound"} /> : <p className="whitespace-pre-wrap text-sm">{it.body}</p>}
                   <div className={cn("mt-1 flex items-center justify-end gap-1 text-[10px]", it.direction === "outbound" ? "text-primary-foreground/80" : "text-muted-foreground")}>
                     {it.direction === "outbound" && it.author && <span>{ws.memberName(it.author)} ·</span>}
                     <span>{fmtDateTime(it.at)}</span>
@@ -422,6 +422,27 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {dialog === "task" && <TaskDialog defaults={{ conversation: id, contact: v.contact_id ?? undefined, lead: v.lead_id ?? undefined }} onClose={() => setDialog(null)} />}
       {dialog === "labels" && <LabelsDialog conversationId={id} current={labels} onClose={() => { setDialog(null); conv.refetch(); qc.invalidateQueries({ queryKey: ["conversations"] }); }} />}
     </>
+  );
+}
+
+function EmailBody({ body, outbound }: { body: string; outbound: boolean }) {
+  const [open, setOpen] = useState(false);
+  const p = parseEmailBody(body);
+  const muted = outbound ? "text-primary-foreground/75" : "text-muted-foreground";
+  return (
+    <div className="space-y-1.5">
+      {p.subject && <div className={cn("text-[11px] font-medium uppercase tracking-wide", muted)}>{cleanSubject(p.subject)}</div>}
+      <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{p.main}</p>
+      {p.quoted && (
+        <>
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+            className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-medium", outbound ? "border-primary-foreground/30 text-primary-foreground/85" : "border-border text-muted-foreground hover:bg-muted")}>
+            {open ? "Hide earlier message" : "··· Show earlier message"}
+          </button>
+          {open && <div className={cn("whitespace-pre-wrap break-words border-l-2 pl-2.5 text-xs leading-relaxed", outbound ? "border-primary-foreground/40 text-primary-foreground/80" : "border-border text-muted-foreground")}>{p.quoted.replace(/^> ?/gm, "")}</div>}
+        </>
+      )}
+    </div>
   );
 }
 
