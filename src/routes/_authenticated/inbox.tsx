@@ -309,6 +309,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const channels = useChannelStatus();
   const accounts = useAccounts();
   const [msgLimit, setMsgLimit] = useState(MSG_PAGE);
+  const [details, setDetails] = useState(true);
+  const [detailsSheet, setDetailsSheet] = useState(false);
   const [dialog, setDialog] = useState<null | "contact" | "newcontact" | "lead" | "booking" | "task" | "labels">(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -376,8 +378,6 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     qc.invalidateQueries({ queryKey: ["count"] });
   }
 
-  const [details, setDetails] = useState(true);
-  const [detailsSheet, setDetailsSheet] = useState(false);
   const toggleDetails = () => {
     if (window.matchMedia("(min-width: 1280px)").matches) setDetails((d) => !d);
     else setDetailsSheet(true);
