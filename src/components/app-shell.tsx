@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { canViewAudit, ROLE_LABEL, initials } from "@/lib/domain";
 import { BrandLockup, BrandMark } from "@/components/brand";
+import { subscribePush } from "@/lib/push";
 import { OfflineBanner } from "@/components/states";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -105,6 +106,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => setMoreOpen(false), [loc.pathname]);
 
+  // Register this device for push notifications (browser de-duplicates).
+  useEffect(() => {
+    if (!ws.userId) return;
+    const t = setTimeout(() => { void subscribePush(); }, 3000);
+    return () => clearTimeout(t);
+  }, [ws.userId]);
+
+  const pageTitle = NAV.find((n) => isActive(n.to))?.label ?? "TeamInbox";
+
   return (
     <div className="flex min-h-screen w-full">
       {/* Desktop sidebar */}
@@ -157,8 +167,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <OfflineBanner />
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-end border-b bg-card/95 px-4 backdrop-blur md:hidden">
-          <Link to="/notifications" className="relative flex size-10 items-center justify-center rounded-lg hover:bg-accent" aria-label="Notifications">
+        <header className="sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-card/95 px-4 backdrop-blur md:hidden">
+          <div className="min-w-0 truncate text-[15px] font-semibold tracking-tight">{pageTitle}</div>
+          <Link to="/notifications" className="relative flex size-10 shrink-0 items-center justify-center rounded-lg hover:bg-accent" aria-label="Notifications">
             <Bell className="size-5" />
             {counts.notif > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive" />}
           </Link>
