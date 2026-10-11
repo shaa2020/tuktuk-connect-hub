@@ -24,6 +24,10 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
           out[w.id] = r;
         }
         try { await recover(); } catch { /* retried next run */ }
+        try {
+          const { sendPendingPushes } = await import("@/lib/push.server");
+          out.push = await sendPendingPushes(sb);
+        } catch (e) { out.pushError = (e as Error).message.slice(0, 200); }
         console.log("background-sync", JSON.stringify(out));
         return Response.json({ ok: true });
       },
