@@ -50,6 +50,13 @@
       "when": 1791686763774,
       "tag": "0006_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791690144141,
+      "tag": "0007_bookings_delete_all_members",
+      "breakpoints": true
     }
   ]
 }

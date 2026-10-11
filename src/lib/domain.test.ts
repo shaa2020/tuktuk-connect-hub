@@ -16,8 +16,10 @@ describe("role permissions", () => {
   });
   it("agents cannot delete contacts or bookings", () => {
     expect(canDeleteContacts("agent")).toBe(false);
-    expect(canDeleteBookings("manager")).toBe(false);
+    expect(canDeleteBookings("agent")).toBe(true);
+    expect(canDeleteBookings("manager")).toBe(true);
     expect(canDeleteBookings("admin")).toBe(true);
+    expect(canDeleteBookings(null)).toBe(false);
   });
   it("agents can only assign conversations to themselves", () => {
     expect(canAssignTo("agent", "me", "someone-else")).toBe(false);

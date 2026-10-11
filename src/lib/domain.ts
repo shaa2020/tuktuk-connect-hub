@@ -105,7 +105,7 @@ export function canDeleteLeads(role: AppRole | null | undefined) {
   return role === "admin" || role === "manager";
 }
 export function canDeleteBookings(role: AppRole | null | undefined) {
-  return role === "admin";
+  return role === "admin" || role === "manager" || role === "agent";
 }
 /** Agents may only (re)assign a conversation to themselves or unassign it. */
 export function canAssignTo(
