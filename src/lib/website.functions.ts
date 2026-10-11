@@ -201,50 +201,10 @@ export const syncWebsiteBookings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => ws.parse(d))
   .handler(async ({ data, context }) => {
-    const sb = context.supabase;
-    const { data: member } = await sb.rpc("is_member", { _ws: data.workspaceId });
+    const { data: member } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
     if (member !== true) return { ok: false as const, error: "Not a member.", added: 0 };
     try {
-      const { websiteGet } = await import("./website-api.server");
-      const rows = await websiteGet<any[]>("/booking-requests?limit=100");
-      const refs = rows.map((r) => String(r.id).slice(0, 8).toUpperCase());
-      const { data: local } = await sb.from("bookings").select("external_reference").eq("workspace_id", data.workspaceId).in("external_reference", refs.length ? refs : ["-"]);
-      const have = new Set((local ?? []).map((l) => l.external_reference));
-      let added = 0;
-      for (const r of rows) {
-        const reference = String(r.id).slice(0, 8).toUpperCase();
-        if (have.has(reference)) continue;
-        const email = r.email ? String(r.email).toLowerCase().trim() : null;
-        const phone = r.phone ? String(r.phone).trim() : null;
-        let contactId: string | null = null;
-        if (email) {
-          const { data: c } = await sb.from("contacts").select("id").eq("workspace_id", data.workspaceId).is("merged_into", null).ilike("email", email).limit(1).maybeSingle();
-          contactId = c?.id ?? null;
-        }
-        if (!contactId && phone) {
-          const { data: c } = await sb.from("contacts").select("id").eq("workspace_id", data.workspaceId).is("merged_into", null).eq("phone", phone).limit(1).maybeSingle();
-          contactId = c?.id ?? null;
-        }
-        if (!contactId) {
-          const { data: c } = await sb.from("contacts").insert({ workspace_id: data.workspaceId, full_name: String(r.customer_name || "Website guest").slice(0, 200), email, phone, created_by: context.userId }).select("id").single();
-          contactId = c?.id ?? null;
-        }
-        const notes = typeof r.notes === "string" ? r.notes : "";
-        const pickup = notes.match(/(?:Hotel pickup|Meetup point|Pickup):\s*([^\n—]+)/)?.[1]?.trim() ?? null;
-        const time = typeof r.travel_time === "string" && /^\d{1,2}:\d{2}/.test(r.travel_time) ? r.travel_time.slice(0, 5) : null;
-        const title = String(r.tour_title || "Website booking");
-        const dur = durationFromTitle(title);
-        const { error } = await sb.from("bookings").insert({
-          workspace_id: data.workspaceId, contact_id: contactId, tour_name: title.slice(0, 200),
-          tour_date: r.travel_date ?? null, start_time: time, guests: Math.max(1, Math.min(500, Number(r.guests) || 1)),
-          duration_minutes: dur && dur >= 15 && dur <= 1440 ? dur : null,
-          pickup_location: pickup ? pickup.slice(0, 300) : null,
-          status: STATUS_MAP[String(r.status)] ?? "inquiry",
-          payment_status: PAY_MAP[String(r.payment_status)] ?? "unknown", payment_status_source: "booking_system",
-          source_system: "website", external_reference: reference, notes: notes ? notes.slice(0, 5000) : null, created_by: context.userId,
-        } as any);
-        if (!error) added++;
-      }
-      return { ok: true as const, added };
+      const { syncWebsiteBookingsFor } = await import("./background-sync.server");
+      return { ok: true as const, added: await syncWebsiteBookingsFor(context.supabase, data.workspaceId, context.userId) };
     } catch (e) { return { ok: false as const, error: (e as Error).message, added: 0 }; }
   });
