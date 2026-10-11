@@ -103,19 +103,28 @@ async function run(row: Row) {
   }
 }
 
-/** Store then process. Returns HTTP status to send back. */
-export async function receive(deliveryId: string, event: string, payload: unknown): Promise<number> {
+/** Store then process. Returns HTTP status to send back, plus the workspace when a live inbound message arrived. */
+export async function receive(deliveryId: string, event: string, payload: unknown): Promise<{ status: number; liveInboundWorkspace: string | null }> {
   const sb = await db();
   const ins = await sb.from("whatsapp_webhook_events").insert({ delivery_id: deliveryId, event, payload: payload as any }).select("id, event, payload, attempts, processed_at").maybeSingle();
   let row: any = ins.data;
   if (ins.error) {
-    if (ins.error.code !== "23505") { console.error("wa inbox insert", ins.error); return 500; }
+    if (ins.error.code !== "23505") { console.error("wa inbox insert", ins.error); return { status: 500, liveInboundWorkspace: null }; }
     row = (await sb.from("whatsapp_webhook_events").select("id, event, payload, attempts, processed_at").eq("delivery_id", deliveryId).maybeSingle()).data;
-    if (!row) return 500;
+    if (!row) return { status: 500, liveInboundWorkspace: null };
   }
   const ok = row.processed_at ? true : await run(row);
   await recover(row.id);
-  return ok ? 200 : 500;
+  return { status: ok ? 200 : 500, liveInboundWorkspace: ok ? await liveInboundWorkspace(row) : null };
+}
+
+/** Workspace of a just-received live guest message (not history sync), so the AI Operator can reply instantly. */
+async function liveInboundWorkspace(row: Row): Promise<string | null> {
+  if (row.event !== "whatsapp.message") return null;
+  const v = row.payload?.entry?.[0]?.changes?.[0]?.value ?? {};
+  if (!(v.messages ?? []).length) return null;
+  const target = await connectorTarget(v.metadata?.phone_number_id);
+  return target?.workspace_id ?? null;
 }
 
 /** Bounded retry of unfinished rows, least-attempted first so blocked rows can't starve others. */
