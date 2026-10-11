@@ -28,6 +28,7 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
         const { ingestInbound, applyStatus, findConnection } = await import("@/lib/channels.server");
         let body: any;
         try { body = JSON.parse(raw); } catch { return new Response("Bad request", { status: 400 }); }
+        let gotInbound = false;
         try {
           if (body.object === "whatsapp_business_account") {
             for (const e of body.entry ?? []) for (const ch of e.changes ?? []) {
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
               for (const m of v.messages ?? []) {
                 const text = m.text?.body ?? m.button?.text ?? m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title ?? (m.type ? `[${m.type} received — open WhatsApp to view]` : "");
                 await ingestInbound(ws, "whatsapp", { from: m.from, name: names[m.from], externalMessageId: m.id, text, at: m.timestamp ? new Date(Number(m.timestamp) * 1000) : undefined, connectionId });
+                gotInbound = true;
               }
               for (const s of v.statuses ?? []) await applyStatus(ws, s.id, s.status, `${s.id}:${s.status}`, s.errors?.[0]?.title);
             }
@@ -48,6 +50,7 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
               if (ev.message && !ev.message.is_echo) {
                 const text = ev.message.text ?? (ev.message.attachments?.length ? "[attachment received — open the app to view]" : "");
                 await ingestInbound(ws, channel, { from: ev.sender.id, externalMessageId: ev.message.mid, text, at: ev.timestamp ? new Date(ev.timestamp) : undefined, connectionId });
+                gotInbound = true;
               }
               for (const mid of ev.delivery?.mids ?? []) await applyStatus(ws, mid, "delivered", `${mid}:delivered`);
               }
@@ -56,6 +59,10 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
         } catch (err) {
           console.error("meta webhook", err);
           return new Response("Error", { status: 500 }); // Meta will retry
+        }
+        // New guest message → let the AI Operator answer right away (it no-ops when Away mode is off).
+        if (gotInbound) {
+          try { await (await import("@/lib/ai-operator.server")).runOperatorFor(ws); } catch { /* the periodic job retries */ }
         }
         return new Response("OK", { status: 200 });
       },
