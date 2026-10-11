@@ -8,7 +8,15 @@
 - [x] T6 Deleted website bookings stay deleted
 - [ ] T7 BLOCKED: automated phone check stops at mandatory two-step sign-in; owner to check pages on phone
 - [ ] T8 BLOCKED: Agent-role test needs a second invited account
-- [ ] T9–T19 see archived audit plan (social comments/posting, Meta, AI key, email domain, prices)
+- [x] T9 Integration health alerts (notification to admins/managers, once a day per broken channel)
+- [x] T15 Guest data export (contact page, logged in audit)
+- [ ] T10/T17/T18 BLOCKED: Meta app credentials + Meta app review (Instagram, Messenger, comments, posting)
+- [ ] T11 BLOCKED: owner's own AI provider key
+- [ ] T12 BLOCKED: email sending domain setup
+- [ ] T13 BLOCKED: real tour price list
+- [ ] T19 BLOCKED: Google Business Profile access
+- [ ] T14 Skipped: no built-in rate limiting; receivers already reject unsigned calls
+- [ ] T16 Optional: presence / driver view
 - [x] Knowledge Base
 - [x] AI settings + AI Assistant page
 - [x] AI in inbox: draft reply, translate, summarize
