@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Home, Inbox, Users, Target, CalendarCheck, CheckSquare, Workflow, Sparkles, BarChart3,
   UsersRound, Truck, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
+  CalendarClock, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -14,7 +15,7 @@ import { OfflineBanner } from "@/components/states";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-type NavItem = { to: string; label: string; icon: typeof Home; badge?: "inbox" | "notif"; audit?: boolean };
+type NavItem = { to: string; label: string; icon: typeof Home; badge?: "inbox" | "notif"; audit?: boolean; platform?: boolean };
 
 export const NAV: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: Home },
