@@ -130,7 +130,7 @@ function Dashboard() {
                 ))}</ul>
               )}
             </Panel>
-            <Panel>
+            <Panel className="min-w-0 overflow-hidden">
               <div className="flex items-center justify-between border-b px-4 py-3"><h2 className="text-sm font-semibold">Recent booking activity</h2><Link to="/bookings" className="text-xs font-medium text-primary">Bookings</Link></div>
               {!activity.data?.bookings.length ? <p className="px-4 py-6 text-sm text-muted-foreground">No bookings yet.</p> : (
                 <ul className="divide-y">{activity.data.bookings.map((b) => (
@@ -141,7 +141,7 @@ function Dashboard() {
                 ))}</ul>
               )}
             </Panel>
-            <Panel>
+            <Panel className="min-w-0 overflow-hidden">
               <div className="flex items-center justify-between border-b px-4 py-3"><h2 className="text-sm font-semibold">Health</h2><Link to="/integrations" className="text-xs font-medium text-primary">Integrations</Link></div>
               <ul className="divide-y text-sm">
                 {activity.data?.channels.map((c) => (
