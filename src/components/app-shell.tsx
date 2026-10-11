@@ -15,29 +15,31 @@ import { OfflineBanner } from "@/components/states";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-type NavItem = { to: string; label: string; icon: typeof Home; badge?: "inbox" | "notif"; audit?: boolean; platform?: boolean };
+type NavGroup = "Daily work" | "Customers" | "Growth" | "Admin";
+type NavItem = { to: string; label: string; short?: string; icon: typeof Home; group: NavGroup; badge?: "inbox" | "notif"; audit?: boolean; platform?: boolean };
 
 export const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Home", icon: Home },
-  { to: "/inbox", label: "Inbox", icon: Inbox, badge: "inbox" },
-  { to: "/contacts", label: "Contacts", icon: Users },
-  { to: "/leads", label: "Leads", icon: Target },
-  { to: "/bookings", label: "Bookings", icon: CalendarCheck },
-  { to: "/dispatch", label: "Tour Calendar", icon: Truck },
-  { to: "/tasks", label: "Tasks", icon: CheckSquare },
-  { to: "/automations", label: "Automations", icon: Workflow },
-  { to: "/ai", label: "AI Assistant", icon: Sparkles },
-  { to: "/social", label: "Social Planner", icon: CalendarClock },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/team", label: "Team", icon: UsersRound },
-  { to: "/integrations", label: "Integrations", icon: Plug },
-  { to: "/knowledge", label: "Knowledge Base", icon: BookOpen },
-  { to: "/notifications", label: "Notifications", icon: Bell, badge: "notif" },
-  { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/audit", label: "Audit Log", icon: ScrollText, audit: true },
-  { to: "/platform", label: "Platform", icon: ShieldCheck, platform: true },
+  { to: "/dashboard", label: "Home", icon: Home, group: "Daily work" },
+  { to: "/inbox", label: "Inbox", icon: Inbox, badge: "inbox", group: "Daily work" },
+  { to: "/dispatch", label: "Tour Calendar", short: "Tours", icon: Truck, group: "Daily work" },
+  { to: "/bookings", label: "Bookings", icon: CalendarCheck, group: "Daily work" },
+  { to: "/tasks", label: "Tasks", icon: CheckSquare, group: "Daily work" },
+  { to: "/contacts", label: "Contacts", icon: Users, group: "Customers" },
+  { to: "/leads", label: "Leads", icon: Target, group: "Customers" },
+  { to: "/notifications", label: "Notifications", icon: Bell, badge: "notif", group: "Customers" },
+  { to: "/social", label: "Social Planner", icon: CalendarClock, group: "Growth" },
+  { to: "/ai", label: "AI Assistant", icon: Sparkles, group: "Growth" },
+  { to: "/automations", label: "Automations", icon: Workflow, group: "Growth" },
+  { to: "/analytics", label: "Analytics", icon: BarChart3, group: "Growth" },
+  { to: "/knowledge", label: "Knowledge Base", icon: BookOpen, group: "Growth" },
+  { to: "/team", label: "Team", icon: UsersRound, group: "Admin" },
+  { to: "/integrations", label: "Integrations", icon: Plug, group: "Admin" },
+  { to: "/settings", label: "Settings", icon: Settings, group: "Admin" },
+  { to: "/audit", label: "Audit Log", icon: ScrollText, audit: true, group: "Admin" },
+  { to: "/platform", label: "Platform", icon: ShieldCheck, platform: true, group: "Admin" },
 ];
-const MOBILE_MAIN = ["/dashboard", "/inbox", "/contacts", "/leads"];
+const GROUPS: NavGroup[] = ["Daily work", "Customers", "Growth", "Admin"];
+const MOBILE_MAIN = ["/dashboard", "/inbox", "/dispatch", "/bookings"];
 
 function useCounts() {
   const { workspaceId, userId } = useWorkspace();
@@ -130,24 +132,35 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex h-16 items-center justify-between px-3.5">
           {collapsed ? <BrandMark /> : <BrandLockup light />}
         </div>
-        <nav className="scrollbar-none flex-1 space-y-0.5 overflow-y-auto px-2.5 py-2" aria-label="Main">
-          {items.map((n) => {
-            const active = isActive(n.to);
-            const c = countFor(n.badge);
+        <nav className="scrollbar-none flex-1 overflow-y-auto px-2.5 py-2" aria-label="Main">
+          {GROUPS.map((g) => {
+            const groupItems = items.filter((n) => n.group === g);
+            if (!groupItems.length) return null;
             return (
-              <Link
-                key={n.to}
-                to={n.to}
-                title={collapsed ? n.label : undefined}
-                className={cn(
-                  "relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                  active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+              <div key={g} className="mb-3 space-y-0.5">
+                {collapsed ? <div className="mx-2 mb-2 h-px bg-sidebar-border" /> : (
+                  <div className="px-2.5 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">{g}</div>
                 )}
-              >
-                <n.icon className="size-4 shrink-0" />
-                {!collapsed && <span className="truncate">{n.label}</span>}
-                {!collapsed ? <CountBadge n={c} /> : c > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary" />}
-              </Link>
+                {groupItems.map((n) => {
+                  const active = isActive(n.to);
+                  const c = countFor(n.badge);
+                  return (
+                    <Link
+                      key={n.to}
+                      to={n.to}
+                      title={collapsed ? n.label : undefined}
+                      className={cn(
+                        "relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                        active ? "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:-left-2.5 before:h-5 before:w-1 before:rounded-r-full before:bg-sidebar-primary" : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                      )}
+                    >
+                      <n.icon className="size-4 shrink-0" />
+                      {!collapsed && <span className="truncate">{n.label}</span>}
+                      {!collapsed ? <CountBadge n={c} /> : c > 0 && <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary" />}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
@@ -175,49 +188,77 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <OfflineBanner />
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-card/95 px-4 backdrop-blur md:hidden">
-          <div className="min-w-0 truncate text-[15px] font-semibold tracking-tight">{pageTitle}</div>
-          <Link to="/notifications" className="relative flex size-10 shrink-0 items-center justify-center rounded-lg hover:bg-accent" aria-label="Notifications">
-            <Bell className="size-5" />
-            {counts.notif > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive" />}
-          </Link>
+        <header className="sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-card/90 px-4 backdrop-blur-md md:hidden">
+          <div className="min-w-0">
+            <div className="truncate font-display text-[16px] font-bold tracking-tight">{pageTitle}</div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Link to="/notifications" className="relative flex size-10 items-center justify-center rounded-full hover:bg-accent" aria-label="Notifications">
+              <Bell className="size-5" />
+              {counts.notif > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-card" />}
+            </Link>
+            <button onClick={() => setMoreOpen(true)} className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-[11px] font-bold text-primary" aria-label="Account and menu">
+              {initials(ws.fullName)}
+            </button>
+          </div>
         </header>
-        <main className="min-w-0 flex-1 overflow-x-hidden pb-20 md:pb-0">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden pb-24 md:pb-0">{children}</main>
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card md:hidden" aria-label="Main">
-        <div className="grid grid-cols-5">
+      <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 shadow-pop backdrop-blur-md md:hidden" aria-label="Main">
+        <div className="grid grid-cols-5 px-1">
           {MOBILE_MAIN.map((to) => {
             const n = NAV.find((x) => x.to === to)!;
             const active = isActive(to);
             const c = countFor(n.badge);
             return (
-              <Link key={to} to={to} className={cn("relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", active ? "text-primary" : "text-muted-foreground")}>
-                <n.icon className="size-5" />
-                {n.label}
-                {c > 0 && <span className="absolute left-1/2 top-2 ml-2 min-w-4 rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground">{c > 99 ? "99+" : c}</span>}
+              <Link key={to} to={to} className={cn("relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-primary" : "text-muted-foreground")}>
+                <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", active && "bg-primary-soft")}>
+                  <n.icon className="size-5" />
+                </span>
+                {n.short ?? n.label}
+                {c > 0 && <span className="absolute left-1/2 top-1.5 ml-2 min-w-4 rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground ring-2 ring-card">{c > 99 ? "99+" : c}</span>}
               </Link>
             );
           })}
           <button onClick={() => setMoreOpen(true)} className={cn("flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", !MOBILE_MAIN.some(isActive) ? "text-primary" : "text-muted-foreground")}>
-            <MoreHorizontal className="size-5" /> More
+            <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !MOBILE_MAIN.some(isActive) && "bg-primary-soft")}><MoreHorizontal className="size-5" /></span>
+            More
           </button>
         </div>
       </nav>
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl pb-8">
-          <SheetHeader><SheetTitle>More</SheetTitle></SheetHeader>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {items.filter((n) => !MOBILE_MAIN.includes(n.to)).map((n) => (
-              <Link key={n.to} to={n.to} className={cn("relative flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center text-xs font-medium", isActive(n.to) ? "border-primary bg-primary-soft text-primary" : "bg-card")}>
-                <n.icon className="size-5" />
-                {n.label}
-                {countFor(n.badge) > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-primary" />}
-              </Link>
-            ))}
-          </div>
-          <button onClick={signOut} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-sm font-medium text-destructive">
+        <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-3xl px-4 pb-8">
+          <SheetHeader className="px-0 text-left">
+            <SheetTitle className="sr-only">Menu</SheetTitle>
+            <div className="flex items-center gap-3">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary">{initials(ws.fullName)}</div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{ws.fullName}</div>
+                <div className="truncate text-xs text-muted-foreground">{ROLE_LABEL[ws.role]} · {ws.workspaceName}</div>
+              </div>
+            </div>
+          </SheetHeader>
+          {GROUPS.map((g) => {
+            const groupItems = items.filter((n) => n.group === g && !MOBILE_MAIN.includes(n.to));
+            if (!groupItems.length) return null;
+            return (
+              <div key={g} className="mt-4">
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{g}</div>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {groupItems.map((n) => (
+                    <Link key={n.to} to={n.to} className={cn("relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-2xl border p-2 text-center text-[11px] font-medium leading-tight", isActive(n.to) ? "border-primary bg-primary-soft text-primary" : "bg-card")}>
+                      <n.icon className="size-5" />
+                      {n.label}
+                      {countFor(n.badge) > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-primary" />}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          <button onClick={signOut} className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-sm font-medium text-destructive">
             <LogOut className="size-4" /> Sign out
           </button>
         </SheetContent>
