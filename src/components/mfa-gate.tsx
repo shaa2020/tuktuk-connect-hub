@@ -84,7 +84,14 @@ export function MfaEnrollment({ onDone }: { onDone?: () => void }) {
   async function begin() {
     setBusy(true);
     try {
-      const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "Authenticator app" });
+      // Remove abandoned (unverified) setups first so a refresh mid-setup never blocks enrollment.
+      const { data: list } = await supabase.auth.mfa.listFactors();
+      const stale = (list?.all ?? []).filter((f) => f.factor_type === "totp" && f.status !== "verified");
+      for (const f of stale) await supabase.auth.mfa.unenroll({ factorId: f.id });
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: `Authenticator app ${new Date().toISOString().slice(0, 16)}`,
+      });
       if (error) throw error;
       setFactor({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
       setStep("scan");
