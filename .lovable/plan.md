@@ -15,7 +15,7 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 ## Phase 2 — New features that make it sellable
 
 - **Public booking page per business** — guests book tours directly (date, guests, tour, pay deposit); lands in the calendar and inbox automatically. Biggest value-add for tour operators.
-- **Online payments for bookings** — Stripe payment links / deposits on bookings; payment status tracked on the booking.
+- **Online payments for bookings** — PayPal checkout / deposit links on bookings; payment status tracked on the booking via PayPal webhooks.
 - **Review requests** — automatic WhatsApp/email after a completed tour asking for a Google/TripAdvisor review.
 - **Customer-facing live chat widget** — embeddable on the business's own website; chats arrive in the shared inbox.
 - **Canned replies / quick replies library** — shared per workspace, insertable in the composer.
@@ -40,7 +40,7 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 ## Technical notes
 
 - The data model is already workspace-scoped with RLS everywhere, so multi-tenancy is mostly additive: signup flow, plans table, billing webhook, and per-plan limit checks.
-- Billing via Stripe (Lovable-managed integration); subscription state stored on the workspace, updated by a signed webhook under /api/public/.
+- Billing via PayPal Subscriptions (your existing PayPal Business account); subscription state stored on the workspace, updated by a verified PayPal webhook under /api/public/. Requires your PayPal app's Client ID and Secret, stored as encrypted server secrets.
 - Your own Tuk Tuk 24 Lisbon workspace stays untouched and gets an unlimited internal plan.
 - No changes to existing channels, inbox, or security model (MFA, invite-only team access, encrypted secrets all stay).
 
