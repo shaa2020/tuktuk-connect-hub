@@ -10,6 +10,7 @@ import { ChannelIcon } from "./inbox";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MetaConnectForm } from "@/components/admin-connections";
+import { TemplatesPanel } from "@/components/wa-templates";
 import { useServerFn } from "@tanstack/react-start";
 import { connectEmailChannel, connectGmailAppPassword, disconnectChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
@@ -134,6 +135,7 @@ function IntegrationsPage() {
                   ))}
                   {rows.length === 0 && ch === "email" && isAdmin && <EmailControls workspaceId={workspaceId} connected={false} onDone={() => q.refetch()} />}
                 </div>
+                {ch === "whatsapp" && rows.some((r) => r.status === "connected" && (r.config as any)?.mode === "connector") && <TemplatesPanel workspaceId={workspaceId} isAdmin={isAdmin} />}
                 {isAdmin && isMeta && (
                   <>
                     <Button size="sm" variant="secondary" className="mt-2" onClick={() => setOpen(open === `new-${ch}` ? null : `new-${ch}`)}><Plus />Add {rows.some((r) => r.status === "connected") ? "another" : "an"} account</Button>

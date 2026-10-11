@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NativeSelect, ToneBadge } from "@/components/kit";
 
-const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "neutral"> = { APPROVED: "success", PENDING: "warning", REJECTED: "danger" };
+const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "muted"> = { APPROVED: "success", PENDING: "warning", REJECTED: "danger" };
 const STATUS_TEXT: Record<string, string> = { APPROVED: "Approved", PENDING: "Waiting for WhatsApp", REJECTED: "Rejected" };
 
 function useTemplates(workspaceId: string, enabled = true) {
@@ -108,7 +108,7 @@ export function TemplatesPanel({ workspaceId, isAdmin }: { workspaceId: string; 
           {existing.map((t) => (
             <li key={`${t.name}|${t.language}`} className="flex items-center justify-between gap-2 text-sm">
               <span className="truncate">{t.name.replace(/_/g, " ")} <span className="text-xs text-muted-foreground">({t.language})</span></span>
-              <ToneBadge tone={STATUS_TONE[t.status] ?? "neutral"}>{STATUS_TEXT[t.status] ?? t.status}</ToneBadge>
+              <ToneBadge tone={STATUS_TONE[t.status] ?? "muted"}>{STATUS_TEXT[t.status] ?? t.status}</ToneBadge>
             </li>
           ))}
           {isAdmin && STARTER_TEMPLATES.filter((s) => !existing.some((t) => t.name === s.name)).map((s) => (
