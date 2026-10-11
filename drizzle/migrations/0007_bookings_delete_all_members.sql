@@ -1,0 +1,2 @@
+drop policy if exists "bookings delete" on public.bookings;
+create policy "bookings delete" on public.bookings for delete to authenticated using (public.has_ws_role(workspace_id, array['admin','manager','agent']::public.app_role[]));
