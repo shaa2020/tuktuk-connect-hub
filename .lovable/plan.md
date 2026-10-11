@@ -8,7 +8,7 @@ Today the app serves one business (Tuk Tuk 24 Lisbon). To sell it to other tour 
 
 - **Self-serve signup with workspace creation** — today only the first user bootstraps a workspace and everyone else is invite-only. Add a "Start your business" flow: sign up, name the company, become its admin. Keep the current invite-only mode as an option per workspace.
 - **Per-workspace plan & limits** — plans table (e.g. Free / Pro / Business): max team members, connected channels, AI usage, message volume. Enforced server-side.
-- **Billing** — Stripe subscriptions: checkout, plan upgrades/downgrades, invoices, cancel. Webhook updates the workspace's plan automatically.
+- **Billing via PayPal** (you already use PayPal) — PayPal Subscriptions API: plan checkout, upgrades/downgrades, cancel. A signed PayPal webhook updates the workspace's plan automatically. Note: Lovable's built-in one-click payments are Stripe/Paddle only, so PayPal is a custom integration using your own PayPal Business account credentials (stored encrypted, never exposed). PayPal also covers guest booking deposits.
 - **Workspace switcher** — users belonging to several businesses can switch between them.
 - **Onboarding wizard** — after signup: connect first channel, invite team, load sample data, done checklist.
 
