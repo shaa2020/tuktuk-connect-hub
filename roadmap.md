@@ -29,3 +29,4 @@
 - Multiple Gmail inboxes via App Password (IMAP/SMTP) — done
 - [x] WhatsApp message templates (follow up after 24h window)
 - [x] Mandatory two-step sign-in (authenticator app) for all team accounts
+- [ ] Fix Inbox translate (must)
