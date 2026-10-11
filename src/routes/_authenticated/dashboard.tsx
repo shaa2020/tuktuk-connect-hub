@@ -91,8 +91,8 @@ function Dashboard() {
             <Stat icon={<CalendarCheck />} label="Upcoming bookings" value={s?.upcoming_bookings} hint="Next 14 days" />
           </div>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
-            <Panel className="p-4">
+          <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-3">
+            <Panel className="min-w-0 overflow-hidden p-4">
               <h2 className="text-sm font-semibold">By channel</h2>
               <ChartOrEmpty data={Object.entries(s?.by_channel ?? {}).map(([k, v]) => ({ name: CHANNEL_LABEL[k as ChannelType] ?? k, value: v }))} loading={!s} kind="pie" />
             </Panel>
