@@ -187,7 +187,7 @@ async function sendViaApp(ws: string, convId: string, connId: string, cfg: Recor
   const { data: last } = await supabaseAdmin.from("messages").select("body").eq("conversation_id", convId).eq("direction", "inbound").order("created_at", { ascending: false }).limit(1).maybeSingle();
   const s = /^Subject: (.+)/.exec(last?.body ?? "")?.[1]?.trim();
   const subject = s ? (/^re:/i.test(s) ? s : `Re: ${s}`) : "Tuk Tuk 24 Lisbon";
-  return `im-out:${await sendSmtp(cfg.address, pass, to, subject, body, "Tuk Tuk 24 Lisbon")}`;
+  return `im-out:${await sendSmtp(cfg.address ?? "", pass, to, subject, body, "Tuk Tuk 24 Lisbon")}`;
 }
 
 async function saveEmailRow(sb: any, ws: string, fields: Record<string, unknown>) {
@@ -237,7 +237,7 @@ export const syncEmailNow = createServerFn({ method: "POST" })
           const { getSecret } = await import("./secrets.server");
           const { passKind, syncImap } = await import("./imap-mail.server");
           const pass = await getSecret(data.workspaceId, passKind(cc.id));
-          if (pass) imported += await syncImap(data.workspaceId, cc.id, cfg.address, pass);
+          if (pass) imported += await syncImap(data.workspaceId, cc.id, cfg.address ?? "", pass);
         } else {
           const { syncEmail } = await import("./email-channel.server");
           imported += await syncEmail(data.workspaceId, cfg.address ?? "");

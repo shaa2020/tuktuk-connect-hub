@@ -16,3 +16,4 @@
 - [x] Quick tour quotes in inbox composer (packages, guests → tuk tuks, € total, insert into reply)
 
 - [x] Multiple accounts per channel (WhatsApp/Instagram/Messenger), account names, inbox filter + badges, replies sent from the receiving account
+- Multiple Gmail inboxes via App Password (IMAP/SMTP) — done
