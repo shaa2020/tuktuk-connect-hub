@@ -12,9 +12,11 @@ export type OperatorDecision = {
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^\d{2}:\d{2}$/;
 
+export const PARSE_FAIL_ALERT = "The AI could not understand this conversation.";
+
 /** Parse the model's JSON answer defensively; anything malformed becomes a safe hand-off. */
 export function parseDecision(raw: string): OperatorDecision {
-  const safe: OperatorDecision = { action: "handoff", reply: "", tags: [], urgent: false, alert: "The AI could not understand this conversation.", booking: null };
+  const safe: OperatorDecision = { action: "handoff", reply: "", tags: [], urgent: false, alert: PARSE_FAIL_ALERT, booking: null };
   const m = /\{[\s\S]*\}/.exec(raw);
   if (!m) return safe;
   let j: any;
@@ -40,6 +42,19 @@ export function parseDecision(raw: string): OperatorDecision {
 /** The operator stops replying once it has sent `max` replies in one conversation. */
 export function replyAllowed(repliesSoFar: number, max: number) {
   return repliesSoFar < max;
+}
+
+/**
+ * Parse the model's answer, with a fallback: if the answer is not JSON at all but
+ * contains readable text, send that text as the guest reply instead of a silent hand-off.
+ */
+export function decisionFromRaw(raw: string): OperatorDecision {
+  const d = parseDecision(raw);
+  const text = raw.trim();
+  if (d.action === "handoff" && d.alert === PARSE_FAIL_ALERT && text && !text.includes("{")) {
+    return { ...d, action: "reply", reply: text.slice(0, 1500), alert: "" };
+  }
+  return d;
 }
 
 /** Tuk-tuks needed: each vehicle carries up to 6 guests. */

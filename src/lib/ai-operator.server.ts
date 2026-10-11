@@ -1,8 +1,43 @@
 // Server-only: the AI Operator ("Away mode"). Runs from the 5-minute background job or "Run now".
 // Bounded per run, single-flight lock in the database, idempotent per guest message, pauses on credit/permission errors.
-import { parseDecision, replyAllowed, vehiclesFor } from "./ai-operator";
+import { decisionFromRaw, PARSE_FAIL_ALERT, replyAllowed, vehiclesFor } from "./ai-operator";
 
 const BATCH = 5;
+// Strict structured output so the model's decision is always parseable JSON.
+const DECISION_SCHEMA = {
+  name: "operator_decision",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["action", "reply", "tags", "urgent", "alert", "booking"],
+    properties: {
+      action: { type: "string", enum: ["reply", "handoff", "none"] },
+      reply: { type: "string" },
+      tags: { type: "array", items: { type: "string" } },
+      urgent: { type: "boolean" },
+      alert: { type: "string" },
+      booking: {
+        anyOf: [
+          { type: "null" },
+          {
+            type: "object",
+            additionalProperties: false,
+            required: ["ready", "date", "time", "guests", "tour", "pickup", "name"],
+            properties: {
+              ready: { type: "boolean" },
+              date: { type: "string" },
+              time: { type: "string" },
+              guests: { type: "integer" },
+              tour: { type: "string" },
+              pickup: { type: "string" },
+              name: { type: "string" },
+            },
+          },
+        ],
+      },
+    },
+  },
+};
 const RULES = `You are the AI Operator for Tuk Tuk 24 Lisbon, a tuk-tuk tour company in Lisbon, Portugal. The team is away and you handle guest chats on their behalf.
 Rules:
 - Be warm, short and professional. Reply in the language the guest writes in.
@@ -112,6 +147,7 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     raw = await generate(ws, { provider: ai.provider ?? "lovable", model: ai.model, base_url: ai.base_url }, {
       instructions: `${RULES}\n\nToday in Lisbon: ${today}.\n\nOwner instructions:\n${ai.instructions || "(none)"}\n${s.notes ? `\nAway-mode notes from the owner:\n${s.notes}` : ""}\n\nBusiness knowledge:\n${kb || "(none)"}`,
       input: `Guest name: ${name}. Channel: ${c.channel}.\nConversation (oldest first):\n${transcript}`,
+      jsonSchema: DECISION_SCHEMA,
     });
   } catch (e) {
     const status = e instanceof AiError ? e.status : 500;
@@ -127,7 +163,10 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     return { replies, handedOff: false, stop: true };
   }
 
-  const d = parseDecision(raw);
+  const d = decisionFromRaw(raw);
+  if (d.action === "handoff" && d.alert === PARSE_FAIL_ALERT) {
+    await log(sb, ws, c.id, "error", `AI answer was not readable; handed to the team. Excerpt: ${raw.slice(0, 160)}`);
+  }
   let sent = 0;
 
   // Always answer the guest — even on handoff, the reply goes out first.

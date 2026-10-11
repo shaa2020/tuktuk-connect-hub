@@ -11,7 +11,7 @@ export const PROVIDER_BASE: Record<string, string> = {
 
 export interface ProviderSettings { provider: Provider; model: string | null; base_url: string | null }
 
-export async function generate(ws: string, s: ProviderSettings, opts: { instructions: string; input: string }) {
+export async function generate(ws: string, s: ProviderSettings, opts: { instructions: string; input: string; jsonSchema?: { name: string; schema: Record<string, unknown> } }) {
   if (s.provider === "lovable" || !s.provider) return lovableGenerate(opts);
   const apiKey = await getSecret(ws, "ai_api_key");
   if (!apiKey) throw new AiError("Your AI provider key is missing. An admin can add it on the AI Assistant page.", 400);
