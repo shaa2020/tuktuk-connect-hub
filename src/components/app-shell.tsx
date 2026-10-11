@@ -128,6 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, [ws.userId]);
 
+  const inThread = loc.pathname === "/inbox" && !!(loc.search as { c?: string }).c;
   const pageTitle = NAV.find((n) => isActive(n.to))?.label ?? "TeamInbox";
 
   return (
@@ -243,12 +244,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
-        <main className="min-w-0 flex-1 overflow-x-hidden pb-24 md:pb-0">{children}</main>
+        <main className={cn("min-w-0 flex-1 overflow-x-hidden md:pb-0", inThread ? "pb-0" : "pb-24")}>{children}</main>
         <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} items={items} groups={GROUPS} />
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 shadow-pop backdrop-blur-md md:hidden" aria-label="Main">
+      <nav className={cn("pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 shadow-pop backdrop-blur-md md:hidden", inThread && "hidden")} aria-label="Main">
         <div className="grid grid-cols-5 px-1">
           {MOBILE_MAIN.map((to) => {
             const n = NAV.find((x) => x.to === to)!;
