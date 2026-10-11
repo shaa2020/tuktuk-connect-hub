@@ -45,6 +45,15 @@ function Stat({ label, value, warn }: { label: string; value: number; warn?: boo
 function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return <div className="flex min-w-0 items-start gap-2"><span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span><span className="min-w-0">{children}</span></div>;
 }
+/** Missing details that would stop a tour running smoothly. */
+function tourIssues(t: { pickup_location: string | null; vehicle_id: string | null; driver_id: string | null; contacts: { phone: string | null } | null }) {
+  const out: string[] = [];
+  if (!t.pickup_location?.trim()) out.push("No pickup location");
+  if (!t.contacts?.phone?.trim()) out.push("No guest phone");
+  if (!t.vehicle_id) out.push("No tuk tuk");
+  if (!t.driver_id) out.push("No driver");
+  return out;
+}
 
 function DispatchPage() {
   const { workspaceId, role, members } = useWorkspace();
@@ -170,6 +179,10 @@ function DispatchPage() {
                     <Stat label="Need crew" value={open} warn={open > 0} />
                   </div>
                 )}
+                {(() => {
+                  const bad = live.filter((t) => conflicts.has(t.id) || tourIssues(t).length > 0).length;
+                  return bad > 0 ? <div className="mb-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2.5 text-sm font-semibold text-destructive"><AlertTriangle className="size-4 shrink-0" /> {bad} tour{bad > 1 ? "s" : ""} need attention before departure</div> : null;
+                })()}
                 {list.length === 0 ? (
                   view === "day" ? <EmptyState icon={<Truck />} title="No tours this day" description="Bookings with a tour date appear here." action={<Button asChild size="sm"><Link to="/bookings" search={{ new: true }}>New booking</Link></Button>} /> : <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">No tours</p>
                 ) : (
@@ -209,7 +222,12 @@ function DispatchPage() {
                                 {t.amount != null && <Row icon={<Euro className="size-3.5" />}>{t.amount} {t.currency}</Row>}
                                 {t.notes && <Row icon={<StickyNote className="size-3.5" />}><span className="line-clamp-2">{t.notes}</span></Row>}
                               </dl>
-                              {c && <div className="mt-2 flex items-center gap-1 text-xs font-medium text-destructive"><AlertTriangle className="size-3.5" /> Double-booked {c.join(" & ")}</div>}
+                              {c && <div className="mt-2 flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive"><AlertTriangle className="size-3.5 shrink-0" /> Overlap: same {c.join(" & ")} as another tour at this time</div>}
+                              {t.status !== "cancelled" && tourIssues(t).length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {tourIssues(t).map((m) => <span key={m} className="inline-flex items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-[11px] font-semibold text-warning"><AlertTriangle className="size-3 shrink-0" /> {m}</span>)}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="grid gap-2 border-t bg-muted/30 p-3 sm:grid-cols-2">

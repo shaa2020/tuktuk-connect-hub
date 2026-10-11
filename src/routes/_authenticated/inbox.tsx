@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, ArrowLeft, Inbox as InboxIcon, Phone, MessageCircle, Instagram, Mail, Facebook, StickyNote,
-  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt,
+  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt, SlidersHorizontal,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
 import { listWebsiteTours } from "@/lib/website.functions";
@@ -138,6 +138,8 @@ function InboxPage() {
   const [debounced, setDebounced] = useState("");
   const [limit, setLimit] = useState(40);
   const [newOpen, setNewOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const activeFilters = [channel, assignee, label, since].filter(Boolean).length;
   useEffect(() => { const t = setTimeout(() => setDebounced(term.trim().replace(/[%,()]/g, "")), 300); return () => clearTimeout(t); }, [term]);
 
   const accounts = useAccounts();
@@ -196,16 +198,25 @@ function InboxPage() {
     <div className="flex h-[calc(100dvh-3.5rem-4rem)] md:h-dvh">
       {/* List pane */}
       <section className={cn("flex w-full flex-col border-r bg-card md:w-[380px] md:shrink-0", c && "hidden md:flex")} aria-label="Conversations">
-        <div className="space-y-2 border-b p-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold">Inbox</h1>
-            <Button size="sm" onClick={() => setNewOpen(true)}><Plus /> New</Button>
+        <div className="space-y-2 border-b px-3 py-2">
+          <div className="flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="h-9 pl-8 text-sm" placeholder="Search inbox" value={term} onChange={(e) => setTerm(e.target.value)} aria-label="Search conversations" />
+            </div>
+            <Button size="sm" variant={showFilters || activeFilters ? "secondary" : "outline"} className="h-9 shrink-0 px-2.5" onClick={() => setShowFilters((s) => !s)} aria-expanded={showFilters}>
+              <SlidersHorizontal />{activeFilters > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{activeFilters}</span>}
+            </Button>
+            <Button size="sm" className="h-9 shrink-0 px-2.5" onClick={() => setNewOpen(true)} aria-label="New conversation"><Plus /><span className="hidden sm:inline">New</span></Button>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Name, email, phone, message, booking ref" value={term} onChange={(e) => setTerm(e.target.value)} aria-label="Search conversations" />
+          <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-0.5 [scrollbar-width:none]">
+            {(["all", "mine", "unread", "unassigned", "open", "waiting_team", "high"] as FilterKey[]).map((k) => (
+              <button key={k} onClick={() => { setFilter(k); setLimit(40); }} className={cn("shrink-0 rounded-full border px-3 py-1 text-xs font-medium", filter === k ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground")}>
+                {k === "all" ? "All" : k === "high" ? "High priority" : FILTERS[k]}
+              </button>
+            ))}
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          {showFilters && <div className="grid grid-cols-2 gap-2 pb-1">
             <NativeSelect value={filter} onChange={(e) => { setFilter(e.target.value as FilterKey); setLimit(40); }} aria-label="View" className="h-9 text-xs">
               {Object.entries(FILTERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </NativeSelect>
@@ -224,8 +235,9 @@ function InboxPage() {
               <option value="">Any label</option>
               {tags.data?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </NativeSelect>
-            <Input type="date" value={since} onChange={(e) => setSince(e.target.value)} aria-label="Active since" className="col-span-2 h-9 text-xs" title="Active since" />
-          </div>
+            <Input type="date" value={since} onChange={(e) => setSince(e.target.value)} aria-label="Active since" className="h-9 text-xs" title="Active since" />
+            <Button size="sm" variant="ghost" className="h-9" onClick={() => { setChannel(""); setAssignee(""); setLabel(""); setSince(""); setFilter("all"); }}>Clear filters</Button>
+          </div>}
         </div>
         <div className="flex-1 overflow-y-auto">
           {list.isLoading ? <ListSkeleton rows={7} /> : list.error ? <div className="p-3"><ErrorState message={(list.error as Error).message} onRetry={() => list.refetch()} /></div> :
@@ -237,7 +249,7 @@ function InboxPage() {
                   const labels = (v.conversation_tags ?? []).map((x) => x.tags).filter(Boolean) as { id: string; name: string }[];
                   return (
                     <li key={v.id}>
-                      <button onClick={() => navigate({ search: { c: v.id } })} className={cn("flex w-full gap-3 border-b px-3 py-3 text-left transition-colors hover:bg-muted/60", c === v.id && "bg-primary-soft hover:bg-primary-soft")}>
+                      <button onClick={() => navigate({ search: { c: v.id } })} className={cn("flex w-full gap-2.5 border-b px-3 py-2 text-left transition-colors hover:bg-muted/60", c === v.id && "bg-primary-soft hover:bg-primary-soft")}>
                         <div className="relative">
                           <Avatar name={v.contacts?.full_name ?? v.subject} />
                           <span className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border-2 border-card bg-card"><ChannelIcon channel={v.channel} className="size-2.5 text-muted-foreground" /></span>
@@ -248,7 +260,7 @@ function InboxPage() {
                             <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">{fmtRelative(v.last_message_at)}</span>
                           </div>
                           <div className={cn("truncate text-xs", v.unread ? "text-foreground" : "text-muted-foreground")}>{v.last_message_preview ?? "No messages yet"}</div>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                          <div className="mt-1 flex items-center gap-1 overflow-hidden [&>*]:shrink-0">
                             <ToneBadge tone={STATUS_META[v.status].tone}>{STATUS_META[v.status].label}</ToneBadge>
                             {(v.priority === "high" || v.priority === "urgent") && <ToneBadge tone={PRIORITY_META[v.priority].tone}>{PRIORITY_META[v.priority].label}</ToneBadge>}
                             {v.escalated && <ToneBadge tone="danger">Escalated</ToneBadge>}
@@ -257,7 +269,7 @@ function InboxPage() {
                             {v.booking_id && <CalendarCheck className="size-3 text-success" aria-label="Has booking" />}
                             {labels.slice(0, 2).map((t) => <ToneBadge key={t.id} tone="muted">{t.name}</ToneBadge>)}
                             <SampleBadge show={v.is_demo} />
-                            <span className="ml-auto truncate text-[11px] text-muted-foreground">{v.assigned_to ? ws.memberName(v.assigned_to) : "Unassigned"}</span>
+                            <span className="ml-auto !shrink truncate text-[11px] text-muted-foreground">{v.assigned_to ? ws.memberName(v.assigned_to) : "Unassigned"}</span>
                           </div>
                         </div>
                         {v.unread && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" aria-label="Unread" />}
