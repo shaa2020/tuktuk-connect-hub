@@ -29,6 +29,7 @@ import {
   type ChannelType, type ConversationStatus, type Priority,
 } from "@/lib/domain";
 import { cn } from "@/lib/utils";
+import { parseEmailBody, cleanSubject } from "@/lib/email-format";
 
 const FILTERS = {
   all: "All conversations", mine: "My conversations", unassigned: "Unassigned", unread: "Unread", open: "Open",
