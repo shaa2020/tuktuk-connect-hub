@@ -21,3 +21,5 @@
 - Third-party credentials live encrypted (AES-GCM, server key) in `workspace_secrets`, which has no client grants; only server functions read them after `has_ws_role` admin checks, and the UI only ever sees masked hints — secrets are never returned to browsers.
 - Meta channels ingest via `/api/public/webhooks/meta/$workspaceId` (verify token + X-Hub-Signature-256) and send via `sendChannelMessage`; only these server paths set sent/delivered/read statuses.
 - Email channel uses the linked Gmail connector server-side (email-channel.server.ts); inbox polls syncEmailNow while open since Gmail push needs Pub/Sub — keeps setup credential-free.
+
+- Invite-only access: public signup disabled (auth config); /auth is sign-in + reset only; new accounts are created server-side by redeemInvitation (src/lib/invite.functions.ts) when a valid invitation token is opened, then the invitee sets their password via a reset email.
