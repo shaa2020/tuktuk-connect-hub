@@ -34,7 +34,7 @@ Everything from one place, for every connected account:
 - **SLA & business-hours rules** — auto-reply outside hours, escalation when a conversation waits too long.
 - **Reports export (PDF/CSV)** — owner-ready monthly summaries: response times, bookings, revenue, channel mix.
 
-## Phase 3 — Platform polish
+## Phase 4 — Platform polish
 
 - **Platform admin console** (for you as the SaaS owner) — list all businesses, plans, usage, health; impersonate for support; platform_admins table already exists.
 - **White-label options** — each business picks its name, logo, brand color for their booking page and widget.
@@ -44,10 +44,11 @@ Everything from one place, for every connected account:
 
 ## Suggested order
 
-1. Phase 1 (signup, plans, billing) — nothing else works as a product without it.
-2. Public booking page + payments — the feature tour operators will pay for.
-3. Review requests + chat widget — retention and daily-value features.
-4. Platform admin console — needed once real customers exist.
+1. Phase 2 (full social control) — your priority; start Meta app review early since it's the long pole.
+2. Phase 1 (signup, plans, PayPal billing) — nothing else works as a product without it.
+3. Public booking page + payments — the feature tour operators will pay for.
+4. Review requests + chat widget — retention and daily-value features.
+5. Platform admin console — needed once real customers exist.
 
 ## Technical notes
 
