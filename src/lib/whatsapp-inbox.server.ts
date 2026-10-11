@@ -6,7 +6,7 @@ async function db() {
 }
 
 type Row = { id: string; event: string; payload: any; attempts: number };
-const MAX_ATTEMPTS = 30;
+const MAX_ATTEMPTS = 10;
 
 async function connectorTarget(phoneNumberId?: string) {
   const sb = await db();
@@ -29,6 +29,15 @@ async function processRow(row: Row): Promise<"done" | "pending"> {
       const text = m.text?.body ?? m.button?.text ?? m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title
         ?? (m.type ? `[${m.type} received${caption ? `: ${caption}` : ""} — open WhatsApp to view]` : "");
       await ingestInbound(ws, "whatsapp", { from: m.from, name: names[m.from], externalMessageId: m.id, text, at: m.timestamp ? new Date(Number(m.timestamp) * 1000) : undefined, connectionId: target.id });
+    }
+    return "done";
+  }
+  if (row.event === "whatsapp.smb_message_echoes") {
+    // Replies typed in the WhatsApp Business app on the phone: show them in the conversation.
+    for (const m of v.message_echoes ?? []) {
+      if (!m.to || !m.id) continue;
+      const text = m.text?.body ?? (m.type ? `[${m.type} sent from the WhatsApp app]` : "");
+      await ingestInbound(ws, "whatsapp", { from: m.to, externalMessageId: m.id, text, at: m.timestamp ? new Date(Number(m.timestamp) * 1000) : undefined, connectionId: target.id, direction: "outbound" });
     }
     return "done";
   }

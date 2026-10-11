@@ -1,4 +1,14 @@
 # Roadmap
+## Audit backlog (2026-10-11)
+- [x] T1 Two-step gate fails closed
+- [x] T2 No self-disable; add-new-phone flow; admin reset (audited)
+- [x] T3 WhatsApp phone-app replies shown in inbox
+- [x] T4 Stuck webhook events capped at 10 attempts
+- [ ] T5 Scheduled background sync (Gmail/website) with app closed
+- [ ] T6 Deleted website bookings must not return
+- [ ] T7 Phone check of every page
+- [ ] T8 BLOCKED: Agent-role test needs a second invited account
+- [ ] T9–T19 see archived audit plan (social comments/posting, Meta, AI key, email domain, prices)
 - [x] Knowledge Base
 - [x] AI settings + AI Assistant page
 - [x] AI in inbox: draft reply, translate, summarize
