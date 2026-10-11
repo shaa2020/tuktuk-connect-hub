@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Home, Inbox, Users, Target, CalendarCheck, CheckSquare, Workflow, Sparkles, BarChart3,
-  UsersRound, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
+  UsersRound, Truck, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -21,6 +21,7 @@ export const NAV: NavItem[] = [
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/leads", label: "Leads", icon: Target },
   { to: "/bookings", label: "Bookings", icon: CalendarCheck },
+  { to: "/dispatch", label: "Tour Calendar", icon: Truck },
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/automations", label: "Automations", icon: Workflow },
   { to: "/ai", label: "AI Assistant", icon: Sparkles },

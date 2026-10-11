@@ -29,6 +29,13 @@
       "when": 1791653205517,
       "tag": "0003_byo_ai_and_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791680773393,
+      "tag": "0004_fleet_dispatch",
+      "breakpoints": true
     }
   ]
 }

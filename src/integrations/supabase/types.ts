@@ -224,6 +224,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          dispatch_status: string
+          driver_id: string | null
           duration_minutes: number | null
           external_reference: string | null
           guests: number | null
@@ -242,6 +244,7 @@ export type Database = {
           tour_date: string | null
           tour_name: string
           updated_at: string
+          vehicle_id: string | null
           workspace_id: string
         }
         Insert: {
@@ -250,6 +253,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          dispatch_status?: string
+          driver_id?: string | null
           duration_minutes?: number | null
           external_reference?: string | null
           guests?: number | null
@@ -268,6 +273,7 @@ export type Database = {
           tour_date?: string | null
           tour_name: string
           updated_at?: string
+          vehicle_id?: string | null
           workspace_id: string
         }
         Update: {
@@ -276,6 +282,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          dispatch_status?: string
+          driver_id?: string | null
           duration_minutes?: number | null
           external_reference?: string | null
           guests?: number | null
@@ -294,6 +302,7 @@ export type Database = {
           tour_date?: string | null
           tour_name?: string
           updated_at?: string
+          vehicle_id?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -305,10 +314,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
           {
@@ -1576,6 +1599,44 @@ export type Database = {
           },
           {
             foreignKeyName: "tasks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          plate: string | null
+          seats: number
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          plate?: string | null
+          seats?: number
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          plate?: string | null
+          seats?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
