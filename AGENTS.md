@@ -28,3 +28,4 @@
 - Extra Gmail inboxes use IMAP/SMTP over node:tls with a Gmail App Password stored encrypted as gmail_pass:<connectionId>; rows have config.mode='imap' — the Lovable Gmail connector only supports one account.
 - WhatsApp primary number uses the Lovable WhatsApp connector (config.mode='connector'): sends via connector gateway, receives at /api/public/whatsapp/webhook into the durable whatsapp_webhook_events inbox with bounded retry — no Meta tokens stored.
 - WhatsApp templates are read live from the connector (/message_templates) and sent only if APPROVED; the 24h-window check (src/lib/wa-templates.ts) is UI guidance — Meta remains the enforcer.
+- MFA: TOTP two-step sign-in is mandatory for all team accounts — MfaGate (src/components/mfa-gate.tsx) wraps the _authenticated layout, forcing enrollment when no verified factor exists and challenge/verify when the session is aal1; management UI lives in Settings (MfaSettingsPanel).
