@@ -24,7 +24,26 @@ export async function testMeta(channel: MetaChannel, config: Record<string, stri
 /** Secret kind for one connection's token; older single-account tokens use the plain kind. */
 export const tokenKind = (channel: MetaChannel, connectionId?: string | null) => connectionId ? `${TOKEN_KIND[channel]}:${connectionId}` : TOKEN_KIND[channel];
 
+/** WhatsApp via the built-in Lovable connector (no Meta token stored by us). */
+export async function sendWhatsAppConnector(to: string, body: string) {
+  const lk = process.env.LOVABLE_API_KEY, wk = process.env.WHATSAPP_API_KEY;
+  if (!lk || !wk) throw new Error("WhatsApp connection is not configured on the server.");
+  const res = await fetch("https://connector-gateway.lovable.dev/whatsapp/messages", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${lk}`, "X-Connection-Api-Key": wk, "Content-Type": "application/json" },
+    body: JSON.stringify({ messaging_product: "whatsapp", to: to.replace(/\D/g, ""), type: "text", text: { body } }),
+  });
+  const txt = await res.text();
+  if (!res.ok) {
+    let m = txt; try { m = JSON.parse(txt)?.error?.message ?? txt; } catch { /* keep raw */ }
+    if (/24|re-engagement|131047/i.test(m)) m = "WhatsApp only allows free replies within 24 hours of the guest's last message. " + m;
+    throw new Error(`WhatsApp (${res.status}): ${m}`.slice(0, 300));
+  }
+  return JSON.parse(txt)?.messages?.[0]?.id as string;
+}
+
 export async function sendMeta(ws: string, channel: MetaChannel, config: Record<string, string>, to: string, body: string, connectionId?: string | null) {
+  if (channel === "whatsapp" && config.mode === "connector") return sendWhatsAppConnector(to, body);
   const token = (connectionId && (await getSecret(ws, tokenKind(channel, connectionId)))) || (await getSecret(ws, TOKEN_KIND[channel]));
   if (!token) throw new Error("Channel credentials are missing.");
   const url = channel === "whatsapp" ? `${GRAPH}/${config.phone_number_id}/messages` : `${GRAPH}/me/messages`;
@@ -69,15 +88,18 @@ export async function ingestInbound(ws: string, channel: MetaChannel | "email", 
 }
 
 const STATUS_MAP: Record<string, "sent" | "delivered" | "read" | "failed"> = { sent: "sent", delivered: "delivered", read: "read", failed: "failed" };
-export async function applyStatus(ws: string, externalId: string, status: string, eventId: string, detail?: string) {
+/** Returns false when the outbound message isn't saved yet (caller may retry later). */
+export async function applyStatus(ws: string, externalId: string, status: string, eventId: string, detail?: string): Promise<boolean> {
   const s = STATUS_MAP[status];
-  if (!s) return;
+  if (!s) return true;
   const sb = await db();
   const { data: m } = await sb.from("messages").select("id, status").eq("workspace_id", ws).eq("external_id", externalId).maybeSingle();
-  if (!m) return;
+  if (!m) return false;
   const rank = { logged: 0, queued: 0, sending: 0, sent: 1, delivered: 2, read: 3, failed: 4 } as Record<string, number>;
-  await sb.from("message_delivery_events").insert({ workspace_id: ws, message_id: m.id, status: s, provider_event_id: eventId, detail: detail ?? null });
+  const { error } = await sb.from("message_delivery_events").insert({ workspace_id: ws, message_id: m.id, status: s, provider_event_id: eventId, detail: detail ?? null });
+  if (error && error.code !== "23505") throw error;
   if ((rank[s] ?? 0) > (rank[m.status] ?? 0)) await sb.from("messages").update({ status: s, error_message: s === "failed" ? (detail ?? "Delivery failed").slice(0, 300) : null }).eq("id", m.id);
+  return true;
 }
 
 /** Finds which connected account received a webhook event (by phone number / page / IG account ID). */
