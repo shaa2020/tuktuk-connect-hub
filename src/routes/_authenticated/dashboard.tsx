@@ -149,7 +149,7 @@ function Dashboard() {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat icon={<MessageSquare />} label="Conversations" value={s?.total} hint={RANGES[range]} />
             <Stat icon={<Inbox />} label="Open" value={s?.open} />
-            <Stat icon={<Clock />} label="Avg. first response" value={s ? (s.frt_samples ? fmtMinutes(s.avg_frt_minutes) : "Not enough data") : undefined} hint={s?.frt_samples ? `${s.frt_samples} conversations` : "Needs logged customer messages and replies"} small />
+            <Stat icon={<Clock />} label="Avg. first response" value={s ? (s.frt_samples && (s.avg_frt_minutes ?? 0) >= 0 ? fmtMinutes(s.avg_frt_minutes) : "Not enough data") : undefined} hint={s?.frt_samples ? `${s.frt_samples} conversations` : "Needs logged customer messages and replies"} small />
             <Stat icon={<CheckSquare />} label="Avg. resolution" value={s ? (s.res_samples ? fmtMinutes(s.avg_res_minutes) : "Not enough data") : undefined} hint={s?.res_samples ? `${s.res_samples} resolved` : undefined} small />
             <Stat icon={<Target />} label="New leads" value={s?.new_leads} hint={s?.followup_leads ? `${s.followup_leads} need follow-up` : "No follow-ups due"} />
             <Stat icon={<CalendarCheck />} label="Upcoming bookings" value={s?.upcoming_bookings} hint="Next 14 days" />
