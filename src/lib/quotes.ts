@@ -4,6 +4,8 @@ export type TourPackage = {
   durationMinutes: number;
   pricePerTuk: number; // EUR, per tuk tuk (not per person)
   maxGuestsPerTuk: number;
+  /** per_tuk (default): price × tuks. per_person: price × guests. */
+  pricing?: "per_tuk" | "per_person";
   highlights: string[];
 };
 
@@ -21,10 +23,11 @@ export function tuksNeeded(guests: number, perTuk: number): number {
 
 export function quoteTotal(pkg: TourPackage, guests: number): { tuks: number; total: number } {
   const tuks = tuksNeeded(guests, pkg.maxGuestsPerTuk);
-  return { tuks, total: tuks * pkg.pricePerTuk };
+  const total = pkg.pricing === "per_person" ? Math.max(guests, 1) * pkg.pricePerTuk : tuks * pkg.pricePerTuk;
+  return { tuks, total };
 }
 
-const fmtDur = (m: number) => (m % 60 === 0 ? `${m / 60}h` : `${Math.floor(m / 60)}h${m % 60}`);
+const fmtDur = (m: number) => (m <= 0 ? "flexible" : m % 60 === 0 ? `${m / 60}h` : `${Math.floor(m / 60)}h${m % 60}`);
 
 /** Ready-to-send booking summary the agent reviews before sending. */
 export function formatQuote(pkg: TourPackage, guests: number, date: string, time: string, pickup: string): string {
@@ -42,4 +45,12 @@ export function formatQuote(pkg: TourPackage, guests: number, date: string, time
   lines.push(``, `Total: €${total} (all taxes included)`);
   lines.push(``, `Reply YES to confirm and we'll reserve your tuk tuk. Any questions, just ask! ☀️`);
   return lines.join("\n");
+}
+
+/** "90 minutes", "1.5 Hours", "1 hour", "On-demand" → minutes (0 when unknown). */
+export function parseDurationMinutes(s: string): number {
+  const m = s.toLowerCase().match(/([\d.]+)\s*(h|hour|hours|min|minute|minutes)/);
+  if (!m) return 0;
+  const n = parseFloat(m[1]!);
+  return Math.round(m[2]!.startsWith("h") ? n * 60 : n);
 }

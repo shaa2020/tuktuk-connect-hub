@@ -7,6 +7,7 @@ import {
   MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
+import { listWebsiteTours } from "@/lib/website.functions";
 import { windowOpen } from "@/lib/wa-templates";
 import { TemplateSender } from "@/components/wa-templates";
 import { toast } from "sonner";
@@ -574,7 +575,7 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         <Button size="sm" variant="outline" onClick={() => runAi("draft")} disabled={!!aiBusy}>{aiBusy === "draft" ? <Loader2 className="animate-spin" /> : <Sparkles />}Draft reply</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("summarize")} disabled={!!aiBusy}>{aiBusy === "summarize" ? <Loader2 className="animate-spin" /> : <Sparkles />}Summarize</Button>
         <Button size="sm" variant="outline" onClick={() => runAi("translate")} disabled={!!aiBusy || !text.trim()} title="Translate the text in the box into the guest's language">{aiBusy === "translate" ? <Loader2 className="animate-spin" /> : <Languages />}Translate</Button>
-        <QuoteButton onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
+        <QuoteButton workspaceId={ws.workspaceId} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
         {waTemplates && <TemplateSender workspaceId={ws.workspaceId} conversationId={conversationId} highlight={waClosed} />}
       </div>
       <div className={cn("flex items-end gap-2 rounded-xl border p-1.5", mode === "note" && "border-note-border bg-note")}>
@@ -603,14 +604,17 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
   );
 }
 
-function QuoteButton({ onInsert }: { onInsert: (quote: string) => void }) {
+function QuoteButton({ onInsert, workspaceId }: { onInsert: (quote: string) => void; workspaceId?: string }) {
   const [open, setOpen] = useState(false);
-  const [pkgId, setPkgId] = useState(TOUR_PACKAGES[0]!.id);
+  const listTours = useServerFn(listWebsiteTours);
+  const live = useQuery({ queryKey: ["website-tours", workspaceId], enabled: open && !!workspaceId, staleTime: 5 * 60_000, queryFn: () => listTours({ data: { workspaceId: workspaceId! } }) });
+  const packages = live.data?.ok && live.data.tours.length ? live.data.tours : TOUR_PACKAGES;
+  const [pkgId, setPkgId] = useState("");
   const [guests, setGuests] = useState("2");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [pickup, setPickup] = useState("");
-  const pkg = TOUR_PACKAGES.find((p) => p.id === pkgId) ?? TOUR_PACKAGES[0]!;
+  const pkg = packages.find((p) => p.id === pkgId) ?? packages[0]!;
   const g = Math.max(1, Number(guests) || 1);
   const { tuks, total } = quoteTotal(pkg, g);
   return (
@@ -620,8 +624,9 @@ function QuoteButton({ onInsert }: { onInsert: (quote: string) => void }) {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-3" align="start">
         <div className="space-y-2">
-          <NativeSelect aria-label="Tour" value={pkgId} onChange={(e) => setPkgId(e.target.value)}>
-            {TOUR_PACKAGES.map((p) => <option key={p.id} value={p.id}>{p.name} · €{p.pricePerTuk}/tuk tuk</option>)}
+          <p className="text-[11px] text-muted-foreground">{live.isFetching ? "Loading live prices from your website…" : packages === TOUR_PACKAGES ? "Sample prices — website prices unavailable" : "Live prices from tuktuk24lisbon.com"}</p>
+          <NativeSelect aria-label="Tour" value={pkg.id} onChange={(e) => setPkgId(e.target.value)}>
+            {packages.map((p) => <option key={p.id} value={p.id}>{p.name} · €{p.pricePerTuk}/{p.pricing === "per_person" ? "person" : "tuk tuk"}</option>)}
           </NativeSelect>
           <div className="grid grid-cols-2 gap-2">
             <Input type="number" min={1} max={40} value={guests} onChange={(e) => setGuests(e.target.value)} aria-label="Guests" placeholder="Guests" />
