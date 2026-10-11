@@ -18,8 +18,12 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         const event = request.headers.get("x-lovable-event") ?? "";
         if (!deliveryId || !event) return new Response("Missing headers", { status: 400 });
         const { receive } = await import("@/lib/whatsapp-inbox.server");
-        const status = await receive(deliveryId.slice(0, 200), event.slice(0, 100), payload);
-        return new Response(status === 200 ? "OK" : "Error", { status });
+        const result = await receive(deliveryId.slice(0, 200), event.slice(0, 100), payload);
+        // New guest message: let the AI Operator answer immediately instead of waiting for the next job run.
+        if (result.status === 200 && result.liveInboundWorkspace) {
+          try { await (await import("@/lib/ai-operator.server")).runOperatorFor(result.liveInboundWorkspace); } catch { /* the periodic job retries */ }
+        }
+        return new Response(result.status === 200 ? "OK" : "Error", { status: result.status });
       },
     },
   },
