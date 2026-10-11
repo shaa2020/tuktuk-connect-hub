@@ -27,6 +27,7 @@ export const NAV: NavItem[] = [
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/automations", label: "Automations", icon: Workflow },
   { to: "/ai", label: "AI Assistant", icon: Sparkles },
+  { to: "/social", label: "Social Planner", icon: CalendarClock },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/team", label: "Team", icon: UsersRound },
   { to: "/integrations", label: "Integrations", icon: Plug },
@@ -34,6 +35,7 @@ export const NAV: NavItem[] = [
   { to: "/notifications", label: "Notifications", icon: Bell, badge: "notif" },
   { to: "/settings", label: "Settings", icon: Settings },
   { to: "/audit", label: "Audit Log", icon: ScrollText, audit: true },
+  { to: "/platform", label: "Platform", icon: ShieldCheck, platform: true },
 ];
 const MOBILE_MAIN = ["/dashboard", "/inbox", "/contacts", "/leads"];
 
