@@ -10,7 +10,7 @@ export const DISPATCH_LABEL: Record<DispatchStatus, string> = {
 
 export function nextDispatch(s: DispatchStatus): DispatchStatus | null {
   const i = DISPATCH_FLOW.indexOf(s);
-  return i >= 0 && i < DISPATCH_FLOW.length - 1 ? DISPATCH_FLOW[i + 1] : null;
+  return i >= 0 && i < DISPATCH_FLOW.length - 1 ? (DISPATCH_FLOW[i + 1] ?? null) : null;
 }
 
 export type Slot = {
@@ -26,7 +26,7 @@ export type Slot = {
 /** Minutes from midnight for "HH:MM[:SS]". */
 export function toMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);
-  return h * 60 + (m || 0);
+  return (h ?? 0) * 60 + (m || 0);
 }
 
 function range(s: Slot): [number, number] | null {
@@ -41,7 +41,7 @@ export function findConflicts(slots: Slot[]): Map<string, string[]> {
   const live = slots.filter((s) => s.status !== "cancelled");
   for (let i = 0; i < live.length; i++) {
     for (let j = i + 1; j < live.length; j++) {
-      const a = live[i], b = live[j];
+      const a = live[i]!, b = live[j]!;
       if (a.tour_date !== b.tour_date) continue;
       const ra = range(a), rb = range(b);
       if (!ra || !rb || !(ra[0] < rb[1] && rb[0] < ra[1])) continue;
