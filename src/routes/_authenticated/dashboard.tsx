@@ -96,11 +96,11 @@ function Dashboard() {
               <h2 className="text-sm font-semibold">By channel</h2>
               <ChartOrEmpty data={Object.entries(s?.by_channel ?? {}).map(([k, v]) => ({ name: CHANNEL_LABEL[k as ChannelType] ?? k, value: v }))} loading={!s} kind="pie" />
             </Panel>
-            <Panel className="p-4">
+            <Panel className="min-w-0 overflow-hidden p-4">
               <h2 className="text-sm font-semibold">By status</h2>
               <ChartOrEmpty data={Object.entries(s?.by_status ?? {}).map(([k, v]) => ({ name: STATUS_META[k as ConversationStatus]?.label ?? k, value: v }))} loading={!s} kind="bar" />
             </Panel>
-            <Panel className="p-4">
+            <Panel className="min-w-0 overflow-hidden p-4">
               <h2 className="mb-3 text-sm font-semibold">Team workload <span className="font-normal text-muted-foreground">(open now)</span></h2>
               {!s ? <Skeleton className="h-32" /> : !s.workload.length ? <p className="py-8 text-center text-sm text-muted-foreground">No open conversations.</p> : (
                 <ul className="space-y-2">
@@ -118,13 +118,13 @@ function Dashboard() {
             </Panel>
           </div>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
-            <Panel className="lg:col-span-1">
+          <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-3">
+            <Panel className="min-w-0 overflow-hidden lg:col-span-1">
               <div className="flex items-center justify-between border-b px-4 py-3"><h2 className="text-sm font-semibold">Recent customer activity</h2><Link to="/inbox" className="text-xs font-medium text-primary">Inbox</Link></div>
               {activity.isLoading ? <div className="p-4"><Skeleton className="h-24" /></div> : !activity.data?.conv.length ? <p className="px-4 py-6 text-sm text-muted-foreground">No conversations yet.</p> : (
                 <ul className="divide-y">{activity.data.conv.map((c) => (
                   <li key={c.id}><Link to="/inbox" search={{ c: c.id }} className="block px-4 py-2.5 hover:bg-muted/60">
-                    <div className="flex justify-between gap-2 text-sm"><span className="truncate font-medium">{c.contacts?.full_name ?? "Unknown customer"}</span><span className="shrink-0 text-xs text-muted-foreground">{fmtRelative(c.last_message_at)}</span></div>
+                    <div className="flex justify-between gap-2 text-sm"><span className="min-w-0 truncate font-medium">{c.contacts?.full_name ?? "Unknown customer"}</span><span className="shrink-0 text-xs text-muted-foreground">{fmtRelative(c.last_message_at)}</span></div>
                     <div className="truncate text-xs text-muted-foreground">{c.last_message_preview}</div>
                   </Link></li>
                 ))}</ul>
