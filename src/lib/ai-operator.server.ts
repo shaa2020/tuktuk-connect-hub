@@ -49,7 +49,8 @@ export async function runOperatorFor(ws: string, opts: { force?: boolean } = {})
       const { data: last } = await sb.from("messages").select("id").eq("conversation_id", c.id).eq("direction", "inbound").order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (!last) continue;
       const { data: mark } = await sb.from("ai_operator_marks").select("*").eq("conversation_id", c.id).maybeSingle();
-      if (mark?.last_inbound_id === last.id || mark?.handed_off) continue;
+      // A previous handoff never silences the chat: every new guest message gets an answer.
+      if (mark?.last_inbound_id === last.id) continue;
       handled++;
       const r = await handleConversation(sb, ws, s, ai, kb, c, mark?.replies ?? 0);
       await sb.from("ai_operator_marks").upsert({ conversation_id: c.id, workspace_id: ws, last_inbound_id: last.id, replies: r.replies, handed_off: r.handedOff, updated_at: new Date().toISOString() });
