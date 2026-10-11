@@ -29,7 +29,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 const addDays = (s: string, n: number) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
 const endTime = (start: string, mins: number | null) => {
   const [h, m] = start.split(":").map(Number);
-  const t = h * 60 + m + (mins ?? 60);
+  const t = (h ?? 0) * 60 + (m ?? 0) + (mins ?? 60);
   return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 };
 const DOT: Record<DispatchStatus, string> = { scheduled: "bg-muted-foreground", dispatched: "bg-primary", on_tour: "bg-accent-foreground", done: "bg-success" };
