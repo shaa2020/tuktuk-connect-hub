@@ -1,10 +1,15 @@
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.png";
 
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl bg-primary font-display text-sm font-extrabold text-primary-foreground", className)}>
-      24
-    </div>
+    <img
+      src={logo}
+      alt="Tuk Tuk 24 Lisbon"
+      width={36}
+      height={36}
+      className={cn("h-9 w-9 shrink-0 rounded-xl object-cover shadow-sm", className)}
+    />
   );
 }
 
