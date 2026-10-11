@@ -148,48 +148,12 @@ export const sendChannelMessage = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ conversationId: z.string().uuid(), body: z.string().trim().min(1).max(4096) }).parse(d))
   .handler(async ({ data, context }) => {
     // RLS: only returns the conversation if the caller may see it
-    const { data: conv } = await context.supabase.from("conversations").select("id, workspace_id, channel, connection_id").eq("id", data.conversationId).maybeSingle();
+    const { data: conv } = await context.supabase.from("conversations").select("id").eq("id", data.conversationId).maybeSingle();
     if (!conv) return { ok: false as const, error: "Conversation not found or not accessible." };
-    if (!["whatsapp", "messenger", "instagram", "email"].includes(conv.channel)) return { ok: false as const, error: "This channel can't send messages." };
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { sendMeta } = await import("./channels.server");
-    const [{ data: cc }, { data: part }] = await Promise.all([
-      conv.connection_id
-        ? supabaseAdmin.from("channel_connections").select("id, status, config").eq("id", conv.connection_id).maybeSingle()
-        : supabaseAdmin.from("channel_connections").select("id, status, config").eq("workspace_id", conv.workspace_id).eq("channel", conv.channel).eq("status", "connected").limit(1).maybeSingle(),
-      supabaseAdmin.from("conversation_participants").select("external_identities(external_id)").eq("conversation_id", conv.id).limit(1).maybeSingle(),
-    ]);
-    if (cc?.status !== "connected") return { ok: false as const, error: "This channel isn't connected." };
-    const to = (part as any)?.external_identities?.external_id as string | undefined;
-    if (!to) return { ok: false as const, error: "No customer address for this conversation." };
-    try {
-      const cfg = (cc.config ?? {}) as Record<string, string>;
-      const extId = conv.channel === "email" && cfg.mode === "imap"
-        ? await sendViaApp(conv.workspace_id, conv.id, cc.id, cfg, to, data.body)
-        : conv.channel === "email"
-        ? await (await import("./email-channel.server")).sendEmail(conv.workspace_id, conv.id, to, data.body)
-        : await sendMeta(conv.workspace_id, conv.channel as any, cc.config as Record<string, string>, to, data.body, cc.id);
-      await supabaseAdmin.from("messages").insert({ workspace_id: conv.workspace_id, conversation_id: conv.id, direction: "outbound", body: data.body, status: "sent", external_id: extId ?? null, author_id: context.userId });
-      if (conv.channel === "whatsapp") await (await import("./whatsapp-inbox.server")).recover().catch(() => {}); // apply early delivery callbacks
-      return { ok: true as const };
-    } catch (e) {
-      const msg = (e as Error).message;
-      await supabaseAdmin.from("messages").insert({ workspace_id: conv.workspace_id, conversation_id: conv.id, direction: "outbound", body: data.body, status: "failed", error_message: msg, author_id: context.userId });
-      return { ok: false as const, error: msg };
-    }
+    const { sendToConversation } = await import("./outbound.server");
+    const r = await sendToConversation(conv.id, data.body, context.userId);
+    return r.ok ? { ok: true as const } : { ok: false as const, error: r.error };
   });
-
-async function sendViaApp(ws: string, convId: string, connId: string, cfg: Record<string, string>, to: string, body: string) {
-  const { getSecret } = await import("./secrets.server");
-  const { passKind, sendSmtp } = await import("./imap-mail.server");
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const pass = await getSecret(ws, passKind(connId));
-  if (!pass) throw new Error("This Gmail account needs its app password again.");
-  const { data: last } = await supabaseAdmin.from("messages").select("body").eq("conversation_id", convId).eq("direction", "inbound").order("created_at", { ascending: false }).limit(1).maybeSingle();
-  const s = /^Subject: (.+)/.exec(last?.body ?? "")?.[1]?.trim();
-  const subject = s ? (/^re:/i.test(s) ? s : `Re: ${s}`) : "Tuk Tuk 24 Lisbon";
-  return `im-out:${await sendSmtp(cfg.address ?? "", pass, to, subject, body, "Tuk Tuk 24 Lisbon")}`;
-}
 
 async function saveEmailRow(sb: any, ws: string, fields: Record<string, unknown>) {
   const { data: row } = await sb.from("channel_connections").select("id").eq("workspace_id", ws).eq("channel", "email").is("config->>mode", null).limit(1).maybeSingle();

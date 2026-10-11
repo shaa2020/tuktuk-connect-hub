@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Confirm, Field, NativeSelect, fmtDateTime } from "@/components/kit";
 import { MemberSelect } from "@/components/pickers";
 import { CHANNEL_LABEL, type ChannelType } from "@/lib/domain";
+import { AiOperatorPanel } from "@/components/ai-operator-panel";
 
 export const Route = createFileRoute("/_authenticated/automations")({
   head: () => ({ meta: [{ title: "Automations — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Automatic assignment rules." }] }),
@@ -64,7 +65,9 @@ function AutomationsPage() {
 
   return (
     <PageContainer className="max-w-3xl">
-      <PageHeader title="Automations" description="Automatically assign new, unassigned conversations. Rules run in order; the first match wins." />
+      <PageHeader title="Automations" description="Let the AI Operator run things while you're away, and set simple auto-assign rules." />
+      <AiOperatorPanel />
+      <h2 className="mb-2 text-sm font-semibold text-muted-foreground">Auto-assign rules</h2>
       {admin && (
         <Panel className="mb-4 space-y-3 p-4">
           <h2 className="text-sm font-semibold">New auto-assign rule</h2>

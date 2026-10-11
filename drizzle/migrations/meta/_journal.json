@@ -92,6 +92,13 @@
       "when": 1791757450910,
       "tag": "0012_saas_foundations_social_posts",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791760163089,
+      "tag": "0013_ai_operator",
+      "breakpoints": true
     }
   ]
 }

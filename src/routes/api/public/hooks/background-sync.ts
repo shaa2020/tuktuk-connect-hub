@@ -21,6 +21,7 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
           try { r.email = await syncAllEmailFor(w.id); } catch (e) { r.emailError = (e as Error).message.slice(0, 200); }
           try { r.bookings = await syncWebsiteBookingsFor(sb, w.id, null); } catch (e) { r.bookingsError = (e as Error).message.slice(0, 200); }
           try { r.alerts = await alertBrokenChannels(w.id); } catch { /* next run */ }
+          try { r.operator = await (await import("@/lib/ai-operator.server")).runOperatorFor(w.id); } catch (e) { r.operatorError = (e as Error).message.slice(0, 200); }
           out[w.id] = r;
         }
         try { await recover(); } catch { /* retried next run */ }

@@ -17,7 +17,9 @@
 - Protected pages live under `src/routes/_authenticated/` (client-only gate, redirect to `/auth`).
 - Sample data is flagged `is_demo` and labelled "[SAMPLE]" — never mixed with real records.
 - tsconfig relaxes exactOptionalPropertyTypes / noPropertyAccessFromIndexSignature / noImplicitReturns — generated DB types are incompatible with them.
-- AI calls go through `src/lib/ai.functions.ts` (requireSupabaseAuth, RLS-scoped reads) → `ai-gateway.server.ts` (streamed Responses API); output is always shown as a labelled suggestion, never auto-sent.
+- AI calls go through `src/lib/ai.functions.ts` (requireSupabaseAuth, RLS-scoped reads) → `ai-gateway.server.ts` (streamed Responses API); output is a labelled suggestion, never auto-sent — except the AI Operator.
+- AI Operator (src/lib/ai-operator.server.ts) auto-acts only while an admin/manager has Away mode on, with per-action toggles; runs in the 5-min background job with a DB lease, per-message marks, a reply cap, 402/403 pause, and logs every action to ai_operator_log — keeps autonomy bounded and auditable.
+- Outbound sends share src/lib/outbound.server.ts so team and operator replies use the same channel routing.
 - Automations are evaluated in a DB trigger on conversation insert and logged to `automation_runs`.
 - Third-party credentials live encrypted (AES-GCM, server key) in `workspace_secrets`, which has no client grants; only server functions read them after `has_ws_role` admin checks, and the UI only ever sees masked hints — secrets are never returned to browsers.
 - Meta channels ingest via `/api/public/webhooks/meta/$workspaceId` (verify token + X-Hub-Signature-256) and send via `sendChannelMessage`; only these server paths set sent/delivered/read statuses.
