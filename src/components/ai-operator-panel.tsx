@@ -76,7 +76,7 @@ export function AiOperatorPanel() {
     q.refetch(); log.refetch();
   }
 
-  if (q.isLoading) return <Panel className="mb-4 h-40 animate-pulse" />;
+  if (q.isLoading) return <Panel className="mb-4 h-40 animate-pulse">{null}</Panel>;
   const on = form.away_mode;
 
   return (
