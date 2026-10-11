@@ -82,6 +82,11 @@ Live "someone else is replying" indicator, driver-only view, automatic review re
 | T14 | Rate limit on the message receivers | P3 | S | — |
 | T15 | Customer data export and retention policy | P3 | M | — |
 | T16 | Presence and collision warning; driver view | P4 | L | — |
+| T17 | Social media management: Instagram and Facebook comments in the shared inbox (read, reply, hide) | P2 | M | T10 (Meta app with comment permissions) |
+| T18 | Post scheduler: write, schedule and publish posts to Instagram and your Facebook Page, with a content calendar | P3 | L | T10 plus Meta app review for publishing permissions |
+| T19 | Google Business reviews: read and reply | P3 | M | Google Business Profile access |
+
+**About social media management (T17 to T19):** none of this exists today. The app currently handles private messages only. Comments and posting go through the same Meta app as Instagram and Messenger messages, but they need extra permissions that Meta must approve (app review, which usually takes several days to a few weeks). Recommended order: comments first, because guests ask about tours in comments, then scheduled posting. TikTok posting is possible later, but TikTok has its own approval process.
 
 ## K. Phases
 1. Security: T1, T2.
