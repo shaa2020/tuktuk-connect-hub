@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncWebsiteBookings } from "@/lib/website.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ChevronLeft, ChevronRight, Globe, Plus, RefreshCw, Truck, Trash2 } from "lucide-react";
+import type React from "react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Euro, Globe, MapPin, MessageCircle, Pencil, Phone, Plus, RefreshCw, StickyNote, Truck, Trash2, User, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -26,6 +27,24 @@ export const Route = createFileRoute("/_authenticated/dispatch")({
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const addDays = (s: string, n: number) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
+const endTime = (start: string, mins: number | null) => {
+  const [h, m] = start.split(":").map(Number);
+  const t = (h ?? 0) * 60 + (m ?? 0) + (mins ?? 60);
+  return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+};
+const DOT: Record<DispatchStatus, string> = { scheduled: "bg-muted-foreground", dispatched: "bg-primary", on_tour: "bg-accent-foreground", done: "bg-success" };
+const PILL: Record<DispatchStatus, string> = { scheduled: "bg-secondary text-secondary-foreground", dispatched: "bg-primary-soft text-primary", on_tour: "bg-accent text-accent-foreground", done: "bg-success/15 text-success" };
+function Stat({ label, value, warn }: { label: string; value: number; warn?: boolean }) {
+  return (
+    <div className={cn("rounded-xl border bg-card px-3 py-2", warn && "border-destructive/40 bg-destructive/5")}>
+      <div className={cn("text-xl font-bold tabular-nums", warn && "text-destructive")}>{value}</div>
+      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return <div className="flex min-w-0 items-start gap-2"><span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span><span className="min-w-0">{children}</span></div>;
+}
 
 function DispatchPage() {
   const { workspaceId, role, members } = useWorkspace();
@@ -47,7 +66,7 @@ function DispatchPage() {
     queryKey: ["dispatch", workspaceId, day, end],
     queryFn: async () => {
       const { data, error } = await supabase.from("bookings")
-        .select("id, reference, tour_name, tour_date, start_time, duration_minutes, guests, pickup_location, status, vehicle_id, driver_id, dispatch_status, is_demo, source_system, external_reference, contacts(full_name, phone)")
+        .select("id, reference, tour_name, tour_date, start_time, duration_minutes, guests, pickup_location, status, payment_status, amount, currency, language, notes, vehicle_id, driver_id, dispatch_status, is_demo, source_system, external_reference, contacts(full_name, phone)")
         .eq("workspace_id", workspaceId).gte("tour_date", day).lte("tour_date", end)
         .order("tour_date").order("start_time", { nullsFirst: false });
       if (error) throw error;
@@ -115,49 +134,99 @@ function DispatchPage() {
       )}
 
       {tours.isLoading ? <ListSkeleton /> : tours.error ? <ErrorState message={errMsg(tours.error)} onRetry={() => tours.refetch()} /> : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {days.map((d) => {
             const list = (tours.data ?? []).filter((t) => t.tour_date === d);
+            const live = list.filter((t) => t.status !== "cancelled");
+            const pax = live.reduce((s, t) => s + (t.guests ?? 0), 0);
+            const open = live.filter((t) => !t.vehicle_id || !t.driver_id).length;
+            const vName = (id: string | null) => active.find((v) => v.id === id)?.name ?? (vehicles.data ?? []).find((v) => v.id === id)?.name;
+            const dName = (id: string | null) => { const m = members.find((x) => x.user_id === id); return m ? (m.full_name || m.email) : undefined; };
+            const sheet = () => {
+              const head = new Date(d + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+              const lines = live.map((t) => [
+                `🕐 ${t.start_time?.slice(0, 5) ?? "TBC"}${t.start_time ? `–${endTime(t.start_time, t.duration_minutes)}` : ""} · ${t.tour_name}`,
+                `👤 ${t.contacts?.full_name ?? "Guest"}${t.contacts?.phone ? ` (${t.contacts.phone})` : ""} · ${t.guests ?? "?"} guests`,
+                t.pickup_location ? `📍 ${t.pickup_location}` : null,
+                `🛺 ${vName(t.vehicle_id) ?? "No tuk tuk"} · 🧑‍✈️ ${dName(t.driver_id) ?? "No driver"}`,
+                t.notes ? `📝 ${t.notes}` : null,
+              ].filter(Boolean).join("\n"));
+              navigator.clipboard.writeText(`Tuk Tuk 24 Lisbon — ${head}\n${live.length} tours · ${pax} guests\n\n${lines.join("\n\n")}`)
+                .then(() => toast.success("Run sheet copied — paste it in WhatsApp"), () => toast.error("Could not copy"));
+            };
             return (
               <section key={d}>
-                <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
-                  {new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })} · {list.length} tours
-                </h2>
+                <div className="mb-3 flex items-end justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-primary">{d === iso(new Date()) ? "Today" : new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "long" })}</div>
+                    <h2 className="truncate text-lg font-bold">{new Date(d + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}</h2>
+                  </div>
+                  {live.length > 0 && <Button size="sm" variant="outline" className="shrink-0" onClick={sheet}><Copy /> Copy run sheet</Button>}
+                </div>
+                {list.length > 0 && (
+                  <div className="mb-3 grid grid-cols-3 gap-2">
+                    <Stat label="Tours" value={live.length} />
+                    <Stat label="Guests" value={pax} />
+                    <Stat label="Need crew" value={open} warn={open > 0} />
+                  </div>
+                )}
                 {list.length === 0 ? (
-                  view === "day" ? <EmptyState icon={<Truck />} title="No tours this day" description="Bookings with a tour date appear here." action={<Button asChild size="sm"><Link to="/bookings" search={{ new: true }}>New booking</Link></Button>} /> : null
+                  view === "day" ? <EmptyState icon={<Truck />} title="No tours this day" description="Bookings with a tour date appear here." action={<Button asChild size="sm"><Link to="/bookings" search={{ new: true }}>New booking</Link></Button>} /> : <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">No tours</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="relative space-y-3 border-l-2 border-primary/20 pl-4">
                     {list.map((t) => {
                       const c = conflicts.get(t.id);
                       const ds = (t.dispatch_status ?? "scheduled") as DispatchStatus;
                       const nx = nextDispatch(ds);
+                      const phone = t.contacts?.phone?.replace(/[^\d+]/g, "");
+                      const first = t.contacts?.full_name?.split(" ")[0] ?? "";
+                      const wa = phone ? `https://wa.me/${phone.replace(/^\+/, "")}?text=${encodeURIComponent(`Hello ${first}, this is Tuk Tuk 24 Lisbon about your ${t.tour_name} on ${new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" })}${t.start_time ? ` at ${t.start_time.slice(0, 5)}` : ""}.`)}` : null;
                       return (
-                        <Panel key={t.id} className={cn("p-3", c && "border-destructive ring-1 ring-destructive/40", t.status === "cancelled" && "opacity-50")}>
-                          <div className="flex flex-wrap items-start gap-3">
-                            <div className="w-14 shrink-0 text-center">
-                              <div className="text-lg font-bold tabular-nums">{t.start_time?.slice(0, 5) ?? "—"}</div>
-                              <div className="text-xs text-muted-foreground">{t.duration_minutes ?? 60} min</div>
+                        <Panel key={t.id} className={cn("relative overflow-hidden p-0", c && "border-destructive ring-1 ring-destructive/40", t.status === "cancelled" && "opacity-50")}>
+                          <span className={cn("absolute -left-[23px] top-5 size-3 rounded-full border-2 border-background", DOT[ds])} />
+                          <div className="flex items-stretch">
+                            <div className="flex w-20 shrink-0 flex-col items-center justify-center bg-primary-soft px-2 py-3 text-primary">
+                              <div className="text-xl font-bold tabular-nums leading-none">{t.start_time?.slice(0, 5) ?? "TBC"}</div>
+                              {t.start_time && <div className="mt-1 text-[11px] tabular-nums">to {endTime(t.start_time, t.duration_minutes)}</div>}
+                              <div className="mt-1 text-[11px] opacity-80">{t.duration_minutes ? `${t.duration_minutes} min` : "flexible"}</div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <Link to="/bookings" search={{ b: t.id }} className="font-semibold hover:underline">{t.tour_name}</Link> <SampleBadge show={t.is_demo} />
-                              {t.source_system === "website" && <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary"><Globe className="size-3" /> Website {t.external_reference}</span>}
-                              <div className="text-sm text-muted-foreground">
-                                {t.contacts?.full_name ?? "Guest"}{t.guests ? ` · ${t.guests} guests` : ""}{t.pickup_location ? ` · ${t.pickup_location}` : ""}
+                            <div className="min-w-0 flex-1 p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <Link to="/bookings" search={{ b: t.id }} className="min-w-0 font-semibold leading-snug hover:underline">{t.tour_name}</Link>
+                                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", PILL[ds])}>{DISPATCH_LABEL[ds]}</span>
                               </div>
-                              {c && <div className="mt-1 text-xs font-medium text-destructive">Double-booked {c.join(" & ")}</div>}
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                                <SampleBadge show={t.is_demo} />
+                                <span className="rounded bg-secondary px-1.5 py-0.5 font-mono">{t.reference}</span>
+                                {t.source_system === "website" && <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-1.5 py-0.5 font-semibold text-primary"><Globe className="size-3" /> Website {t.external_reference}</span>}
+                                <span className="rounded bg-secondary px-1.5 py-0.5 capitalize">{t.status}</span>
+                                {t.payment_status && <span className="rounded bg-secondary px-1.5 py-0.5 capitalize">{String(t.payment_status).replace(/_/g, " ")}</span>}
+                              </div>
+                              <dl className="mt-2 space-y-1 text-sm">
+                                <Row icon={<User className="size-3.5" />}>{t.contacts?.full_name ?? "Guest"}{t.language ? ` · ${t.language}` : ""}</Row>
+                                <Row icon={<Users className="size-3.5" />}>{t.guests ?? "?"} guests</Row>
+                                {t.pickup_location && <Row icon={<MapPin className="size-3.5" />}><a className="hover:underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.pickup_location + ", Lisbon")}`}>{t.pickup_location}</a></Row>}
+                                {t.amount != null && <Row icon={<Euro className="size-3.5" />}>{t.amount} {t.currency}</Row>}
+                                {t.notes && <Row icon={<StickyNote className="size-3.5" />}><span className="line-clamp-2">{t.notes}</span></Row>}
+                              </dl>
+                              {c && <div className="mt-2 flex items-center gap-1 text-xs font-medium text-destructive"><AlertTriangle className="size-3.5" /> Double-booked {c.join(" & ")}</div>}
                             </div>
-                            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">{DISPATCH_LABEL[ds]}</span>
                           </div>
-                          <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                          <div className="grid gap-2 border-t bg-muted/30 p-3 sm:grid-cols-2">
                             <NativeSelect aria-label="Tuk tuk" value={t.vehicle_id ?? ""} onChange={(e) => patch(t.id, { vehicle_id: e.target.value || null })}>
-                              <option value="">No tuk tuk</option>
-                              {active.map((v) => <option key={v.id} value={v.id}>{v.name}{v.plate ? ` (${v.plate})` : ""}</option>)}
+                              <option value="">🛺 No tuk tuk</option>
+                              {active.map((v) => <option key={v.id} value={v.id}>🛺 {v.name}{v.plate ? ` (${v.plate})` : ""}</option>)}
                             </NativeSelect>
                             <NativeSelect aria-label="Driver" value={t.driver_id ?? ""} onChange={(e) => patch(t.id, { driver_id: e.target.value || null })}>
-                              <option value="">No driver</option>
-                              {members.filter((m) => m.active).map((m) => <option key={m.user_id} value={m.user_id}>{m.full_name || m.email}</option>)}
+                              <option value="">🧑‍✈️ No driver</option>
+                              {members.filter((m) => m.active).map((m) => <option key={m.user_id} value={m.user_id}>🧑‍✈️ {m.full_name || m.email}</option>)}
                             </NativeSelect>
-                            {nx && <Button size="sm" onClick={() => patch(t.id, { dispatch_status: nx })}>Mark {DISPATCH_LABEL[nx].toLowerCase()}</Button>}
+                            <div className="flex flex-wrap gap-2 sm:col-span-2">
+                              {phone && <Button asChild size="sm" variant="outline"><a href={`tel:${phone}`}><Phone /> Call</a></Button>}
+                              {wa && <Button asChild size="sm" variant="outline"><a href={wa} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp</a></Button>}
+                              <Button asChild size="sm" variant="ghost"><Link to="/bookings" search={{ b: t.id }}><Pencil /> Edit</Link></Button>
+                              {nx && <Button size="sm" className="ml-auto" onClick={() => patch(t.id, { dispatch_status: nx })}>Mark {DISPATCH_LABEL[nx].toLowerCase()}</Button>}
+                            </div>
                           </div>
                         </Panel>
                       );
