@@ -1,11 +1,11 @@
+import { TT24_PLAYBOOK } from "./tt24-playbook";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const BASE = `You help the team of Tuk Tuk 24 Lisbon, a tuk-tuk tour company in Lisbon, Portugal, communicate with guests.
-Be warm, concise and professional. Never invent prices, availability, times, meeting points or policies:
-only use facts from the business knowledge provided. If a fact is missing, write a placeholder like [confirm price] for the team to fill in.
-Never claim a booking or payment is confirmed.`;
+const BASE = `You help the team of TukTuk24 (Tuk Tuk 24 Lisbon) draft replies to guests. A team member reviews every draft before sending.
+${TT24_PLAYBOOK}
+If a fact is missing from the business knowledge, write a placeholder like [confirm price] for the team to fill in.`;
 
 async function loadContext(supabase: any, workspaceId: string) {
   const [s, kb] = await Promise.all([
