@@ -70,7 +70,7 @@ export async function runOperatorFor(ws: string, opts: { force?: boolean } = {})
   // Single-flight lease.
   const now = new Date();
   const { data: lock } = await sb.from("ai_operator_settings")
-    .update({ lock_until: new Date(now.getTime() + 4 * 60_000).toISOString() })
+    .update({ lock_until: new Date(now.getTime() + 90_000).toISOString() })
     .eq("workspace_id", ws).or(`lock_until.is.null,lock_until.lt.${now.toISOString()}`).select("workspace_id");
   if (!lock?.length) return { skipped: "locked" };
 
@@ -165,7 +165,7 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
 
   const d = decisionFromRaw(raw);
   if (d.action === "handoff" && d.alert === PARSE_FAIL_ALERT) {
-    await log(sb, ws, c.id, "error", `AI answer was not readable; handed to the team. Excerpt: ${raw.slice(0, 160)}`);
+    await log(sb, ws, c.id, "parse_fail", "The AI answer could not be read, so the chat was handed to the team.", { excerpt: raw.slice(0, 300) });
   }
   let sent = 0;
 

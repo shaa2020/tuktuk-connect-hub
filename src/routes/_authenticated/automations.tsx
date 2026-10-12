@@ -14,6 +14,7 @@ import { Confirm, Field, NativeSelect, fmtDateTime } from "@/components/kit";
 import { MemberSelect } from "@/components/pickers";
 import { CHANNEL_LABEL, type ChannelType } from "@/lib/domain";
 import { AiOperatorPanel } from "@/components/ai-operator-panel";
+import { AiOperatorMonitor } from "@/components/ai-operator-monitor";
 
 export const Route = createFileRoute("/_authenticated/automations")({
   head: () => ({ meta: [{ title: "Automations — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Automatic assignment rules." }] }),
@@ -67,6 +68,7 @@ function AutomationsPage() {
     <PageContainer className="max-w-3xl">
       <PageHeader title="Automations" description="Let the AI Operator run things while you're away, and set simple auto-assign rules." />
       <AiOperatorPanel />
+      <div className="my-6"><AiOperatorMonitor /></div>
       <h2 className="mb-2 text-sm font-semibold text-muted-foreground">Auto-assign rules</h2>
       {admin && (
         <Panel className="mb-4 space-y-3 p-4">

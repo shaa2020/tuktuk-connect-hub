@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         const result = await receive(deliveryId.slice(0, 200), event.slice(0, 100), payload);
         // New guest message: let the AI Operator answer immediately instead of waiting for the next job run.
         if (result.status === 200 && result.liveInboundWorkspace) {
-          try { await (await import("@/lib/ai-operator.server")).runOperatorFor(result.liveInboundWorkspace); } catch { /* the periodic job retries */ }
+          try { const { supabaseAdmin } = await import("@/integrations/supabase/client.server"); await (supabaseAdmin as any).rpc("kick_ai_operator", { _ws: result.liveInboundWorkspace }); } catch { /* the periodic job retries */ }
         }
         return new Response(result.status === 200 ? "OK" : "Error", { status: result.status });
       },

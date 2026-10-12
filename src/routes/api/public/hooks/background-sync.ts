@@ -12,6 +12,13 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
         const { safeEqual } = await import("@/lib/secrets.server");
         const { data: row } = await sb.from("internal_job_tokens").select("token").eq("name", "background_sync").maybeSingle();
         if (!row || !safeEqual(token, row.token)) return new Response("Unauthorized", { status: 401 });
+        // Fast path: a webhook asked for an immediate AI Operator run for one workspace.
+        const body = (await request.json().catch(() => ({}))) as { operatorOnly?: unknown; workspace?: unknown };
+        if (body.operatorOnly === true && typeof body.workspace === "string" && /^[0-9a-f-]{36}$/.test(body.workspace)) {
+          let r: unknown;
+          try { r = await (await import("@/lib/ai-operator.server")).runOperatorFor(body.workspace); } catch (e) { r = { error: (e as Error).message.slice(0, 200) }; }
+          return Response.json({ ok: true, operator: r });
+        }
         const { syncAllEmailFor, syncWebsiteBookingsFor, alertBrokenChannels } = await import("@/lib/background-sync.server");
         const { recover } = await import("@/lib/whatsapp-inbox.server");
         const { data: wss } = await sb.from("workspaces").select("id");

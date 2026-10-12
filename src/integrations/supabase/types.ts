@@ -2155,6 +2155,7 @@ export type Database = {
       }
       is_member: { Args: { _ws: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      kick_ai_operator: { Args: { _ws: string }; Returns: undefined }
       load_demo_data: { Args: { _ws: string }; Returns: undefined }
       merge_contacts: {
         Args: { _keep: string; _merge: string }
