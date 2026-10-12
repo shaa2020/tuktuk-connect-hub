@@ -51,7 +51,9 @@ export function AiOperatorMonitor() {
   const shown = filter === "all" ? rows : rows.filter((r) => r.outcome === filter);
 
   return (
-    <Panel title="AI Operator monitoring" description="Every reply, handover and parsing failure, linked to its conversation.">
+    <Panel className="p-4">
+      <h2 className="text-base font-semibold">AI Operator monitoring</h2>
+      <p className="mb-3 text-sm text-muted-foreground">Every reply, handover and parsing failure, linked to its conversation.</p>
       <div className="mb-3 flex flex-wrap gap-2">
         {[1, 7, 30].map((d) => (
           <button key={d} onClick={() => setDays(d)} className={`rounded-full border px-3 py-1 text-xs ${days === d ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}>
