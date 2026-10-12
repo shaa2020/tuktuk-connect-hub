@@ -22,7 +22,7 @@ describe("AI Operator decisions", () => {
     expect(parseDecision('{"action":"reply","reply":""}').action).toBe("handoff");
   });
   it("only creates a booking when the guest confirmed a real date and group size", () => {
-    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":false,"date":"2026-10-20","guests":4}}').booking).toBeNull();
+    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":false,"date":"2026-10-20","guests":4}}').booking?.ready).toBe(false);
     expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"tomorrow","guests":4}}').booking).toBeNull();
     expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","time":"15:00","guests":4}}').booking?.guests).toBe(4);
   });

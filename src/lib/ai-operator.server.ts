@@ -1,6 +1,6 @@
 // Server-only: the AI Operator ("Away mode"). Runs from the 5-minute background job or "Run now".
 // Bounded per run, single-flight lock in the database, idempotent per guest message, pauses on credit/permission errors.
-import { decisionFromRaw, PARSE_FAIL_ALERT, replyAllowed, vehiclesFor } from "./ai-operator";
+import { decisionFromRaw, PARSE_FAIL_ALERT, replyAllowed, vehiclesFor, withinTourHours } from "./ai-operator";
 import { TT24_PLAYBOOK } from "./tt24-playbook";
 
 const BATCH = 5;
@@ -54,7 +54,7 @@ Operator mechanics:
 - In "alert", write a short summary for the team (e.g. the collected booking details or what the guest needs).
 - If a message is unreadable (voice note, sticker), reply asking the guest to send it as text.
 - Use "none" only when the message clearly needs no answer (e.g. "ok" or "thanks" after everything is settled).
-- booking: fill fields the guest has given (empty string / 0 when unknown; guests = adults + children). Set booking.ready true only when name, tour, date, guests and a contact or pickup are known. Use null when the chat is not about a booking.`;
+- booking: fill every field the guest has given anywhere in the chat, and keep filling it on every later message (empty string / 0 when unknown; guests = adults + children; time as HH:MM 24h, e.g. 12:30 PM -> 12:30; language = preferred tour language). Return the booking object whenever date and guests are known, even if not ready. Set booking.ready true only when name, tour, date, guests and a contact or pickup are known. Use null when the chat is not about a booking.`;
 
 type Admin = any;
 
@@ -192,18 +192,39 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     }
   }
 
-  if (d.booking && s.allow_booking && !c.booking_id) {
+  if (d.booking && s.allow_booking) {
     const b = d.booking;
-    const { data: bk, error } = await sb.from("bookings").insert({
-      workspace_id: ws, contact_id: c.contact_id, tour_name: b.tour || null, tour_date: b.date, start_time: b.time || null,
-      guests: b.guests, pickup_location: b.pickup || null, status: "tentative", source_system: "ai_operator",
-      notes: `Taken by AI Operator from chat — please confirm with the guest. Needs ${vehiclesFor(b.guests)} tuk-tuk(s).${b.name ? ` Guest name given: ${b.name}.` : ""}`,
-    }).select("id").maybeSingle();
-    if (bk) {
-      await sb.from("conversations").update({ booking_id: bk.id }).eq("id", c.id);
-      await log(sb, ws, c.id, "booking", `Added a tentative booking for ${name}: ${b.date}${b.time ? ` ${b.time}` : ""}, ${b.guests} guests${b.tour ? `, ${b.tour}` : ""}.`, { booking_id: bk.id });
-      if (s.allow_alert) await alertTeam(sb, ws, c.id, `New booking request from ${name}`, `${b.date} ${b.time} · ${b.guests} guests · ${b.tour || "tour not set"} — confirm in Tour Calendar.`);
-    } else await log(sb, ws, c.id, "error", `Couldn't add booking for ${name}: ${error?.message ?? "unknown"}`);
+    const extras = [
+      b.name && `Guest name: ${b.name}`, b.contact && `Contact: ${b.contact}`, b.children && `Children: ${b.children}`,
+      b.dropoff && `Drop-off: ${b.dropoff}`, b.special && `Special requests: ${b.special}`,
+      b.time && !withinTourHours(b.time) && `Requested time ${b.time} is outside 09:00-19:00`,
+    ].filter(Boolean).join(". ");
+    const notes = `Taken by AI Operator from chat — please check the slot is free and confirm with the guest. Needs ${vehiclesFor(b.guests)} tuk-tuk(s).${extras ? ` ${extras}.` : ""}`;
+    const fields: Record<string, unknown> = { tour_date: b.date, guests: b.guests, notes };
+    if (b.tour) fields.tour_name = b.tour;
+    if (b.time) fields.start_time = b.time;
+    if (b.pickup) fields.pickup_location = b.pickup;
+    if (b.language) fields.language = b.language;
+    // Real guest name replaces a phone-number placeholder on the contact.
+    if (b.name && c.contact_id && (!guest.full_name || /^[+\d\s()-]+$/.test(guest.full_name))) {
+      await sb.from("contacts").update({ full_name: b.name }).eq("id", c.contact_id);
+    }
+    if (c.booking_id) {
+      const { data: cur } = await sb.from("bookings").select("status, source_system").eq("id", c.booking_id).maybeSingle();
+      if (cur?.status === "tentative" && cur.source_system === "ai_operator") {
+        const { error } = await sb.from("bookings").update(fields).eq("id", c.booking_id);
+        if (!error) await log(sb, ws, c.id, "booking", `Updated the tentative booking for ${b.name || name}: ${b.date}${b.time ? ` ${b.time}` : ""}, ${b.guests} guests.`, { booking_id: c.booking_id });
+      }
+    } else if (b.ready) {
+      const { data: bk, error } = await sb.from("bookings").insert({
+        workspace_id: ws, contact_id: c.contact_id, tour_name: b.tour || null, ...fields, status: "tentative", source_system: "ai_operator",
+      }).select("id").maybeSingle();
+      if (bk) {
+        await sb.from("conversations").update({ booking_id: bk.id }).eq("id", c.id);
+        await log(sb, ws, c.id, "booking", `Added a tentative booking for ${b.name || name}: ${b.date}${b.time ? ` ${b.time}` : ""}, ${b.guests} guests${b.tour ? `, ${b.tour}` : ""}.`, { booking_id: bk.id });
+        if (s.allow_alert) await alertTeam(sb, ws, c.id, `New booking request from ${b.name || name}`, `${b.date} ${b.time} · ${b.guests} guests · ${b.tour || "tour not set"} — check the slot and confirm in Tour Calendar.`);
+      } else await log(sb, ws, c.id, "error", `Couldn't add booking for ${name}: ${error?.message ?? "unknown"}`);
+    }
   }
 
   if (d.action === "handoff") await log(sb, ws, c.id, "handoff", `Handed ${name} to the team${d.alert ? `: ${d.alert}` : "."}`);
