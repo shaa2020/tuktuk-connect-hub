@@ -7,7 +7,7 @@ export type OperatorDecision = {
   urgent: boolean;
   alert: string;
   booking: {
-    date: string; time: string; guests: number; tour: string; pickup: string; name: string;
+    ready: boolean; date: string; time: string; guests: number; tour: string; pickup: string; name: string;
     children: string; dropoff: string; contact: string; language: string; special: string;
   } | null;
 };
@@ -46,8 +46,8 @@ export function parseDecision(raw: string): OperatorDecision {
   const b = j?.booking;
   const guests = Number(b?.guests);
   const s = (v: unknown, n: number) => String(v ?? "").trim().slice(0, n);
-  const booking = b && b.ready === true && DATE.test(String(b.date)) && Number.isInteger(guests) && guests >= 1 && guests <= 60
-    ? { date: String(b.date), time: normalizeTime(String(b.time ?? "")), guests, tour: s(b.tour, 120), pickup: s(b.pickup, 200), name: s(b.name, 120),
+  const booking = b && DATE.test(String(b.date)) && Number.isInteger(guests) && guests >= 1 && guests <= 60
+    ? { ready: b.ready === true, date: String(b.date), time: normalizeTime(String(b.time ?? "")), guests, tour: s(b.tour, 120), pickup: s(b.pickup, 200), name: s(b.name, 120),
         children: s(b.children, 120), dropoff: s(b.dropoff, 200), contact: s(b.contact, 120), language: s(b.language, 40), special: s(b.special, 300) }
     : null;
   return {
