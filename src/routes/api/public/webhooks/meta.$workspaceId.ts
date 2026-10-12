@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
         }
         // New guest message → let the AI Operator answer right away (it no-ops when Away mode is off).
         if (gotInbound) {
-          try { await (await import("@/lib/ai-operator.server")).runOperatorFor(ws); } catch { /* the periodic job retries */ }
+          try { const { supabaseAdmin } = await import("@/integrations/supabase/client.server"); await (supabaseAdmin as any).rpc("kick_ai_operator", { _ws: ws }); } catch { /* the periodic job retries */ }
         }
         return new Response("OK", { status: 200 });
       },
