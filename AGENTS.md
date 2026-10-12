@@ -19,7 +19,7 @@
 - tsconfig relaxes exactOptionalPropertyTypes / noPropertyAccessFromIndexSignature / noImplicitReturns — generated DB types are incompatible with them.
 - AI calls go through `src/lib/ai.functions.ts` (requireSupabaseAuth, RLS-scoped reads) → `ai-gateway.server.ts` (streamed Responses API); output is a labelled suggestion, never auto-sent — except the AI Operator.
 - AI Operator (src/lib/ai-operator.server.ts) auto-acts only while an admin/manager has Away mode on, with per-action toggles; runs in the 5-min background job with a DB lease, per-message marks, a reply cap, 402/403 pause, and logs every action to ai_operator_log — keeps autonomy bounded and auditable.
-- Webhooks never run the AI Operator inline: they call the kick_ai_operator RPC, which uses pg_net (120s timeout) to hit background-sync with operatorOnly — inline runs got cut off when the webhook caller disconnected, leaving stuck leases.
+- Webhooks start the AI Operator via the kick_ai_operator RPC (pg_net, 120s timeout, background-sync operatorOnly), never inline — inline runs were cut off on caller disconnect.
 - Outbound sends share src/lib/outbound.server.ts so team and operator replies use the same channel routing.
 - Automations are evaluated in a DB trigger on conversation insert and logged to `automation_runs`.
 - Third-party credentials live encrypted (AES-GCM, server key) in `workspace_secrets`, which has no client grants; only server functions read them after `has_ws_role` admin checks, and the UI only ever sees masked hints — secrets are never returned to browsers.
