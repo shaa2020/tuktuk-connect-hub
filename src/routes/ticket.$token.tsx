@@ -28,6 +28,7 @@ function TicketPage() {
       <h1 className="mx-auto mb-4 max-w-sm font-display text-xl font-bold">Your ticket</h1>
       <div className="relative mx-auto max-w-sm rounded-3xl bg-primary p-3">
         <div className="rounded-2xl bg-sidebar p-5">
+          {t.completed && <div className="mx-auto mb-2 w-fit rounded-md bg-muted px-4 py-1.5 text-center text-sm font-extrabold tracking-wide text-muted-foreground">TOUR COMPLETED</div>}
           <div className={`mx-auto mb-4 w-fit rounded-md px-4 py-1.5 text-center text-sm font-extrabold tracking-wide ${pay.paid ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}`}>{pay.label}</div>
           <div className="mx-auto aspect-square w-52 rounded-2xl bg-card p-3">{qr && <img src={qr} alt="Ticket QR code" className="h-full w-full" />}</div>
           <div className="mt-5 flex justify-between border-b border-dashed border-sidebar-border pb-3 font-semibold"><span>{date}</span><span>{t.start_time ? t.start_time.slice(0, 5) : "Time TBC"}</span></div>
