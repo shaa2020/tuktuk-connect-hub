@@ -20,6 +20,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createWebsiteBooking, listWebsiteBookings, importWebsiteBooking, syncWebsiteBookings } from "@/lib/website.functions";
 import { RefreshCw, Globe, Ticket, Copy, ExternalLink } from "lucide-react";
 import { sendTickets, setTicketAuto } from "@/lib/tickets.functions";
+import { flushAutoAssignedFn } from "@/lib/driver-dispatch.functions";
 import { payLabel, TICKET_BASE_URL, type TicketAuto } from "@/lib/tickets";
 
 function TicketBar({ workspaceId, rows }: { workspaceId: string; rows: Array<{ id: string; status: string; payment_status: PaymentStatus }> }) {
@@ -69,6 +70,7 @@ function SendOneButton({ workspaceId, bookingId, sent, label }: { workspaceId: s
       const r = await send({ data: { workspaceId, bookingIds: [bookingId] } });
       if (r.sent) toast.success("Ticket sent (by email if the guest has one, otherwise their chat)");
       else toast.error(r.firstError || "Ticket not sent");
+      if (f.status === "confirmed") flushAssign({ data: { workspaceId: ws.workspaceId } }).then((r) => { if (r.sent) toast.success("Default guide assigned and sent the tour details on WhatsApp"); else if (r.errors[0]) toast.warning(`Default guide assigned, but WhatsApp wasn't sent: ${r.errors[0]}`); qc.invalidateQueries({ queryKey: ["dispatch"] }); }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["bookings"] });
       qc.invalidateQueries({ queryKey: ["booking"] });
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
@@ -279,6 +281,7 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
   const [err, setErr] = useState<string | null>(null);
   const [web, setWeb] = useState({ on: false, name: "", phone: "", email: "" });
   const createWebsite = useServerFn(createWebsiteBooking);
+  const flushAssign = useServerFn(flushAutoAssignedFn);
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((p) => ({ ...p, [k]: e.target.value }));
   const setV = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
