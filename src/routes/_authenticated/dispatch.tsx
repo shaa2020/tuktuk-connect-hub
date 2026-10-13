@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncWebsiteBookings } from "@/lib/website.functions";
-import { notifyDriverFn, sendDriverScheduleFn } from "@/lib/driver-dispatch.functions";
+import { notifyDriverFn, sendDriverScheduleFn, flushAutoAssignedFn, setAutoAssign } from "@/lib/driver-dispatch.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Euro, Globe, MapPin, MessageCircle, Pencil, Phone, Plus, RefreshCw, Send, StickyNote, Truck, Trash2, User, Users } from "lucide-react";
@@ -13,6 +13,7 @@ import { PageContainer } from "@/components/app-shell";
 import { EmptyState, ErrorState, ListSkeleton, PageHeader, Panel, errMsg } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { NativeSelect, SampleBadge } from "@/components/kit";
 import { canManageWorkspace } from "@/lib/domain";
 import { DISPATCH_LABEL, findConflicts, nextDispatch, type DispatchStatus } from "@/lib/dispatch";
@@ -97,12 +98,14 @@ function DispatchPage() {
   const syncFn = useServerFn(syncWebsiteBookings);
   const [syncing, setSyncing] = useState(false);
   const didSync = useRef(false);
+  const flushFn = useServerFn(flushAutoAssignedFn);
   async function syncWeb(manual: boolean) {
     setSyncing(true);
     const r = await syncFn({ data: { workspaceId } }).catch((e) => ({ ok: false as const, error: (e as Error).message, added: 0 }));
     setSyncing(false);
     if (!r.ok) { if (manual) toast.error(`Website: ${r.error}`); return; }
     if (r.added > 0 || manual) toast.success(r.added ? `${r.added} new website booking${r.added > 1 ? "s" : ""} added` : "Website bookings are up to date");
+    flushFn({ data: { workspaceId } }).then((x) => { if (x.sent) { toast.success(`Default guide sent ${x.sent} new tour${x.sent > 1 ? "s" : ""} on WhatsApp`); refresh(); } }).catch(() => {});
     if (r.added > 0) { refresh(); qc.invalidateQueries({ queryKey: ["bookings"] }); }
   }
   useEffect(() => {
@@ -154,6 +157,8 @@ function DispatchPage() {
           ))}
         </div>
       </div>
+
+      {canFleet && <AutoAssignPanel workspaceId={workspaceId} members={members} />}
 
       {conflicts.size > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
@@ -334,6 +339,30 @@ function Fleet({ canEdit, rows, onChange }: { canEdit: boolean; rows: { id: stri
           <Button onClick={add}><Plus /> Add</Button>
         </div>
       )}
+    </Panel>
+  );
+}
+
+function AutoAssignPanel({ workspaceId, members }: { workspaceId: string; members: { user_id: string; full_name: string | null; email: string | null; active?: boolean }[] }) {
+  const qc = useQueryClient();
+  const save = useServerFn(setAutoAssign);
+  const q = useQuery({ queryKey: ["auto-assign", workspaceId], queryFn: async () => (await supabase.from("workspaces").select("auto_assign_driver, default_driver_id").eq("id", workspaceId).maybeSingle()).data });
+  const on = !!q.data?.auto_assign_driver; const driver = q.data?.default_driver_id ?? null;
+  async function update(nextOn: boolean, nextDriver: string | null) {
+    const r = await save({ data: { workspaceId, on: nextOn, driverId: nextDriver } }).catch((e) => { toast.error((e as Error).message); return null; });
+    if (r) { toast.success(nextOn ? "Auto-assign is on" : "Auto-assign is off"); qc.invalidateQueries({ queryKey: ["auto-assign", workspaceId] }); }
+  }
+  return (
+    <Panel className="mb-4 flex flex-wrap items-center gap-3 p-3">
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-semibold">Auto-assign default guide</div>
+        <div className="text-xs text-muted-foreground">When a tour is confirmed with no driver, this guide is assigned and sent the details on WhatsApp.</div>
+      </div>
+      <NativeSelect aria-label="Default guide" value={driver ?? ""} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => update(on && !!e.target.value, e.target.value || null)} className="w-auto">
+        <option value="">Choose guide</option>
+        {members.filter((m) => m.active !== false).map((m) => <option key={m.user_id} value={m.user_id}>{m.full_name || m.email}</option>)}
+      </NativeSelect>
+      <Switch aria-label="Auto-assign default guide" checked={on} disabled={!driver} onCheckedChange={(v) => update(v, driver)} />
     </Panel>
   );
 }
