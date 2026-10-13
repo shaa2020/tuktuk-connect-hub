@@ -55,7 +55,7 @@ Operator mechanics:
 - In "alert", write a short summary for the team (e.g. the collected booking details or what the guest needs).
 - If a message is unreadable (voice note, sticker), reply asking the guest to send it as text.
 - Use "none" only when the message clearly needs no answer (e.g. "ok" or "thanks" after everything is settled).
-- booking: fill every field the guest has given anywhere in the chat, and keep filling it on every later message (empty string / 0 when unknown; guests = adults + children; time as HH:MM 24h, e.g. 12:30 PM -> 12:30; language = preferred tour language). Return the booking object whenever date and guests are known, even if not ready. Set booking.ready true only when name, tour, date, guests and a contact or pickup are known. Use null when the chat is not about a booking.`;
+- booking: fill every field the guest has given anywhere in the chat, and keep filling it on every later message (empty string / 0 when unknown; guests = adults + children; time as HH:MM 24h, e.g. 12:30 PM -> 12:30; language = preferred tour language, or the language the guest writes in if they never stated one; duration = tour length in minutes, infer it from the tour name, e.g. "2-hour tour" -> 120, "1.5-hour" -> 90, 0 when unknown). Return the booking object whenever date and guests are known, even if not ready. Set booking.ready true only when name, tour, date, guests and a contact or pickup are known. Use null when the chat is not about a booking.`;
 
 type Admin = any;
 
