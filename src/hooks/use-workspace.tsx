@@ -47,13 +47,13 @@ async function loadWorkspace() {
   if (error) throw error;
   const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
   if (!mem) return { user, profile, mem: null, members: [] as Member[] };
-  const { data: rows, error: me } = await supabase
+  const { data: rows, error: me } = await (supabase as any)
     .from("workspace_members")
     .select("id, user_id, role, active, whatsapp_phone, profiles(full_name, email)")
     .eq("workspace_id", mem.workspace_id)
     .order("created_at");
   if (me) throw me;
-  const members: Member[] = (rows ?? []).map((r) => ({
+  const members: Member[] = ((rows ?? []) as any[]).map((r: any) => ({
     id: r.id,
     user_id: r.user_id,
     role: r.role,
