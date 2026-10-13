@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncWebsiteBookings } from "@/lib/website.functions";
+import { notifyDriverFn, sendDriverScheduleFn } from "@/lib/driver-dispatch.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Euro, Globe, MapPin, MessageCircle, Pencil, Phone, Plus, RefreshCw, StickyNote, Truck, Trash2, User, Users } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Euro, Globe, MapPin, MessageCircle, Pencil, Phone, Plus, RefreshCw, Send, StickyNote, Truck, Trash2, User, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -112,9 +113,27 @@ function DispatchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId]);
 
+  const notifyFn = useServerFn(notifyDriverFn);
+  const scheduleFn = useServerFn(sendDriverScheduleFn);
   async function patch(id: string, values: { vehicle_id?: string | null; driver_id?: string | null; dispatch_status?: string }) {
+    const prev = (tours.data ?? []).find((t) => t.id === id);
     const { error } = await supabase.from("bookings").update(values).eq("id", id);
-    if (error) toast.error(errMsg(error)); else refresh();
+    if (error) { toast.error(errMsg(error)); return; }
+    refresh();
+    if (!canFleet || values.driver_id === undefined || values.driver_id === prev?.driver_id || prev?.status === "cancelled") return;
+    // Tell the old driver it moved, and send the new driver the full tour details on WhatsApp.
+    if (prev?.driver_id) notifyFn({ data: { workspaceId, bookingId: id, kind: "reassigned", driverId: prev.driver_id } }).catch(() => {});
+    if (values.driver_id) {
+      const r = await notifyFn({ data: { workspaceId, bookingId: id, kind: "assigned", driverId: values.driver_id } }).catch((e) => ({ ok: false as const, error: (e as Error).message }));
+      if (r.ok) toast.success("Driver assigned and sent the tour details on WhatsApp");
+      else toast.warning(`Driver assigned, but the WhatsApp message wasn't sent: ${r.error}`);
+    }
+  }
+  async function sendSchedules(date: string, driverIds: string[]) {
+    if (!driverIds.length) { toast.error("No drivers are assigned on this day yet."); return; }
+    const r = await scheduleFn({ data: { workspaceId, date, driverIds } }).catch((e) => ({ sent: 0, failed: 1, firstError: (e as Error).message }));
+    if (r.sent) toast.success(`Schedule sent to ${r.sent} driver${r.sent > 1 ? "s" : ""}${r.failed ? ` (${r.failed} failed: ${r.firstError})` : ""}`);
+    else toast.error(r.firstError ?? "Nothing was sent.");
   }
 
   const active = (vehicles.data ?? []).filter((v) => v.active);
@@ -170,7 +189,12 @@ function DispatchPage() {
                     <div className="text-xs font-semibold uppercase tracking-wide text-primary">{d === iso(new Date()) ? "Today" : new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "long" })}</div>
                     <h2 className="truncate text-lg font-bold">{new Date(d + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}</h2>
                   </div>
-                  {live.length > 0 && <Button size="sm" variant="outline" className="shrink-0" onClick={sheet}><Copy /> Copy run sheet</Button>}
+                  {live.length > 0 && (
+                    <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                      {canFleet && <Button size="sm" onClick={() => sendSchedules(d, [...new Set(live.filter((t) => t.status === "confirmed" || t.status === "tentative").map((t) => t.driver_id).filter((x): x is string => !!x))])}><Send /> Send driver schedules</Button>}
+                      <Button size="sm" variant="outline" onClick={sheet}><Copy /> Copy run sheet</Button>
+                    </div>
+                  )}
                 </div>
                 {list.length > 0 && (
                   <div className="mb-3 grid grid-cols-3 gap-2">

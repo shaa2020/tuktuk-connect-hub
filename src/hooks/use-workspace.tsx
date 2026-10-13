@@ -10,6 +10,7 @@ export type Member = {
   active: boolean;
   full_name: string | null;
   email: string | null;
+  whatsapp_phone: string | null;
 };
 
 export type WorkspaceCtx = {
