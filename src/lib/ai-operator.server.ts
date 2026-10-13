@@ -23,7 +23,7 @@ const DECISION_SCHEMA = {
           {
             type: "object",
             additionalProperties: false,
-            required: ["ready", "date", "time", "guests", "tour", "pickup", "name", "children", "dropoff", "contact", "language", "special"],
+            required: ["ready", "date", "time", "guests", "tour", "pickup", "name", "children", "dropoff", "contact", "language", "special", "duration"],
             properties: {
               ready: { type: "boolean" },
               date: { type: "string" },
@@ -37,6 +37,7 @@ const DECISION_SCHEMA = {
               contact: { type: "string" },
               language: { type: "string" },
               special: { type: "string" },
+              duration: { type: "integer" },
             },
           },
         ],
@@ -54,7 +55,7 @@ Operator mechanics:
 - In "alert", write a short summary for the team (e.g. the collected booking details or what the guest needs).
 - If a message is unreadable (voice note, sticker), reply asking the guest to send it as text.
 - Use "none" only when the message clearly needs no answer (e.g. "ok" or "thanks" after everything is settled).
-- booking: fill every field the guest has given anywhere in the chat, and keep filling it on every later message (empty string / 0 when unknown; guests = adults + children; time as HH:MM 24h, e.g. 12:30 PM -> 12:30; language = preferred tour language). Return the booking object whenever date and guests are known, even if not ready. Set booking.ready true only when name, tour, date, guests and a contact or pickup are known. Use null when the chat is not about a booking.`;
+- booking: fill every field the guest has given anywhere in the chat, and keep filling it on every later message (empty string / 0 when unknown; guests = adults + children; time as HH:MM 24h, e.g. 12:30 PM -> 12:30; language = preferred tour language, or the language the guest writes in if they never stated one; duration = tour length in minutes, infer it from the tour name, e.g. "2-hour tour" -> 120, "1.5-hour" -> 90, 0 when unknown). Return the booking object whenever date and guests are known, even if not ready. Set booking.ready true only when name, tour, date, guests and a contact or pickup are known. Use null when the chat is not about a booking.`;
 
 type Admin = any;
 
@@ -204,7 +205,9 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     if (b.tour) fields.tour_name = b.tour;
     if (b.time) fields.start_time = b.time;
     if (b.pickup) fields.pickup_location = b.pickup;
-    if (b.language) fields.language = b.language;
+    const lang = b.language || (guest?.preferred_language ?? "");
+    if (lang) fields.language = lang;
+    if (b.duration > 0) fields.duration_minutes = b.duration;
     // Real guest name replaces a phone-number placeholder on the contact.
     if (b.name && c.contact_id && (!guest.full_name || /^[+\d\s()-]+$/.test(guest.full_name))) {
       await sb.from("contacts").update({ full_name: b.name }).eq("id", c.contact_id);
