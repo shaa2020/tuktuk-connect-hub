@@ -35,3 +35,11 @@ describe("AI Operator decisions", () => {
     expect(vehiclesFor(7)).toBe(2);
   });
 });
+
+describe("booking duration", () => {
+  it("keeps a valid duration in minutes and rejects bad ones", () => {
+    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","time":"15:00","guests":2,"duration":120}}').booking?.duration).toBe(120);
+    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","guests":2,"duration":"two hours"}}').booking?.duration).toBe(0);
+    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","guests":2}}').booking?.duration).toBe(0);
+  });
+});
