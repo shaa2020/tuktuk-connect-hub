@@ -1,16 +1,41 @@
 import { ticketEligible, ticketMessage, type TicketAuto } from "./tickets";
 
-// Server-only. Sends a ticket link into the guest's existing chat (same account they contacted).
-export async function sendTicket(bookingId: string, authorId: string | null): Promise<{ ok: true } | { ok: false; error: string }> {
+const NIL = "00000000-0000-0000-0000-000000000000";
+
+// Server-only. Sends a ticket: Gmail first when the guest has an email address, otherwise their existing chat.
+export async function sendTicket(bookingId: string, authorId: string | null): Promise<{ ok: true; via: string } | { ok: false; error: string }> {
   const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
-  const { data: b } = await sb.from("bookings").select("*").eq("id", bookingId).maybeSingle();
+  const { data: b } = await sb.from("bookings").select("*, contacts(email)").eq("id", bookingId).maybeSingle();
   if (!b) return { ok: false, error: "Booking not found." };
+  const body = ticketMessage(b as any);
+  const mark = () => sb.from("bookings").update({ ticket_sent_at: new Date().toISOString() } as any).eq("id", b.id);
+  const { sendToConversation } = await import("./outbound.server");
+
+  const email = ((b as any).contacts?.email as string | null)?.trim();
+  if (email && b.contact_id) {
+    // 1) Existing email chat with this guest → reply in that thread.
+    const { data: ec } = await sb.from("conversations").select("id").eq("contact_id", b.contact_id).eq("channel", "email").order("last_message_at", { ascending: false }).limit(1).maybeSingle();
+    if (ec) {
+      const r = await sendToConversation(ec.id, body, authorId);
+      if (r.ok) { await mark(); return { ok: true, via: "email" }; }
+    }
+    // 2) No email chat yet → send a new email from the business Gmail.
+    const { data: cc } = await sb.from("channel_connections").select("id").eq("workspace_id", b.workspace_id).eq("channel", "email").eq("status", "connected").limit(1).maybeSingle();
+    if (cc && !/[\r\n]/.test(email)) {
+      try {
+        const { sendEmail } = await import("./email-channel.server");
+        await sendEmail(b.workspace_id, NIL, email, body);
+        await mark();
+        return { ok: true, via: "email" };
+      } catch { /* fall through to chat */ }
+    }
+  }
+
   let { data: conv } = await sb.from("conversations").select("id").eq("booking_id", b.id).order("last_message_at", { ascending: false }).limit(1).maybeSingle();
   if (!conv && b.contact_id) ({ data: conv } = await sb.from("conversations").select("id").eq("contact_id", b.contact_id).neq("channel", "manual").order("last_message_at", { ascending: false }).limit(1).maybeSingle());
-  if (!conv) return { ok: false, error: "No chat with this guest yet." };
-  const { sendToConversation } = await import("./outbound.server");
-  const r = await sendToConversation(conv.id, ticketMessage(b as any), authorId);
-  if (r.ok) await sb.from("bookings").update({ ticket_sent_at: new Date().toISOString() } as any).eq("id", b.id);
+  if (!conv) return { ok: false, error: email ? "Email failed and there's no chat with this guest." : "No email or chat for this guest yet." };
+  const r = await sendToConversation(conv.id, body, authorId);
+  if (r.ok) { await mark(); return { ok: true, via: "chat" }; }
   return r;
 }
 
