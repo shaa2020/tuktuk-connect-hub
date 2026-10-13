@@ -18,7 +18,46 @@ import { ContactSelect, LeadSelect } from "@/components/pickers";
 import { BOOKING_STATUS_META, PAYMENT_LABEL, canDeleteBookings, type BookingStatus, type PaymentStatus } from "@/lib/domain";
 import { useServerFn } from "@tanstack/react-start";
 import { createWebsiteBooking, listWebsiteBookings, importWebsiteBooking, syncWebsiteBookings } from "@/lib/website.functions";
-import { RefreshCw, Globe } from "lucide-react";
+import { RefreshCw, Globe, Ticket } from "lucide-react";
+import { sendTickets, setTicketAuto } from "@/lib/tickets.functions";
+import { payLabel, type TicketAuto } from "@/lib/tickets";
+
+function TicketBar({ workspaceId, rows }: { workspaceId: string; rows: Array<{ id: string; status: string; payment_status: PaymentStatus }> }) {
+  const send = useServerFn(sendTickets);
+  const setAuto = useServerFn(setTicketAuto);
+  const qc = useQueryClient();
+  const [who, setWho] = useState<"all" | "paid" | "unpaid">("all");
+  const [busy, setBusy] = useState(false);
+  const auto = useQuery({ queryKey: ["ticket-auto", workspaceId], queryFn: async () => ((await supabase.from("workspaces").select("ticket_auto").eq("id", workspaceId).maybeSingle()).data as any)?.ticket_auto as TicketAuto ?? "off" });
+  const targets = rows.filter((b) => b.status === "confirmed" && b.payment_status !== "refunded" && (who === "all" || (who === "paid") === (b.payment_status === "paid")));
+  const go = async () => {
+    if (!targets.length) return toast.error("No confirmed bookings match.");
+    setBusy(true);
+    try {
+      const r = await send({ data: { workspaceId, bookingIds: targets.map((b) => b.id) } });
+      if (r.sent) toast.success(`Sent ${r.sent} ticket${r.sent > 1 ? "s" : ""}`);
+      if (r.failed) toast.error(`${r.failed} not sent: ${r.firstError}`);
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+  const change = async (mode: TicketAuto) => {
+    try { await setAuto({ data: { workspaceId, mode } }); qc.invalidateQueries({ queryKey: ["ticket-auto"] }); toast.success(mode === "off" ? "Automatic tickets off" : "Automatic tickets on"); } catch (e) { toast.error((e as Error).message); }
+  };
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3">
+      <Ticket className="h-4 w-4 text-primary" />
+      <span className="text-sm font-semibold">Tickets</span>
+      <NativeSelect className="w-auto" value={who} onChange={(e) => setWho(e.target.value as typeof who)} aria-label="Send tickets to">
+        <option value="all">All confirmed</option><option value="paid">Paid only</option><option value="unpaid">Not paid only</option>
+      </NativeSelect>
+      <Button size="sm" onClick={go} disabled={busy}>{busy ? "Sending…" : `Send ${targets.length}`}</Button>
+      <span className="ml-auto text-xs text-muted-foreground">Automatic</span>
+      <NativeSelect className="w-auto" value={auto.data ?? "off"} onChange={(e) => change(e.target.value as TicketAuto)} aria-label="Automatic tickets">
+        <option value="off">Off</option><option value="all">All confirmed</option><option value="paid">Paid only</option><option value="unpaid">Not paid only</option>
+      </NativeSelect>
+    </div>
+  );
+}
 
 function WebsiteBookings({ workspaceId, onOpen }: { workspaceId: string; onOpen: (id: string) => void }) {
   const list = useServerFn(listWebsiteBookings);
@@ -132,6 +171,7 @@ function BookingsPage() {
           <option value="">All statuses</option>{STATUSES.map((s) => <option key={s} value={s}>{BOOKING_STATUS_META[s].label}</option>)}
         </NativeSelect>
       </div>
+      <TicketBar workspaceId={workspaceId} rows={rows} />
       <Panel>
         {q.isLoading ? <ListSkeleton /> : q.error ? <div className="p-4"><ErrorState message={(q.error as Error).message} onRetry={() => q.refetch()} /></div> :
           !rows.length ? <EmptyState icon={<CalendarCheck />} title="No bookings here" description="Create a booking manually, or from a lead." action={<Button onClick={() => navigate({ search: { new: true } })}><Plus /> New booking</Button>} /> : (
@@ -148,7 +188,11 @@ function BookingsPage() {
                         <span className="font-mono">{b.reference}</span> · {b.contacts?.full_name ?? "No contact"}{b.start_time ? ` · ${b.start_time.slice(0, 5)}` : ""}{b.guests ? ` · ${b.guests} guests` : ""}
                       </div>
                     </div>
-                    <ToneBadge tone={BOOKING_STATUS_META[b.status].tone}>{BOOKING_STATUS_META[b.status].label}</ToneBadge>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <ToneBadge tone={BOOKING_STATUS_META[b.status].tone}>{BOOKING_STATUS_META[b.status].label}</ToneBadge>
+                      <ToneBadge tone={b.payment_status === "paid" ? "success" : "warning"}>{payLabel(b.payment_status).label}</ToneBadge>
+                      {(b as any).ticket_sent_at && <span className="text-[10px] text-muted-foreground">Ticket sent</span>}
+                    </div>
                   </button>
                 </li>
               ))}

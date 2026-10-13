@@ -31,6 +31,7 @@ import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as TicketTokenRouteImport } from './routes/ticket.$token'
 import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts.index'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as ApiPublicHooksBackgroundSyncRouteImport } from './routes/api/public/hooks/background-sync'
@@ -149,6 +150,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TicketTokenRoute = TicketTokenRouteImport.update({
+  id: '/ticket/$token',
+  path: '/ticket/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedContactsIndexRoute =
   AuthenticatedContactsIndexRouteImport.update({
     id: '/contacts/',
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/ticket/$token': typeof TicketTokenRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/team'
     | '/invite/$token'
+    | '/ticket/$token'
     | '/contacts/$id'
     | '/contacts/'
     | '/api/public/hooks/background-sync'
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/team'
     | '/invite/$token'
+    | '/ticket/$token'
     | '/contacts/$id'
     | '/contacts'
     | '/api/public/hooks/background-sync'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks'
     | '/_authenticated/team'
     | '/invite/$token'
+    | '/ticket/$token'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contacts/'
     | '/api/public/hooks/background-sync'
@@ -359,6 +371,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  TicketTokenRoute: typeof TicketTokenRoute
   ApiPublicHooksBackgroundSyncRoute: typeof ApiPublicHooksBackgroundSyncRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicWebhooksMetaWorkspaceIdRoute: typeof ApiPublicWebhooksMetaWorkspaceIdRoute
@@ -520,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ticket/$token': {
+      id: '/ticket/$token'
+      path: '/ticket/$token'
+      fullPath: '/ticket/$token'
+      preLoaderRoute: typeof TicketTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/contacts/': {
       id: '/_authenticated/contacts/'
       path: '/contacts'
@@ -611,6 +631,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   InviteTokenRoute: InviteTokenRoute,
+  TicketTokenRoute: TicketTokenRoute,
   ApiPublicHooksBackgroundSyncRoute: ApiPublicHooksBackgroundSyncRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicWebhooksMetaWorkspaceIdRoute: ApiPublicWebhooksMetaWorkspaceIdRoute,
