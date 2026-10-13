@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 import markAsset from "@/assets/teaminbox-mark.png.asset.json";
-import lockupAsset from "@/assets/teaminbox-lockup.png.asset.json";
 
 export function BrandMark({ className }: { className?: string }) {
   return (
@@ -14,14 +13,24 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-export function BrandLockup({ light: _light }: { light?: boolean }) {
+export function BrandLockup({ light }: { light?: boolean }) {
   return (
-    <img
-      src={lockupAsset.url}
-      alt="TeamInbox — Connect · Collaborate · Respond"
-      width={910}
-      height={340}
-      className="h-14 w-[150px] max-w-full shrink-0 rounded-md object-contain"
-    />
+    <span className="flex shrink-0 items-center gap-2.5">
+      <img
+        src={markAsset.url}
+        alt="TeamInbox — Connect · Collaborate · Respond"
+        width={40}
+        height={40}
+        className="h-10 w-10 shrink-0 rounded-md object-contain"
+      />
+      <span
+        className={cn(
+          "font-display text-[1.35rem] font-extrabold leading-none tracking-tight",
+          light ? "text-white" : "text-foreground"
+        )}
+      >
+        Team<span className="text-primary">Inbox</span>
+      </span>
+    </span>
   );
 }
