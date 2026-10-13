@@ -2027,7 +2027,9 @@ export type Database = {
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
+          schedule_sent_on: string | null
           user_id: string
+          whatsapp_phone: string | null
           workspace_id: string
         }
         Insert: {
@@ -2035,7 +2037,9 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          schedule_sent_on?: string | null
           user_id: string
+          whatsapp_phone?: string | null
           workspace_id: string
         }
         Update: {
@@ -2043,7 +2047,9 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          schedule_sent_on?: string | null
           user_id?: string
+          whatsapp_phone?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -2102,6 +2108,7 @@ export type Database = {
         Row: {
           agents_see_unassigned: boolean
           created_at: string
+          driver_auto: boolean
           id: string
           name: string
           plan: string
@@ -2113,6 +2120,7 @@ export type Database = {
         Insert: {
           agents_see_unassigned?: boolean
           created_at?: string
+          driver_auto?: boolean
           id?: string
           name: string
           plan?: string
@@ -2124,6 +2132,7 @@ export type Database = {
         Update: {
           agents_see_unassigned?: boolean
           created_at?: string
+          driver_auto?: boolean
           id?: string
           name?: string
           plan?: string
