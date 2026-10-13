@@ -39,3 +39,30 @@ export const setDriverAuto = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const flushAutoAssignedFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ workspaceId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
+    if (!ok) throw new Error("Not a member of this workspace.");
+    const { flushAutoAssigned } = await import("./driver-dispatch.server");
+    return flushAutoAssigned(data.workspaceId);
+  });
+
+export const setAutoAssign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ workspaceId: z.string().uuid(), on: z.boolean(), driverId: z.string().uuid().nullable() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("has_ws_role", { _ws: data.workspaceId, _roles: [...STAFF] });
+    if (!ok) throw new Error("Only admins and managers can change this.");
+    if (data.on && !data.driverId) throw new Error("Pick a default guide first.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.driverId) {
+      const { data: m } = await supabaseAdmin.from("workspace_members").select("id").eq("workspace_id", data.workspaceId).eq("user_id", data.driverId).eq("active", true).maybeSingle();
+      if (!m) throw new Error("That guide isn't an active team member.");
+    }
+    const { error } = await supabaseAdmin.from("workspaces").update({ auto_assign_driver: data.on, default_driver_id: data.driverId }).eq("id", data.workspaceId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

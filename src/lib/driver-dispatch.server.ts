@@ -68,3 +68,18 @@ export async function autoSendSchedulesFor(ws: string) {
   }
   return { sent, errors };
 }
+
+/** Send the assignment message for tours the database auto-assigned to the default guide. */
+export async function flushAutoAssigned(ws: string) {
+  const sb = await db();
+  const { data: rows } = await sb.from("bookings").select("id").eq("workspace_id", ws).eq("driver_notify_pending", true).limit(50);
+  let sent = 0; const errors: string[] = [];
+  for (const r of rows ?? []) {
+    // Claim first so a failing number isn't retried forever.
+    const { data: claimed } = await sb.from("bookings").update({ driver_notify_pending: false }).eq("id", r.id).eq("driver_notify_pending", true).select("id");
+    if (!claimed?.length) continue;
+    const x = await notifyDriver(ws, r.id, "assigned");
+    if (x.ok) sent++; else errors.push(x.error);
+  }
+  return { sent, errors };
+}
