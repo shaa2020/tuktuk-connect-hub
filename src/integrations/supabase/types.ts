@@ -387,6 +387,8 @@ export type Database = {
           source_system: string
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
+          ticket_sent_at: string | null
+          ticket_token: string
           tour_date: string | null
           tour_name: string
           updated_at: string
@@ -416,6 +418,8 @@ export type Database = {
           source_system?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
+          ticket_sent_at?: string | null
+          ticket_token?: string
           tour_date?: string | null
           tour_name: string
           updated_at?: string
@@ -445,6 +449,8 @@ export type Database = {
           source_system?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
+          ticket_sent_at?: string | null
+          ticket_token?: string
           tour_date?: string | null
           tour_name?: string
           updated_at?: string
@@ -2100,6 +2106,7 @@ export type Database = {
           name: string
           plan: string
           plan_limits: Json
+          ticket_auto: string
           timezone: string
           updated_at: string
         }
@@ -2110,6 +2117,7 @@ export type Database = {
           name: string
           plan?: string
           plan_limits?: Json
+          ticket_auto?: string
           timezone?: string
           updated_at?: string
         }
@@ -2120,6 +2128,7 @@ export type Database = {
           name?: string
           plan?: string
           plan_limits?: Json
+          ticket_auto?: string
           timezone?: string
           updated_at?: string
         }
