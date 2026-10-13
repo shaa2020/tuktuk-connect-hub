@@ -191,7 +191,7 @@ function BookingsPage() {
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <ToneBadge tone={BOOKING_STATUS_META[b.status].tone}>{BOOKING_STATUS_META[b.status].label}</ToneBadge>
                       <ToneBadge tone={b.payment_status === "paid" ? "success" : "warning"}>{payLabel(b.payment_status).label}</ToneBadge>
-                      {b.ticket_sent_at && <span className="text-[10px] text-muted-foreground">Ticket sent</span>}
+                      {(b as any).ticket_sent_at && <span className="text-[10px] text-muted-foreground">Ticket sent</span>}
                     </div>
                   </button>
                 </li>
