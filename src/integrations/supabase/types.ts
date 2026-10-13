@@ -372,6 +372,7 @@ export type Database = {
           currency: string
           dispatch_status: string
           driver_id: string | null
+          driver_notify_pending: boolean
           duration_minutes: number | null
           external_reference: string | null
           guests: number | null
@@ -403,6 +404,7 @@ export type Database = {
           currency?: string
           dispatch_status?: string
           driver_id?: string | null
+          driver_notify_pending?: boolean
           duration_minutes?: number | null
           external_reference?: string | null
           guests?: number | null
@@ -434,6 +436,7 @@ export type Database = {
           currency?: string
           dispatch_status?: string
           driver_id?: string | null
+          driver_notify_pending?: boolean
           duration_minutes?: number | null
           external_reference?: string | null
           guests?: number | null
@@ -2107,7 +2110,9 @@ export type Database = {
       workspaces: {
         Row: {
           agents_see_unassigned: boolean
+          auto_assign_driver: boolean
           created_at: string
+          default_driver_id: string | null
           driver_auto: boolean
           id: string
           name: string
@@ -2119,7 +2124,9 @@ export type Database = {
         }
         Insert: {
           agents_see_unassigned?: boolean
+          auto_assign_driver?: boolean
           created_at?: string
+          default_driver_id?: string | null
           driver_auto?: boolean
           id?: string
           name: string
@@ -2131,7 +2138,9 @@ export type Database = {
         }
         Update: {
           agents_see_unassigned?: boolean
+          auto_assign_driver?: boolean
           created_at?: string
+          default_driver_id?: string | null
           driver_auto?: boolean
           id?: string
           name?: string
