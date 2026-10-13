@@ -23,7 +23,7 @@ const DECISION_SCHEMA = {
           {
             type: "object",
             additionalProperties: false,
-            required: ["ready", "date", "time", "guests", "tour", "pickup", "name", "children", "dropoff", "contact", "language", "special"],
+            required: ["ready", "date", "time", "guests", "tour", "pickup", "name", "children", "dropoff", "contact", "language", "special", "duration"],
             properties: {
               ready: { type: "boolean" },
               date: { type: "string" },
@@ -37,6 +37,7 @@ const DECISION_SCHEMA = {
               contact: { type: "string" },
               language: { type: "string" },
               special: { type: "string" },
+              duration: { type: "integer" },
             },
           },
         ],
