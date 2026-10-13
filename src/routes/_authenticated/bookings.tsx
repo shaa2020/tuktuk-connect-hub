@@ -70,7 +70,6 @@ function SendOneButton({ workspaceId, bookingId, sent, label }: { workspaceId: s
       const r = await send({ data: { workspaceId, bookingIds: [bookingId] } });
       if (r.sent) toast.success("Ticket sent (by email if the guest has one, otherwise their chat)");
       else toast.error(r.firstError || "Ticket not sent");
-      if (f.status === "confirmed") flushAssign({ data: { workspaceId: ws.workspaceId } }).then((r) => { if (r.sent) toast.success("Default guide assigned and sent the tour details on WhatsApp"); else if (r.errors[0]) toast.warning(`Default guide assigned, but WhatsApp wasn't sent: ${r.errors[0]}`); qc.invalidateQueries({ queryKey: ["dispatch"] }); }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["bookings"] });
       qc.invalidateQueries({ queryKey: ["booking"] });
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
@@ -322,6 +321,7 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
         toast.success("Booking created");
         onClose();
       }
+      if (f.status === "confirmed") flushAssign({ data: { workspaceId: ws.workspaceId } }).then((r) => { if (r.sent) toast.success("Default guide assigned and sent the tour details on WhatsApp"); else if (r.errors[0]) toast.warning(`Default guide assigned, but WhatsApp wasn't sent: ${r.errors[0]}`); qc.invalidateQueries({ queryKey: ["dispatch"] }); }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["bookings"] });
       qc.invalidateQueries({ queryKey: ["booking"] });
       qc.invalidateQueries({ queryKey: ["dispatch"] });
