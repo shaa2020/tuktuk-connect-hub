@@ -18,9 +18,9 @@ import { ContactSelect, LeadSelect } from "@/components/pickers";
 import { BOOKING_STATUS_META, PAYMENT_LABEL, canDeleteBookings, type BookingStatus, type PaymentStatus } from "@/lib/domain";
 import { useServerFn } from "@tanstack/react-start";
 import { createWebsiteBooking, listWebsiteBookings, importWebsiteBooking, syncWebsiteBookings } from "@/lib/website.functions";
-import { RefreshCw, Globe, Ticket } from "lucide-react";
+import { RefreshCw, Globe, Ticket, Copy, ExternalLink } from "lucide-react";
 import { sendTickets, setTicketAuto } from "@/lib/tickets.functions";
-import { payLabel, type TicketAuto } from "@/lib/tickets";
+import { payLabel, TICKET_BASE_URL, type TicketAuto } from "@/lib/tickets";
 
 function TicketBar({ workspaceId, rows }: { workspaceId: string; rows: Array<{ id: string; status: string; payment_status: PaymentStatus }> }) {
   const send = useServerFn(sendTickets);
@@ -55,6 +55,45 @@ function TicketBar({ workspaceId, rows }: { workspaceId: string; rows: Array<{ i
       <NativeSelect className="w-auto" value={auto.data ?? "off"} onChange={(e) => change(e.target.value as TicketAuto)} aria-label="Automatic tickets">
         <option value="off">Off</option><option value="all">All confirmed</option><option value="paid">Paid only</option><option value="unpaid">Not paid only</option>
       </NativeSelect>
+    </div>
+  );
+}
+
+function SendOneButton({ workspaceId, bookingId, sent, label }: { workspaceId: string; bookingId: string; sent: boolean; label?: string }) {
+  const send = useServerFn(sendTickets);
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    try {
+      const r = await send({ data: { workspaceId, bookingIds: [bookingId] } });
+      if (r.sent) toast.success("Ticket sent to the guest's chat");
+      else toast.error(r.firstError || "Ticket not sent");
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["booking"] });
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+  return <Button size="sm" variant={sent ? "outline" : "default"} onClick={go} disabled={busy}><Ticket />{busy ? "Sending…" : label ?? (sent ? "Resend" : "Send ticket")}</Button>;
+}
+
+function TicketSection({ b, workspaceId }: { b: Booking; workspaceId: string }) {
+  const token = (b as any).ticket_token as string | null;
+  const sentAt = (b as any).ticket_sent_at as string | null;
+  const pay = payLabel(b.payment_status as PaymentStatus);
+  const url = token ? `${TICKET_BASE_URL}/ticket/${token}` : "";
+  const confirmed = b.status === "confirmed" && b.payment_status !== "refunded";
+  return (
+    <div className="space-y-2 rounded-lg border p-3">
+      <div className="flex items-center gap-2">
+        <Ticket className="h-4 w-4 text-primary" /><span className="text-sm font-semibold">Digital ticket</span>
+        <ToneBadge tone={pay.paid ? "success" : "warning"}>{pay.label}</ToneBadge>
+      </div>
+      <p className="text-xs text-muted-foreground">{sentAt ? `Sent ${new Date(sentAt).toLocaleString()}` : "Not sent yet"}{!confirmed ? " · Tickets can only be sent for confirmed bookings." : ""}</p>
+      <div className="flex flex-wrap gap-2">
+        {confirmed && <SendOneButton workspaceId={workspaceId} bookingId={b.id} sent={!!sentAt} label={sentAt ? "Send again" : "Send ticket to guest"} />}
+        {url && <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(url).then(() => toast.success("Ticket link copied"), () => toast.error("Couldn't copy"))}><Copy /> Copy link</Button>}
+        {url && <Button size="sm" variant="outline" asChild><a href={`/ticket/${token}`} target="_blank" rel="noreferrer"><ExternalLink /> Preview</a></Button>}
+      </div>
     </div>
   );
 }
@@ -177,8 +216,8 @@ function BookingsPage() {
           !rows.length ? <EmptyState icon={<CalendarCheck />} title="No bookings here" description="Create a booking manually, or from a lead." action={<Button onClick={() => navigate({ search: { new: true } })}><Plus /> New booking</Button>} /> : (
             <ul className="divide-y">
               {rows.map((b) => (
-                <li key={b.id}>
-                  <button onClick={() => navigate({ search: { b: b.id } })} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/60">
+                <li key={b.id} className="flex items-center hover:bg-muted/60">
+                  <button onClick={() => navigate({ search: { b: b.id } })} className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left">
                     <div className="w-14 shrink-0 rounded-lg bg-primary-soft py-1.5 text-center text-primary">
                       {b.tour_date ? <><div className="text-[10px] font-semibold uppercase">{new Date(b.tour_date + "T00:00").toLocaleDateString(undefined, { month: "short" })}</div><div className="font-display text-lg font-bold leading-none">{new Date(b.tour_date + "T00:00").getDate()}</div></> : <div className="text-[10px] font-semibold">No date</div>}
                     </div>
@@ -194,6 +233,7 @@ function BookingsPage() {
                       {(b as any).ticket_sent_at && <span className="text-[10px] text-muted-foreground">Ticket sent</span>}
                     </div>
                   </button>
+                  {b.status === "confirmed" && b.payment_status !== "refunded" && <div className="shrink-0 pr-3"><SendOneButton workspaceId={workspaceId} bookingId={b.id} sent={!!(b as any).ticket_sent_at} label={(b as any).ticket_sent_at ? "Resend" : "Send"} /></div>}
                 </li>
               ))}
             </ul>
@@ -338,6 +378,7 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
           )}
         </div>
       )}
+      {b && <TicketSection b={b} workspaceId={ws.workspaceId} />}
       {b && <p className="text-xs text-muted-foreground">Source: {b.source_system} · Tour date {fmtDate(b.tour_date)}</p>}
       {err && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">{err}</p>}
       <div className="flex gap-2">
