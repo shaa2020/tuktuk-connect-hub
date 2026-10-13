@@ -205,7 +205,9 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
     if (b.tour) fields.tour_name = b.tour;
     if (b.time) fields.start_time = b.time;
     if (b.pickup) fields.pickup_location = b.pickup;
-    if (b.language) fields.language = b.language;
+    const lang = b.language || (guest?.preferred_language ?? "");
+    if (lang) fields.language = lang;
+    if (b.duration > 0) fields.duration_minutes = b.duration;
     // Real guest name replaces a phone-number placeholder on the contact.
     if (b.name && c.contact_id && (!guest.full_name || /^[+\d\s()-]+$/.test(guest.full_name))) {
       await sb.from("contacts").update({ full_name: b.name }).eq("id", c.contact_id);
