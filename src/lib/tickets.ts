@@ -2,7 +2,7 @@
 export type PayStatus = "unknown" | "pending" | "paid" | "partially_paid" | "refunded";
 export type TicketAuto = "off" | "all" | "paid" | "unpaid";
 
-export const TICKET_BASE_URL = "https://tuktuk24team.xyz";
+export const TICKET_BASE_URL = "https://tickets.tuktuk24lisbon.com";
 
 export function isPaid(p: PayStatus) { return p === "paid"; }
 
