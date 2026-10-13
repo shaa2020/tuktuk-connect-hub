@@ -48,8 +48,8 @@ function TeamPage() {
     if (error) return toast.error(error.message);
     invites.refetch();
   }
-  async function updateMember(id: string, patch: { role?: AppRole; active?: boolean }) {
-    const { error } = await supabase.from("workspace_members").update(patch).eq("id", id);
+  async function updateMember(id: string, patch: { role?: AppRole; active?: boolean; whatsapp_phone?: string | null }) {
+    const { error } = await supabase.from("workspace_members").update(patch as any).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Member updated");
     qc.invalidateQueries({ queryKey: workspaceQueryKey });
@@ -88,6 +88,10 @@ function TeamPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-sm font-semibold">{m.full_name || m.email}{m.user_id === ws.userId && <ToneBadge tone="blue">You</ToneBadge>}{!m.active && <ToneBadge tone="muted">Deactivated</ToneBadge>}</div>
                 <div className="truncate text-xs text-muted-foreground">{m.email}</div>
+                {admin ? (
+                  <Input className="mt-1.5 h-8 max-w-56 text-xs" type="tel" inputMode="tel" aria-label="Driver WhatsApp number" placeholder="Driver WhatsApp, e.g. +351 912 345 678" defaultValue={m.whatsapp_phone ?? ""}
+                    onBlur={(e) => { const v = e.target.value.trim(); if (v !== (m.whatsapp_phone ?? "")) { if (v && !/^\+?[\d\s-]{8,20}$/.test(v)) { toast.error("Enter a phone number with country code, e.g. +351 912 345 678"); return; } updateMember(m.id, { whatsapp_phone: v || null }); } }} />
+                ) : m.whatsapp_phone ? <div className="text-xs text-muted-foreground">WhatsApp {m.whatsapp_phone}</div> : null}
               </div>
               {admin ? (
                 <div className="flex items-center gap-2">

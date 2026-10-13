@@ -48,7 +48,7 @@ async function loadWorkspace() {
   if (!mem) return { user, profile, mem: null, members: [] as Member[] };
   const { data: rows, error: me } = await supabase
     .from("workspace_members")
-    .select("id, user_id, role, active, profiles(full_name, email)")
+    .select("id, user_id, role, active, whatsapp_phone, profiles(full_name, email)")
     .eq("workspace_id", mem.workspace_id)
     .order("created_at");
   if (me) throw me;
@@ -57,6 +57,7 @@ async function loadWorkspace() {
     user_id: r.user_id,
     role: r.role,
     active: r.active,
+    whatsapp_phone: (r as any).whatsapp_phone ?? null,
     full_name: r.profiles?.full_name ?? null,
     email: r.profiles?.email ?? null,
   }));
