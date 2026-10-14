@@ -55,5 +55,6 @@
 - [ ] Owner to test live after publishing (runs every 5 min on live app)
 ## Connect Account upgrade (2026-10-14)
 - [x] + Connect Account sheet (inbox header, empty inbox, Connected accounts page) with real per-provider status
-- [ ] BLOCKED: true one-tap app permission for Instagram/Messenger needs owner's Meta app + Meta app review
+- [x] One-click "Continue with Facebook" connect for Instagram/Messenger built
+- [ ] WAITING on owner: create Meta app once (App ID + Secret) and pass Meta app review for live use
 - [ ] Telegram, Outlook connectors (not built yet); TikTok/LinkedIn need partner approval
