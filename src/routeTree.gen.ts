@@ -36,6 +36,7 @@ import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as ApiPublicHooksBackgroundSyncRouteImport } from './routes/api/public/hooks/background-sync'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
+import { Route as ApiPublicOauthMetaCallbackRouteImport } from './routes/api/public/oauth/meta/callback'
 import { Route as ApiPublicWebhooksMetaWorkspaceIdRouteImport } from './routes/api/public/webhooks/meta.$workspaceId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -178,6 +179,12 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicOauthMetaCallbackRoute =
+  ApiPublicOauthMetaCallbackRouteImport.update({
+    id: '/api/public/oauth/meta/callback',
+    path: '/api/public/oauth/meta/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksMetaWorkspaceIdRoute =
   ApiPublicWebhooksMetaWorkspaceIdRouteImport.update({
     id: '/api/public/webhooks/meta/$workspaceId',
@@ -212,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
 export interface FileRoutesByTo {
@@ -241,6 +249,7 @@ export interface FileRoutesByTo {
   '/contacts': typeof AuthenticatedContactsIndexRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
 export interface FileRoutesById {
@@ -272,6 +281,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
 export interface FileRouteTypes {
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/contacts/'
     | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/meta/$workspaceId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/meta/$workspaceId'
   id:
     | '__root__'
@@ -362,6 +374,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/'
     | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/meta/$workspaceId'
   fileRoutesById: FileRoutesById
 }
@@ -374,6 +387,7 @@ export interface RootRouteChildren {
   TicketTokenRoute: typeof TicketTokenRoute
   ApiPublicHooksBackgroundSyncRoute: typeof ApiPublicHooksBackgroundSyncRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
+  ApiPublicOauthMetaCallbackRoute: typeof ApiPublicOauthMetaCallbackRoute
   ApiPublicWebhooksMetaWorkspaceIdRoute: typeof ApiPublicWebhooksMetaWorkspaceIdRoute
 }
 
@@ -568,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/oauth/meta/callback': {
+      id: '/api/public/oauth/meta/callback'
+      path: '/api/public/oauth/meta/callback'
+      fullPath: '/api/public/oauth/meta/callback'
+      preLoaderRoute: typeof ApiPublicOauthMetaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/meta/$workspaceId': {
       id: '/api/public/webhooks/meta/$workspaceId'
       path: '/api/public/webhooks/meta/$workspaceId'
@@ -634,6 +655,7 @@ const rootRouteChildren: RootRouteChildren = {
   TicketTokenRoute: TicketTokenRoute,
   ApiPublicHooksBackgroundSyncRoute: ApiPublicHooksBackgroundSyncRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
+  ApiPublicOauthMetaCallbackRoute: ApiPublicOauthMetaCallbackRoute,
   ApiPublicWebhooksMetaWorkspaceIdRoute: ApiPublicWebhooksMetaWorkspaceIdRoute,
 }
 export const routeTree = rootRouteImport
