@@ -36,3 +36,4 @@
 - Website (tuktuk24lisbon.com) is read via its /api/v1 with the WEBSITE_API_KEY server secret (website-api.server.ts); quotes fetch tours live and 'Sync now' copies business info/tours/FAQ into knowledge_documents (category 'website') — the website API has no booking-list endpoint, bookings are pulled by syncWebsiteBookingsFor (background-sync.server.ts); deleting a synced booking records a tombstone in website_booking_ignores so it never re-imports.
 
 - Background sync: pg_cron every 5 min POSTs /api/public/hooks/background-sync with a random token read from internal_job_tokens (service_role only) — Gmail push and website webhooks aren't available, and the token never leaves the server/DB.
+- Connect Account sheet (src/components/connect-account.tsx) derives card states only from real channel_connections rows via src/lib/connect-providers.ts (tested) and hands off to /integrations?connect=<channel> — one setup path per provider, no fake states.
