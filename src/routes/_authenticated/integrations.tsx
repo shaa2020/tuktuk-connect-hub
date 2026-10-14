@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { ConnectAccountButton } from "@/components/connect-account";
 import { Button } from "@/components/ui/button";
 import { MetaConnectForm } from "@/components/admin-connections";
+import { MetaOneClick, MetaPicker } from "@/components/meta-one-click";
 import { TemplatesPanel } from "@/components/wa-templates";
 import { useServerFn } from "@tanstack/react-start";
 import { connectEmailChannel, connectGmailAppPassword, disconnectChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
@@ -104,7 +105,7 @@ function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: 
 
 function IntegrationsPage() {
   const { workspaceId, role } = useWorkspace();
-  const { connect } = Route.useSearch();
+  const { connect, meta_pick, meta_channel, meta_error } = Route.useSearch();
   const [open, setOpen] = useState<string | null>(connect ? (connect === "email" ? "new-gmail" : `new-${connect}`) : null);
   useEffect(() => {
     if (!connect) return;
@@ -127,6 +128,7 @@ function IntegrationsPage() {
       <PageHeader title="Connected accounts" description="Connect as many Gmail inboxes, WhatsApp numbers, Instagram accounts and Facebook Pages as you need. Status shown is the real connection state." actions={<ConnectAccountButton />} />
       {q.isLoading ? <ListSkeleton /> : q.error ? <ErrorState message={(q.error as Error).message} /> : (
         <div className="space-y-4">
+          {isAdmin && <MetaPicker workspaceId={workspaceId} nonce={meta_pick} channel={meta_channel} error={meta_error} onDone={() => q.refetch()} />}
           <WebsitePanel workspaceId={workspaceId} canSync={role === "admin" || role === "manager"} />
           {ORDER.map((ch) => {
             const rows = (q.data ?? []).filter((c) => c.channel === ch);
@@ -177,7 +179,7 @@ function IntegrationsPage() {
                 {isAdmin && isMeta && (
                   <>
                     <Button size="sm" variant="secondary" className="mt-2" onClick={() => setOpen(open === `new-${ch}` ? null : `new-${ch}`)}><Plus />Add {rows.some((r) => r.status === "connected") ? "another" : "an"} account</Button>
-                    {open === `new-${ch}` && <MetaConnectForm workspaceId={workspaceId} channel={ch as "whatsapp"} connected={false} onDone={() => { q.refetch(); setOpen(null); }} />}
+                    {open === `new-${ch}` && (ch === "whatsapp" ? <MetaConnectForm workspaceId={workspaceId} channel="whatsapp" connected={false} onDone={() => { q.refetch(); setOpen(null); }} /> : <MetaOneClick workspaceId={workspaceId} channel={ch as "instagram"} onDone={() => { q.refetch(); setOpen(null); }} />)}
                   </>
                 )}
                 {ch === "email" && isAdmin && (
@@ -197,8 +199,12 @@ function IntegrationsPage() {
 
 const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email"] as const;
 export const Route = createFileRoute("/_authenticated/integrations")({
-  validateSearch: (s: Record<string, unknown>): { connect?: (typeof CONNECT_KEYS)[number] } =>
-    CONNECT_KEYS.includes(s.connect as any) ? { connect: s.connect as (typeof CONNECT_KEYS)[number] } : {},
+  validateSearch: (s: Record<string, unknown>): { connect?: (typeof CONNECT_KEYS)[number]; meta_pick?: string; meta_channel?: "messenger" | "instagram"; meta_error?: string } => ({
+    ...(CONNECT_KEYS.includes(s.connect as any) ? { connect: s.connect as (typeof CONNECT_KEYS)[number] } : {}),
+    ...(typeof s.meta_pick === "string" && /^[0-9a-f-]{36}$/.test(s.meta_pick) ? { meta_pick: s.meta_pick } : {}),
+    ...(s.meta_channel === "messenger" || s.meta_channel === "instagram" ? { meta_channel: s.meta_channel } : {}),
+    ...(typeof s.meta_error === "string" ? { meta_error: s.meta_error.slice(0, 200) } : {}),
+  }),
   head: () => ({ meta: [{ title: "Connected accounts — Tuk Tuk 24 Lisbon" }] }),
   component: IntegrationsPage,
 });
