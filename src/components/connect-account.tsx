@@ -52,7 +52,7 @@ function WebsiteCard({ open, isAdmin, go }: { open: boolean; isAdmin: boolean; g
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted"><Globe className="size-5" /></div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">tuktuk24lisbon.com</div>
-            <div className="text-xs text-muted-foreground">{ok ? `${q.data.tourCount} live tours · bookings import automatically` : "Tours, prices and bookings from your website."}</div>
+            <div className="text-xs text-muted-foreground">{q.data?.ok ? `${q.data.tourCount} live tours · bookings import automatically` : "Tours, prices and bookings from your website."}</div>
           </div>
           <ToneBadge tone={ok ? "success" : q.isLoading ? "muted" : "danger"}>{q.isLoading ? "…" : ok ? "Connected" : "Check"}</ToneBadge>
         </div>
