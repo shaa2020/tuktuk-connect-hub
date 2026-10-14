@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ConnectAccountButton } from "@/components/connect-account";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -211,7 +212,8 @@ function InboxPage() {
             <Button size="sm" variant={showFilters || activeFilters ? "secondary" : "outline"} className="h-9 shrink-0 px-2.5" onClick={() => setShowFilters((s) => !s)} aria-expanded={showFilters}>
               <SlidersHorizontal />{activeFilters > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{activeFilters}</span>}
             </Button>
-            <Button size="sm" className="h-9 shrink-0 px-2.5" onClick={() => setNewOpen(true)} aria-label="New conversation"><Plus /><span className="hidden sm:inline">New</span></Button>
+            <Button size="sm" variant="outline" className="h-9 shrink-0 px-2.5" onClick={() => setNewOpen(true)} aria-label="New conversation"><Plus /><span className="hidden sm:inline">New</span></Button>
+            <ConnectAccountButton className="h-9 shrink-0 px-2.5" label="Connect" />
           </div>
           <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-0.5 [scrollbar-width:none]">
             {(["all", "mine", "unread", "unassigned", "open", "waiting_team", "high"] as FilterKey[]).map((k) => (
@@ -246,7 +248,10 @@ function InboxPage() {
         <div className="flex-1 overflow-y-auto">
           {list.isLoading ? <ListSkeleton rows={7} /> : list.error ? <div className="p-3"><ErrorState message={(list.error as Error).message} onRetry={() => list.refetch()} /></div> :
             !list.data?.rows.length ? (
-              <EmptyState icon={<InboxIcon />} title="No conversations" description={debounced || filter !== "all" ? "Nothing matches these filters." : "Social channels aren't connected yet. Log phone or walk-in enquiries with “New”."} />
+              <div>
+                <EmptyState icon={<InboxIcon />} title="No conversations" description={debounced || filter !== "all" ? "Nothing matches these filters." : "Connect WhatsApp, Instagram, Facebook or Gmail to start receiving messages here."} />
+                {!debounced && filter === "all" && <div className="flex justify-center pb-6"><ConnectAccountButton size="default" label="Connect account" /></div>}
+              </div>
             ) : (
               <ul>
                 {list.data.rows.map((v) => {

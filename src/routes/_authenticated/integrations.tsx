@@ -7,7 +7,8 @@ import { ErrorState, ListSkeleton, PageHeader, Panel } from "@/components/states
 import { ToneBadge } from "@/components/kit";
 import { CHANNEL_LABEL, type ChannelType } from "@/lib/domain";
 import { ChannelIcon } from "./inbox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ConnectAccountButton } from "@/components/connect-account";
 import { Button } from "@/components/ui/button";
 import { MetaConnectForm } from "@/components/admin-connections";
 import { TemplatesPanel } from "@/components/wa-templates";
@@ -103,7 +104,13 @@ function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: 
 
 function IntegrationsPage() {
   const { workspaceId, role } = useWorkspace();
-  const [open, setOpen] = useState<string | null>(null);
+  const { connect } = Route.useSearch();
+  const [open, setOpen] = useState<string | null>(connect ? (connect === "email" ? "new-gmail" : `new-${connect}`) : null);
+  useEffect(() => {
+    if (!connect) return;
+    setOpen(connect === "email" ? "new-gmail" : `new-${connect}`);
+    setTimeout(() => document.getElementById(`ch-${connect}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+  }, [connect]);
   const rename = useServerFn(renameConnection);
   const disconnect = useServerFn(disconnectChannel);
   const q = useQuery({
@@ -117,7 +124,7 @@ function IntegrationsPage() {
   const isAdmin = role === "admin";
   return (
     <PageContainer className="max-w-3xl">
-      <PageHeader title="Integrations" description="Connect as many Gmail inboxes, WhatsApp numbers, Instagram accounts and Facebook Pages as you need. Status shown is the real connection state." />
+      <PageHeader title="Connected accounts" description="Connect as many Gmail inboxes, WhatsApp numbers, Instagram accounts and Facebook Pages as you need. Status shown is the real connection state." actions={<ConnectAccountButton />} />
       {q.isLoading ? <ListSkeleton /> : q.error ? <ErrorState message={(q.error as Error).message} /> : (
         <div className="space-y-4">
           <WebsitePanel workspaceId={workspaceId} canSync={role === "admin" || role === "manager"} />
@@ -125,7 +132,7 @@ function IntegrationsPage() {
             const rows = (q.data ?? []).filter((c) => c.channel === ch);
             const isMeta = (META as readonly string[]).includes(ch);
             return (
-              <Panel key={ch} className="p-4">
+              <Panel key={ch} className="scroll-mt-20 p-4" id={`ch-${ch}`}>
                 <div className="mb-2 flex items-center gap-3">
                   <div className="flex size-10 items-center justify-center rounded-lg bg-muted"><ChannelIcon channel={ch} className="size-5" /></div>
                   <div className="flex-1 text-sm font-semibold">{CHANNEL_LABEL[ch]}</div>
@@ -188,7 +195,10 @@ function IntegrationsPage() {
   );
 }
 
+const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email"] as const;
 export const Route = createFileRoute("/_authenticated/integrations")({
-  head: () => ({ meta: [{ title: "Integrations — Tuk Tuk 24 Lisbon" }] }),
+  validateSearch: (s: Record<string, unknown>): { connect?: (typeof CONNECT_KEYS)[number] } =>
+    CONNECT_KEYS.includes(s.connect as any) ? { connect: s.connect as (typeof CONNECT_KEYS)[number] } : {},
+  head: () => ({ meta: [{ title: "Connected accounts — Tuk Tuk 24 Lisbon" }] }),
   component: IntegrationsPage,
 });

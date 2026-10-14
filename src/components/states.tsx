@@ -17,8 +17,8 @@ export function PageHeader({ title, description, actions }: { title: string; des
   );
 }
 
-export function Panel({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn("rounded-xl border bg-card shadow-[var(--shadow-card)]", className)}>{children}</div>;
+export function Panel({ className, children, id }: { className?: string; children: ReactNode; id?: string }) {
+  return <div id={id} className={cn("rounded-xl border bg-card shadow-[var(--shadow-card)]", className)}>{children}</div>;
 }
 
 export function EmptyState({ icon, title, description, action }: { icon?: ReactNode; title: string; description?: string; action?: ReactNode }) {

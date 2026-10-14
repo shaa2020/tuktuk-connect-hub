@@ -53,3 +53,7 @@
 ## AI Operator (Away mode)
 - [x] Away-mode AI Operator: replies, tentative bookings, tags/assign, alerts, activity log
 - [ ] Owner to test live after publishing (runs every 5 min on live app)
+## Connect Account upgrade (2026-10-14)
+- [x] + Connect Account sheet (inbox header, empty inbox, Connected accounts page) with real per-provider status
+- [ ] BLOCKED: true one-tap app permission for Instagram/Messenger needs owner's Meta app + Meta app review
+- [ ] Telegram, Outlook connectors (not built yet); TikTok/LinkedIn need partner approval
