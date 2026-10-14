@@ -89,7 +89,7 @@ export function ConnectAccountSheet({ open, onOpenChange }: { open: boolean; onO
                       </div>
                       {!soon && isAdmin && (
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <Button size="sm" className="min-h-10 flex-1" onClick={() => { onOpenChange(false); navigate({ to: "/integrations", search: { connect: p.key } }); }}>
+                          <Button size="sm" className="min-h-10 flex-1" onClick={() => { onOpenChange(false); navigate({ to: "/integrations", search: { connect: p.key as "whatsapp" } }); }}>
                             {st.action}
                           </Button>
                           {p.appLink && (

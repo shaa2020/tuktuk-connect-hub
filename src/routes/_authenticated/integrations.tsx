@@ -7,7 +7,8 @@ import { ErrorState, ListSkeleton, PageHeader, Panel } from "@/components/states
 import { ToneBadge } from "@/components/kit";
 import { CHANNEL_LABEL, type ChannelType } from "@/lib/domain";
 import { ChannelIcon } from "./inbox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ConnectAccountButton } from "@/components/connect-account";
 import { Button } from "@/components/ui/button";
 import { MetaConnectForm } from "@/components/admin-connections";
 import { TemplatesPanel } from "@/components/wa-templates";
