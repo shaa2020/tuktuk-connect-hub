@@ -17,7 +17,9 @@ export async function sendToConversation(convId: string, body: string, authorId:
   if (!to) return { ok: false, error: "No customer address for this conversation." };
   try {
     const cfg = (cc.config ?? {}) as Record<string, string>;
-    const extId = conv.channel === "email" && cfg.mode === "imap"
+    const extId = cfg.mode === "hub"
+      ? await (await import("./hub.server")).sendViaHub(conv.workspace_id, conv.channel, cfg, to, body, conv.id)
+      : conv.channel === "email" && cfg.mode === "imap"
       ? await sendViaApp(conv.workspace_id, conv.id, cc.id, cfg, to, body)
       : conv.channel === "email"
       ? await (await import("./email-channel.server")).sendEmail(conv.workspace_id, conv.id, to, body)

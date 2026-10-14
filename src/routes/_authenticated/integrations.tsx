@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Globe, Plus, RefreshCw } from "lucide-react";
 import { syncWebsiteKnowledge, websiteStatus } from "@/lib/website.functions";
 import { toast } from "sonner";
+import { AutomationHubPanel } from "@/components/automation-hub";
 
 function EmailControls({ workspaceId, connected, onDone }: { workspaceId: string; connected: boolean; onDone: () => void }) {
   const connect = useServerFn(connectEmailChannel);
@@ -130,6 +131,7 @@ function IntegrationsPage() {
         <div className="space-y-4">
           {isAdmin && <MetaPicker workspaceId={workspaceId} nonce={meta_pick} channel={meta_channel} error={meta_error} onDone={() => q.refetch()} />}
           <WebsitePanel workspaceId={workspaceId} canSync={role === "admin" || role === "manager"} />
+          {role === "admin" && <AutomationHubPanel workspaceId={workspaceId} />}
           {ORDER.map((ch) => {
             const rows = (q.data ?? []).filter((c) => c.channel === ch);
             const isMeta = (META as readonly string[]).includes(ch);
