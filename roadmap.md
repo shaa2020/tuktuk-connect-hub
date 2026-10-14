@@ -58,3 +58,4 @@
 - [x] One-click "Continue with Facebook" connect for Instagram/Messenger built
 - [ ] WAITING on owner: create Meta app once (App ID + Secret) and pass Meta app review for live use
 - [ ] Telegram, Outlook connectors (not built yet); TikTok/LinkedIn need partner approval
+- [x] Website card in Connect Account sheet (live status, Sync now); WhatsApp/Gmail "add another" from the same sheet

@@ -81,7 +81,7 @@ function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: 
   const q = useQuery({ queryKey: ["website-status", workspaceId], queryFn: () => status({ data: { workspaceId } }) });
   const d = q.data;
   return (
-    <Panel className="p-4">
+    <Panel className="scroll-mt-20 p-4" id="ch-website">
       <div className="flex items-center gap-3">
         <div className="flex size-10 items-center justify-center rounded-lg bg-muted"><Globe className="size-5" /></div>
         <div className="min-w-0 flex-1">
@@ -197,7 +197,7 @@ function IntegrationsPage() {
   );
 }
 
-const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email"] as const;
+const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email", "website"] as const;
 export const Route = createFileRoute("/_authenticated/integrations")({
   validateSearch: (s: Record<string, unknown>): { connect?: (typeof CONNECT_KEYS)[number]; meta_pick?: string; meta_channel?: "messenger" | "instagram"; meta_error?: string } => ({
     ...(CONNECT_KEYS.includes(s.connect as any) ? { connect: s.connect as (typeof CONNECT_KEYS)[number] } : {}),
