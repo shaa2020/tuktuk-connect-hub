@@ -1,0 +1,5 @@
+## src/lib rules
+- AI Operator (src/lib/ai-operator.server.ts) auto-acts only while an admin/manager has Away mode on, with per-action toggles; runs in the 5-min background job with a DB lease, per-message marks, a reply cap, 402/403 pause, and logs every action to ai_operator_log — keeps autonomy bounded and auditable.
+- Tour dispatch: vehicles table + bookings.vehicle_id/driver_id/dispatch_status; conflict detection is pure client logic in src/lib/dispatch.ts (tested) — keeps warnings instant without extra queries.
+- WhatsApp templates are read live from the connector (/message_templates) and sent only if APPROVED; the 24h-window check (src/lib/wa-templates.ts) is UI guidance — Meta remains the enforcer.
+- Website (tuktuk24lisbon.com) is read via its /api/v1 with the WEBSITE_API_KEY server secret (website-api.server.ts); quotes fetch tours live and 'Sync now' copies business info/tours/FAQ into knowledge_documents (category 'website') — the website API has no booking-list endpoint, bookings are pulled by syncWebsiteBookingsFor (background-sync.server.ts); deleting a synced booking records a tombstone in website_booking_ignores so it never re-imports.
