@@ -11,6 +11,56 @@ export const PROVIDER_BASE: Record<string, string> = {
 
 export interface ProviderSettings { provider: Provider; model: string | null; base_url: string | null }
 
+/** Guess the provider from the key's well-known prefix. */
+export function detectProvider(key: string): Provider | null {
+  const k = key.trim();
+  if (k.startsWith("AIza")) return "gemini";
+  if (k.startsWith("sk-ant-")) return "anthropic";
+  if (k.startsWith("sk-or-")) return "openrouter";
+  if (k.startsWith("sk-")) return "openai";
+  return null;
+}
+
+/** Pick the best chat model from a list of model ids (pure, tested). */
+export function pickModel(provider: Provider, ids: string[]): string | null {
+  const clean = ids.map((i) => i.replace(/^models\//, ""));
+  const bad = /(lite|preview|exp|tts|image|embed|live|audio|vision|thinking|aqa|learnlm|gemma|nano|search|realtime|transcribe|instruct|-\d{4}-\d{2}-\d{2}|\d{3}$)/i;
+  const ver = (s: string) => Number(s.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 0);
+  const best = (pat: RegExp) => clean.filter((m) => pat.test(m) && !bad.test(m)).sort((a, b) => ver(b) - ver(a))[0] ?? null;
+  if (provider === "gemini") return best(/^gemini-[\d.]+-flash$/) ?? best(/^gemini-[\d.]+-pro$/) ?? best(/^gemini/);
+  if (provider === "anthropic") return best(/sonnet/) ?? best(/claude/);
+  if (provider === "openai") return clean.includes("gpt-4o-mini") ? "gpt-4o-mini" : best(/^gpt-[\d.o]+(-mini)?$/) ?? best(/^gpt/);
+  return null;
+}
+
+/** Ask the provider which models this key can use. Returns [] on any failure. */
+export async function listModels(provider: Provider, apiKey: string): Promise<string[]> {
+  try {
+    const k = apiKey.trim();
+    if (provider === "gemini") {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000`, { headers: { "x-goog-api-key": k } });
+      const j = (await r.json().catch(() => ({}))) as any;
+      return (j.models ?? []).filter((m: any) => (m.supportedGenerationMethods ?? []).includes("generateContent")).map((m: any) => String(m.name));
+    }
+    if (provider === "anthropic") {
+      const r = await fetch("https://api.anthropic.com/v1/models", { headers: { "x-api-key": k, "anthropic-version": "2023-06-01" } });
+      const j = (await r.json().catch(() => ({}))) as any;
+      return (j.data ?? []).map((m: any) => String(m.id));
+    }
+    if (provider === "openai") {
+      const r = await fetch("https://api.openai.com/v1/models", { headers: { authorization: `Bearer ${k}` } });
+      const j = (await r.json().catch(() => ({}))) as any;
+      return (j.data ?? []).map((m: any) => String(m.id));
+    }
+  } catch { /* fall through */ }
+  return [];
+}
+
+export async function autoModel(provider: Provider, apiKey: string): Promise<string | null> {
+  if (provider === "openrouter") return "openai/gpt-4o-mini";
+  return pickModel(provider, await listModels(provider, apiKey));
+}
+
 export async function generate(ws: string, s: ProviderSettings, opts: { instructions: string; input: string; jsonSchema?: { name: string; schema: Record<string, unknown> } }) {
   if (s.provider === "lovable" || !s.provider) return lovableGenerate(opts);
   const apiKey = await getSecret(ws, "ai_api_key");

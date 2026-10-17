@@ -32,15 +32,26 @@ export const saveAiProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, data.workspaceId);
     const { setSecret, getSecret } = await import("./secrets.server");
-    const { callProvider } = await import("./ai-provider.server");
-    const settings = { provider: data.provider, model: data.model || null, base_url: data.provider === "custom" ? data.baseUrl || null : null };
-    if (data.provider !== "lovable") {
-      if (!settings.model) return { ok: false as const, error: "Enter a model name." };
-      if (data.provider === "custom" && !settings.base_url) return { ok: false as const, error: "Enter the provider's https address." };
+    const { callProvider, detectProvider, autoModel } = await import("./ai-provider.server");
+    // A pasted key decides the provider by itself (AIza… = Gemini, sk-ant-… = Claude, …).
+    const detected = data.apiKey ? detectProvider(data.apiKey) : null;
+    const provider = detected && data.provider !== "custom" ? detected : data.provider;
+    const settings = { provider, model: (detected && detected !== data.provider ? "" : data.model) || null, base_url: provider === "custom" ? data.baseUrl || null : null };
+    if (provider !== "lovable") {
+      if (provider === "custom" && !settings.base_url) return { ok: false as const, error: "Enter the provider's https address." };
       const key = data.apiKey || (await getSecret(data.workspaceId, "ai_api_key"));
-      if (!key) return { ok: false as const, error: "Enter your API key." };
+      if (!key) return { ok: false as const, error: "Paste your API key." };
+      if (!settings.model) settings.model = await autoModel(provider, key);
+      if (!settings.model) return { ok: false as const, error: "This key can't use any chat model. Check the key is active and try again." };
       try { await callProvider(settings, key, { instructions: "Reply with OK.", input: "ping" }); }
-      catch (e) { return { ok: false as const, error: (e as Error).message }; }
+      catch (e) {
+        // Typed model rejected? Let the provider tell us which one works and retry once.
+        const picked = await autoModel(provider, key);
+        if (!picked || picked === settings.model) return { ok: false as const, error: (e as Error).message };
+        settings.model = picked;
+        try { await callProvider(settings, key, { instructions: "Reply with OK.", input: "ping" }); }
+        catch (e2) { return { ok: false as const, error: (e2 as Error).message }; }
+      }
       if (data.apiKey) await setSecret(data.workspaceId, "ai_api_key", data.apiKey, context.userId);
     }
     const { error } = await context.supabase.from("ai_settings").upsert({ workspace_id: data.workspaceId, ...settings, updated_at: new Date().toISOString() });
