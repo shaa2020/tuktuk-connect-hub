@@ -15,6 +15,7 @@ export function useCredentialHints(workspaceId: string) {
 }
 
 const PROVIDERS = [
+  { v: "auto", label: "Paste any key — we set it up", model: "" },
   { v: "lovable", label: "Built-in AI (no key needed)", model: "" },
   { v: "openai", label: "OpenAI", model: "gpt-4o-mini" },
   { v: "anthropic", label: "Anthropic Claude", model: "claude-3-5-sonnet-latest" },
@@ -29,7 +30,7 @@ export function AiProviderPanel({ workspaceId, current, onSaved }: { workspaceId
   const hints = useCredentialHints(workspaceId);
   const save = useServerFn(saveAiProvider);
   const remove = useServerFn(removeAiKey);
-  const [provider, setProvider] = useState(current?.provider ?? "lovable");
+  const [provider, setProvider] = useState(current?.provider && current.provider !== "lovable" ? current.provider : "auto");
   const [model, setModel] = useState(current?.model ?? "");
   const [baseUrl, setBaseUrl] = useState(current?.base_url ?? "");
   const [apiKey, setApiKey] = useState("");
@@ -41,7 +42,7 @@ export function AiProviderPanel({ workspaceId, current, onSaved }: { workspaceId
     setBusy(true);
     try {
       const r = await save({ data: { workspaceId, provider: provider as any, model, baseUrl, apiKey } });
-      if (r.ok) { toast.success(provider === "lovable" ? "Using built-in AI" : "Connected — your model replied successfully"); setApiKey(""); hints.refetch(); onSaved(); }
+      if (r.ok) { toast.success(provider === "lovable" ? "Using built-in AI" : `Connected to ${PROVIDERS.find((p) => p.v === (r as any).provider)?.label ?? "your AI"} · ${(r as any).model ?? ""}`); if ((r as any).provider) setProvider((r as any).provider); if ((r as any).model) setModel((r as any).model); setApiKey(""); hints.refetch(); onSaved(); }
       else toast.error(r.error);
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   }
@@ -54,7 +55,7 @@ export function AiProviderPanel({ workspaceId, current, onSaved }: { workspaceId
         {PROVIDERS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
       </NativeSelect></Field>
       {provider !== "lovable" && (<>
-        <Field label="Model name"><Input value={model} onChange={(e) => setModel(e.target.value)} placeholder={meta?.model || "model-name"} /></Field>
+        {provider !== "auto" && <Field label="Model name (optional — filled in automatically)"><Input value={model} onChange={(e) => setModel(e.target.value)} placeholder={meta?.model || "Automatic"} /></Field>}
         {provider === "custom" && <Field label="Provider address (https)"><Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://api.example.com/v1" /></Field>}
         <Field label={keyHint ? `API key (saved ${keyHint} — leave empty to keep)` : "API key"}>
           <Input type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Paste key" />
