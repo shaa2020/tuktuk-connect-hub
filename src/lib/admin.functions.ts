@@ -20,7 +20,7 @@ export const getCredentialStatus = createServerFn({ method: "POST" })
 
 const aiSchema = z.object({
   workspaceId: z.string().uuid(),
-  provider: z.enum(["lovable", "openai", "anthropic", "gemini", "openrouter", "custom"]),
+  provider: z.enum(["auto", "lovable", "openai", "anthropic", "gemini", "openrouter", "custom"]),
   model: z.string().trim().max(120).optional(),
   baseUrl: z.string().trim().url().startsWith("https://").max(300).optional().or(z.literal("")),
   apiKey: secretStr.optional().or(z.literal("")),
@@ -35,7 +35,8 @@ export const saveAiProvider = createServerFn({ method: "POST" })
     const { callProvider, detectProvider, autoModel } = await import("./ai-provider.server");
     // A pasted key decides the provider by itself (AIza… = Gemini, sk-ant-… = Claude, …).
     const detected = data.apiKey ? detectProvider(data.apiKey) : null;
-    const provider = detected && data.provider !== "custom" ? detected : data.provider;
+    const provider = (detected && data.provider !== "custom" ? detected : data.provider) as "lovable" | "openai" | "anthropic" | "gemini" | "openrouter" | "custom" | "auto";
+    if (provider === "auto") return { ok: false as const, error: data.apiKey ? "We couldn't recognise this key. Pick the provider from the list." : "Paste your API key." };
     const settings = { provider, model: (detected && detected !== data.provider ? "" : data.model) || null, base_url: provider === "custom" ? data.baseUrl || null : null };
     if (provider !== "lovable") {
       if (provider === "custom" && !settings.base_url) return { ok: false as const, error: "Enter the provider's https address." };
@@ -56,7 +57,7 @@ export const saveAiProvider = createServerFn({ method: "POST" })
     }
     const { error } = await context.supabase.from("ai_settings").upsert({ workspace_id: data.workspaceId, ...settings, updated_at: new Date().toISOString() });
     if (error) return { ok: false as const, error: error.message };
-    return { ok: true as const };
+    return { ok: true as const, provider: settings.provider, model: settings.model };
   });
 
 export const removeAiKey = createServerFn({ method: "POST" })
