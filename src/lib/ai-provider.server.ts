@@ -42,7 +42,7 @@ export async function callProvider(s: ProviderSettings, apiKey: string, opts: { 
   if (!res.ok) {
     // Provider error text only — never echo the key.
     let m = String(j?.error?.message || j?.message || `request failed (${res.status})`);
-    if (res.status === 404 && s.provider === "gemini") m = `Google doesn't recognise the model "${s.model}". Use gemini-2.5-flash or gemini-2.0-flash.`;
+    if (res.status === 404 && s.provider === "gemini") m = `Google doesn't offer the model "${s.model}" anymore. Type gemini-2.5-flash in the Model name box and try again.`;
     m = m.replaceAll(apiKey, "••••").slice(0, 300);
     throw new AiError(`Your AI provider: ${m}`, res.status);
   }

@@ -18,7 +18,7 @@ const PROVIDERS = [
   { v: "lovable", label: "Built-in AI (no key needed)", model: "" },
   { v: "openai", label: "OpenAI", model: "gpt-4o-mini" },
   { v: "anthropic", label: "Anthropic Claude", model: "claude-3-5-sonnet-latest" },
-  { v: "gemini", label: "Google Gemini", model: "gemini-2.0-flash" },
+  { v: "gemini", label: "Google Gemini", model: "gemini-2.5-flash" },
   { v: "openrouter", label: "OpenRouter", model: "openai/gpt-4o-mini" },
   { v: "custom", label: "Other (OpenAI-compatible)", model: "" },
 ] as const;
