@@ -50,7 +50,7 @@ export function AiProviderPanel({ workspaceId, current, onSaved }: { workspaceId
     <Panel className="space-y-3 p-4">
       <h2 className="flex items-center gap-2 text-sm font-semibold"><KeyRound className="size-4 text-primary" />AI model</h2>
       <p className="text-xs text-muted-foreground">Use the built-in AI, or connect your own account. Your key is encrypted and can never be viewed again — only the last 4 characters are shown.</p>
-      <Field label="Provider"><NativeSelect value={provider} onChange={(e) => { setProvider(e.target.value); const m = PROVIDERS.find((p) => p.v === e.target.value)?.model; if (m && !model) setModel(m); }}>
+      <Field label="Provider"><NativeSelect value={provider} onChange={(e) => { setProvider(e.target.value); setModel(PROVIDERS.find((p) => p.v === e.target.value)?.model ?? ""); }}>
         {PROVIDERS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
       </NativeSelect></Field>
       {provider !== "lovable" && (<>

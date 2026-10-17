@@ -30,16 +30,20 @@ export async function callProvider(s: ProviderSettings, apiKey: string, opts: { 
   } else {
     const base = s.provider === "custom" ? s.base_url : PROVIDER_BASE[s.provider];
     if (!base || !base.startsWith("https://")) throw new AiError("A secure (https) provider address is required.", 400);
+    const model = s.provider === "gemini" ? String(s.model ?? "").trim().replace(/^models\//, "") : s.model;
     res = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: s.model, messages: [{ role: "system", content: opts.instructions }, { role: "user", content: opts.input }] }),
+      headers: { "content-type": "application/json", authorization: `Bearer ${apiKey.trim()}` },
+      body: JSON.stringify({ model, messages: [{ role: "system", content: opts.instructions }, { role: "user", content: opts.input }] }),
     });
   }
-  const j = (await res.json().catch(() => ({}))) as any;
+  const raw = (await res.json().catch(() => ({}))) as any;
+  const j = Array.isArray(raw) ? (raw[0] ?? {}) : raw;
   if (!res.ok) {
     // Provider error text only — never echo the key.
-    const m = String(j?.error?.message || j?.message || `request failed (${res.status})`).replaceAll(apiKey, "••••").slice(0, 300);
+    let m = String(j?.error?.message || j?.message || `request failed (${res.status})`);
+    if (res.status === 404 && s.provider === "gemini") m = `Google doesn't recognise the model "${s.model}". Use gemini-2.5-flash or gemini-2.0-flash.`;
+    m = m.replaceAll(apiKey, "••••").slice(0, 300);
     throw new AiError(`Your AI provider: ${m}`, res.status);
   }
   const text = s.provider === "anthropic"
