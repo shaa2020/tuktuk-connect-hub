@@ -40,6 +40,7 @@ export const redeemInvitation = createServerFn({ method: "POST" })
     });
 
     if (createErr || !created.user) {
+      console.error("[invite] createUser failed:", createErr?.message, (createErr as any)?.status, (createErr as any)?.code);
       const msg = (createErr?.message ?? "").toLowerCase();
       if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
         return { created: false as const, email };
