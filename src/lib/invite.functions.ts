@@ -33,7 +33,7 @@ export const redeemInvitation = createServerFn({ method: "POST" })
     // Try to create the account. If the email is already registered, the
     // invitee signs in instead and accepts via the authenticated RPC.
     // Must satisfy the password policy (lower, upper, digit, symbol); never shown to anyone.
-    const password = `Aa1!${crypto.randomUUID()}${crypto.randomUUID().toUpperCase()}`;
+    const password = `Aa1!${crypto.randomUUID()}${crypto.randomUUID().slice(0, 18).toUpperCase()}`; // 58 chars, under the 72 limit
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
