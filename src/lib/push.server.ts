@@ -125,20 +125,21 @@ async function sendOne(
  * push_sent_at so it is delivered exactly once. Dead subscriptions (404/410)
  * are removed.
  */
-export async function sendPendingPushes(sb: SupabaseClient): Promise<{ sent: number; failed: number }> {
+export async function sendPendingPushes(sb: SupabaseClient, onlyIds?: string[]): Promise<{ sent: number; failed: number }> {
   const priv = process.env["VAPID_PRIVATE_KEY"];
-  const pub = process.env["VAPID_PUBLIC_KEY"] ??
-    "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEElAhPoQwWLsWEFm5L6JU3iJrceYgMv9Jc6QyEMdfLX9B3ffHAXSUQRrCkh8XguTsqMQDCbKaAo-W-DBS1_wP-g";
+  const pub = "BBJQIT6EMFi7FhBZuS-iVN4ia3HmIDL_SXOkMhDHXy1_Qd33xwF0lEEawpIfF4Lk7KjEAwmymgKPlvgwUtf8D_o"; // raw P-256 point (RFC 8292)
   if (!priv) return { sent: 0, failed: 0 };
 
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { data: pending } = await sb
+  let q = sb
     .from("notifications")
     .select("id, user_id, title, body, link")
     .is("push_sent_at", null)
     .gte("created_at", since)
     .order("created_at", { ascending: true })
     .limit(50);
+  if (onlyIds) q = q.in("id", onlyIds);
+  const { data: pending } = await q;
   if (!pending?.length) return { sent: 0, failed: 0 };
 
   let sent = 0;
@@ -166,4 +167,14 @@ export async function sendPendingPushes(sb: SupabaseClient): Promise<{ sent: num
     await sb.from("notifications").update({ push_sent_at: new Date().toISOString() }).eq("id", n.id);
   }
   return { sent, failed };
+}
+
+/** Creates a notification for every active team member and pushes it to their phones right away. */
+export async function notifyTeam(sb: SupabaseClient, ws: string, n: { kind: string; title: string; body: string; link: string }) {
+  const { data: members } = await sb.from("workspace_members").select("user_id").eq("workspace_id", ws).eq("active", true);
+  if (!members?.length) return;
+  const { data: rows } = await sb.from("notifications").insert(members.map((m: any) => ({
+    workspace_id: ws, user_id: m.user_id, kind: n.kind, title: n.title.slice(0, 120), body: n.body.slice(0, 300), link: n.link,
+  }))).select("id");
+  if (rows?.length) await sendPendingPushes(sb, rows.map((r: any) => r.id));
 }

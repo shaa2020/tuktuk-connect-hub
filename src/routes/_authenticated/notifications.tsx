@@ -1,6 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, BellRing, CheckCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { pushSupported, subscribePush } from "@/lib/push";
+import { sendTestPush } from "@/lib/push.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { PageContainer } from "@/components/app-shell";
@@ -39,6 +44,7 @@ function NotificationsPage() {
   return (
     <PageContainer className="max-w-3xl">
       <PageHeader title="Notifications" description="Assignments and escalations." actions={<Button variant="outline" size="sm" onClick={readAll}><CheckCheck /> Mark all read</Button>} />
+      <PhoneAlerts />
       <Panel>
         {q.isLoading ? <ListSkeleton /> : q.error ? <div className="p-4"><ErrorState message={(q.error as Error).message} /></div> :
           !q.data?.length ? <EmptyState icon={<Bell />} title="You're all caught up" description="You'll be notified here when a conversation is assigned to you or escalated." /> : (
@@ -53,7 +59,53 @@ function NotificationsPage() {
             ))}</ul>
           )}
       </Panel>
-      <p className="mt-3 text-xs text-muted-foreground">Push and email notifications aren't set up yet — notifications appear here while the app is open.</p>
     </PageContainer>
+  );
+}
+
+function PhoneAlerts() {
+  const { workspaceId } = useWorkspace();
+  const test = useServerFn(sendTestPush);
+  const [state, setState] = useState<"unknown" | "on" | "off" | "blocked" | "unsupported">("unknown");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!pushSupported()) return setState("unsupported");
+    setState(Notification.permission === "granted" ? "on" : Notification.permission === "denied" ? "blocked" : "off");
+  }, []);
+  async function enable() {
+    setBusy(true);
+    const r = await subscribePush(true);
+    setBusy(false);
+    if (r === "subscribed") { setState("on"); toast.success("Phone alerts are on"); }
+    else if (r === "unsupported") setState("unsupported");
+    else { setState(Notification.permission === "denied" ? "blocked" : "off"); toast.error("Alerts were not allowed"); }
+  }
+  async function sendTest() {
+    setBusy(true);
+    try {
+      await subscribePush(true);
+      const r = await test({ data: { workspaceId } });
+      r.sent ? toast.success("Test sent — check your phone screen") : toast.error("No phone is registered yet. Tap Turn on first.");
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  }
+  return (
+    <Panel className="mb-4 p-4">
+      <div className="flex items-start gap-3">
+        <BellRing className="mt-0.5 size-5 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold">Phone alerts</div>
+          <p className="text-xs text-muted-foreground">
+            {state === "on" ? "On for this device. New WhatsApp, email and other messages appear on your phone screen." :
+              state === "blocked" ? "Blocked in your browser. Open Chrome settings → Site settings → Notifications and allow this site." :
+              state === "unsupported" ? "This browser can't show alerts. On iPhone, add the app to your Home Screen first." :
+              "Get an alert on your phone screen for every new message."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {state !== "on" && state !== "unsupported" && <Button size="sm" onClick={enable} disabled={busy}>Turn on</Button>}
+            {state === "on" && <Button size="sm" variant="outline" onClick={sendTest} disabled={busy}>Send test alert</Button>}
+          </div>
+        </div>
+      </div>
+    </Panel>
   );
 }

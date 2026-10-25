@@ -85,6 +85,15 @@ export async function ingestInbound(ws: string, channel: MetaChannel | "email", 
     status: ev.direction === "outbound" ? "sent" : "delivered", external_id: ev.externalMessageId, author_id: null, ...(ev.at ? { created_at: ev.at.toISOString() } : {}),
   });
   if (error && error.code !== "23505") throw error; // duplicate webhook delivery is fine
+  // Phone alert for genuinely new, recent guest messages (skip history imports and duplicates).
+  const fresh = !ev.at || Date.now() - ev.at.getTime() < 30 * 60 * 1000;
+  if (!error && (ev.direction ?? "inbound") === "inbound" && fresh) {
+    try {
+      const { notifyTeam } = await import("./push.server");
+      const label = { whatsapp: "WhatsApp", messenger: "Messenger", instagram: "Instagram", email: "Email" }[channel] ?? channel;
+      await notifyTeam(sb as any, ws, { kind: "message", title: `New ${label} from ${(ev.name || ev.from).slice(0, 60)}`, body: (ev.text || "New message").slice(0, 200), link: `/inbox?c=${convId}` });
+    } catch { /* never block message saving on alerts */ }
+  }
 }
 
 const STATUS_MAP: Record<string, "sent" | "delivered" | "read" | "failed"> = { sent: "sent", delivered: "delivered", read: "read", failed: "failed" };
