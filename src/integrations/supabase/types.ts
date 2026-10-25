@@ -385,6 +385,8 @@ export type Database = {
           payment_status_source: string
           pickup_location: string | null
           reference: string
+          reminder_sent_at: string | null
+          review_sent_at: string | null
           source_system: string
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
@@ -417,6 +419,8 @@ export type Database = {
           payment_status_source?: string
           pickup_location?: string | null
           reference: string
+          reminder_sent_at?: string | null
+          review_sent_at?: string | null
           source_system?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -449,6 +453,8 @@ export type Database = {
           payment_status_source?: string
           pickup_location?: string | null
           reference?: string
+          reminder_sent_at?: string | null
+          review_sent_at?: string | null
           source_system?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -491,6 +497,41 @@ export type Database = {
           },
           {
             foreignKeyName: "bookings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canned_replies: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sort: number
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sort?: number
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sort?: number
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canned_replies_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -2114,12 +2155,16 @@ export type Database = {
           created_at: string
           default_driver_id: string | null
           driver_auto: boolean
+          google_review_url: string | null
+          guest_reminder_auto: boolean
           id: string
           name: string
           plan: string
           plan_limits: Json
+          review_request_auto: boolean
           ticket_auto: string
           timezone: string
+          tripadvisor_review_url: string | null
           updated_at: string
         }
         Insert: {
@@ -2128,12 +2173,16 @@ export type Database = {
           created_at?: string
           default_driver_id?: string | null
           driver_auto?: boolean
+          google_review_url?: string | null
+          guest_reminder_auto?: boolean
           id?: string
           name: string
           plan?: string
           plan_limits?: Json
+          review_request_auto?: boolean
           ticket_auto?: string
           timezone?: string
+          tripadvisor_review_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -2142,12 +2191,16 @@ export type Database = {
           created_at?: string
           default_driver_id?: string | null
           driver_auto?: boolean
+          google_review_url?: string | null
+          guest_reminder_auto?: boolean
           id?: string
           name?: string
           plan?: string
           plan_limits?: Json
+          review_request_auto?: boolean
           ticket_auto?: string
           timezone?: string
+          tripadvisor_review_url?: string | null
           updated_at?: string
         }
         Relationships: []
