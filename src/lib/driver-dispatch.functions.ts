@@ -66,3 +66,18 @@ export const setAutoAssign = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const urlOrNull = z.string().trim().max(500).refine((v) => v === "" || /^https:\/\//.test(v), "Links must start with https://").transform((v) => v || null);
+
+export const setGuestAutomations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ workspaceId: z.string().uuid(), reminder: z.boolean(), review: z.boolean(), googleUrl: urlOrNull, tripUrl: urlOrNull }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("has_ws_role", { _ws: data.workspaceId, _roles: [...STAFF] });
+    if (!ok) throw new Error("Only admins and managers can change this.");
+    if (data.review && !data.googleUrl && !data.tripUrl) throw new Error("Add a Google or TripAdvisor review link first.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin.from("workspaces") as any).update({ guest_reminder_auto: data.reminder, review_request_auto: data.review, google_review_url: data.googleUrl, tripadvisor_review_url: data.tripUrl }).eq("id", data.workspaceId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
