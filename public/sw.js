@@ -5,9 +5,12 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || "TeamInbox", {
       body: data.body || "",
-      icon: "/icon-192-teaminbox.png",
-      badge: "/icon-192-teaminbox.png",
-      tag: data.tag || undefined,
+      icon: "/icon-192-teaminbox-v2.png",
+      badge: "/icon-192-teaminbox-v2.png",
+      vibrate: [200, 100, 200],
+      renotify: true,
+      requireInteraction: false,
+      tag: data.tag || "tt24",
       data: { url: data.url || "/notifications" },
     })
   );
