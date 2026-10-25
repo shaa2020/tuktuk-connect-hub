@@ -60,3 +60,8 @@
 - [ ] Telegram, Outlook connectors (not built yet); TikTok/LinkedIn need partner approval
 - [x] Website card in Connect Account sheet (live status, Sync now); WhatsApp/Gmail "add another" from the same sheet
 - [x] Automation Hub (n8n/Make) inbound/outbound + downloadable workflow
+## Guest automations (2026-10-25)
+- [x] Evening-before WhatsApp reminder (19:00, map pin, guide, ticket) — toggle on Tour Calendar
+- [x] Review request 2h after tour (Google/TripAdvisor links) — toggle on Tour Calendar
+- [x] Saved replies in inbox (Replies button), editable in Knowledge
+- [ ] Voice note transcription (next)
