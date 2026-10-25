@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncWebsiteBookings } from "@/lib/website.functions";
-import { notifyDriverFn, sendDriverScheduleFn, flushAutoAssignedFn, setAutoAssign } from "@/lib/driver-dispatch.functions";
+import { notifyDriverFn, sendDriverScheduleFn, flushAutoAssignedFn, setAutoAssign, setGuestAutomations } from "@/lib/driver-dispatch.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Euro, Globe, MapPin, MessageCircle, Pencil, Phone, Plus, RefreshCw, Send, StickyNote, Truck, Trash2, User, Users } from "lucide-react";
@@ -159,6 +159,7 @@ function DispatchPage() {
       </div>
 
       {canFleet && <AutoAssignPanel workspaceId={workspaceId} members={members} />}
+      {canFleet && <GuestMessagesPanel workspaceId={workspaceId} />}
 
       {conflicts.size > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
@@ -363,6 +364,45 @@ function AutoAssignPanel({ workspaceId, members }: { workspaceId: string; member
         {members.filter((m) => m.active !== false).map((m) => <option key={m.user_id} value={m.user_id}>{m.full_name || m.email}</option>)}
       </NativeSelect>
       <Switch aria-label="Auto-assign default guide" checked={on} disabled={!driver} onCheckedChange={(v) => update(v, driver)} />
+    </Panel>
+  );
+}
+
+function GuestMessagesPanel({ workspaceId }: { workspaceId: string }) {
+  const qc = useQueryClient();
+  const save = useServerFn(setGuestAutomations);
+  const q = useQuery({ queryKey: ["guest-auto", workspaceId], queryFn: async () => (await supabase.from("workspaces").select("guest_reminder_auto, review_request_auto, google_review_url, tripadvisor_review_url").eq("id", workspaceId).maybeSingle()).data });
+  const [g, setG] = useState<string | null>(null);
+  const [t, setT] = useState<string | null>(null);
+  const google = g ?? q.data?.google_review_url ?? "";
+  const trip = t ?? q.data?.tripadvisor_review_url ?? "";
+  async function update(reminder: boolean, review: boolean) {
+    const r = await save({ data: { workspaceId, reminder, review, googleUrl: google, tripUrl: trip } }).catch((e) => { toast.error((e as Error).message); return null; });
+    if (r) { toast.success("Saved"); setG(null); setT(null); qc.invalidateQueries({ queryKey: ["guest-auto", workspaceId] }); }
+  }
+  const rem = !!q.data?.guest_reminder_auto; const rev = !!q.data?.review_request_auto;
+  return (
+    <Panel className="mb-4 space-y-3 p-3">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold">Evening-before reminder</div>
+          <div className="text-xs text-muted-foreground">At 19:00, guests with a confirmed tour tomorrow get a WhatsApp with time, meeting point map pin, guide and ticket.</div>
+        </div>
+        <Switch aria-label="Evening-before reminder" checked={rem} onCheckedChange={(v) => update(v, rev)} />
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold">Ask for a review</div>
+          <div className="text-xs text-muted-foreground">2 hours after the tour ends, guests get a thank-you WhatsApp with your review links. Each guest is asked only once.</div>
+        </div>
+        <Switch aria-label="Ask for a review" checked={rev} onCheckedChange={(v) => update(rem, v)} />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <Input value={google} onChange={(e) => setG(e.target.value)} placeholder="Google review link (https://…)" aria-label="Google review link" />
+        <Input value={trip} onChange={(e) => setT(e.target.value)} placeholder="TripAdvisor review link (https://…)" aria-label="TripAdvisor review link" />
+        <Button size="sm" variant="outline" disabled={g === null && t === null} onClick={() => update(rem, rev)}>Save links</Button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">WhatsApp only lets free messages reach guests who wrote to you in the last 24 hours; others may not receive it.</p>
     </Panel>
   );
 }

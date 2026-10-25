@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Plus, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -51,6 +51,7 @@ function KnowledgePage() {
             ))}</ul>
           )}
       </Panel>
+      <CannedReplies workspaceId={ws.workspaceId} canEdit={canEdit} />
       {edit && <DocDialog doc={edit === "new" ? undefined : edit} onClose={() => { setEdit(null); q.refetch(); }} />}
     </PageContainer>
   );
@@ -85,6 +86,62 @@ function DocDialog({ doc, onClose }: { doc?: Doc; onClose: () => void }) {
         <Field label="Content"><Textarea rows={10} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Route, duration, price per tuk tuk, max guests, languages, meeting point…" /></Field>
         <DialogFooter className="gap-2">
           {doc && <Confirm trigger={<Button variant="outline" className="text-destructive"><Trash2 /> Delete</Button>} title="Delete article?" description="The AI will no longer use this information." confirmLabel="Delete" onConfirm={del} />}
+          <Button onClick={save}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type Canned = { id: string; title: string; body: string };
+function CannedReplies({ workspaceId, canEdit }: { workspaceId: string; canEdit: boolean }) {
+  const [edit, setEdit] = useState<Canned | "new" | null>(null);
+  const q = useQuery({ queryKey: ["canned", workspaceId], queryFn: async () => { const { data, error } = await supabase.from("canned_replies").select("id, title, body").eq("workspace_id", workspaceId).order("sort"); if (error) throw error; return data as Canned[]; } });
+  return (
+    <>
+      <div className="mt-6 mb-2 flex items-center justify-between">
+        <div><h2 className="text-base font-semibold">Saved replies</h2><p className="text-xs text-muted-foreground">One-tap answers in the inbox Replies button.</p></div>
+        {canEdit && <Button size="sm" variant="outline" onClick={() => setEdit("new")}><Plus /> New reply</Button>}
+      </div>
+      <Panel>
+        {q.isLoading ? <ListSkeleton /> : !q.data?.length ? <EmptyState icon={<Zap />} title="No saved replies" description="Add answers to questions guests ask often." /> : (
+          <ul className="divide-y">{q.data.map((r) => (
+            <li key={r.id}><button onClick={() => canEdit && setEdit(r)} className="block w-full px-4 py-3 text-left hover:bg-muted/60">
+              <span className="text-sm font-semibold">{r.title}</span>
+              <p className="mt-0.5 line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">{r.body}</p>
+            </button></li>
+          ))}</ul>
+        )}
+      </Panel>
+      {edit && <CannedDialog workspaceId={workspaceId} item={edit === "new" ? undefined : edit} onClose={() => { setEdit(null); q.refetch(); }} />}
+    </>
+  );
+}
+
+function CannedDialog({ workspaceId, item, onClose }: { workspaceId: string; item?: Canned; onClose: () => void }) {
+  const [title, setTitle] = useState(item?.title ?? "");
+  const [body, setBody] = useState(item?.body ?? "");
+  async function save() {
+    if (!title.trim() || !body.trim()) return toast.error("Add a title and the reply text.");
+    const r = item ? await supabase.from("canned_replies").update({ title: title.trim(), body: body.trim() }).eq("id", item.id)
+      : await supabase.from("canned_replies").insert({ workspace_id: workspaceId, title: title.trim(), body: body.trim(), sort: 100 });
+    if (r.error) return toast.error(r.error.message);
+    toast.success("Saved"); onClose();
+  }
+  async function del() {
+    if (!item) return;
+    const r = await supabase.from("canned_replies").delete().eq("id", item.id);
+    if (r.error) return toast.error(r.error.message);
+    onClose();
+  }
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{item ? "Edit saved reply" : "New saved reply"}</DialogTitle></DialogHeader>
+        <Field label="Title"><Input value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} /></Field>
+        <Field label="Reply text"><Textarea rows={8} value={body} maxLength={4000} onChange={(e) => setBody(e.target.value)} /></Field>
+        <DialogFooter>
+          {item && <Confirm trigger={<Button variant="outline" className="text-destructive"><Trash2 /> Delete</Button>} title="Delete saved reply?" description="It will be removed from the inbox Replies list." confirmLabel="Delete" onConfirm={del} />}
           <Button onClick={save}>Save</Button>
         </DialogFooter>
       </DialogContent>

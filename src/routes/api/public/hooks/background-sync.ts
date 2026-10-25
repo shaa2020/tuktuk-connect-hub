@@ -32,6 +32,7 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
           try { r.tickets = await (await import("@/lib/tickets.server")).autoSendTicketsFor(w.id); } catch (e) { r.ticketsError = (e as Error).message.slice(0, 200); }
           try { r.autoAssigned = await (await import("@/lib/driver-dispatch.server")).flushAutoAssigned(w.id); } catch (e) { r.autoAssignError = (e as Error).message.slice(0, 200); }
           try { r.drivers = await (await import("@/lib/driver-dispatch.server")).autoSendSchedulesFor(w.id); } catch (e) { r.driversError = (e as Error).message.slice(0, 200); }
+          try { r.guests = await (await import("@/lib/guest-messages.server")).autoGuestMessagesFor(w.id); } catch (e) { r.guestsError = (e as Error).message.slice(0, 200); }
           out[w.id] = r;
         }
         try { await recover(); } catch { /* retried next run */ }

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, ArrowLeft, Inbox as InboxIcon, Phone, MessageCircle, Instagram, Mail, Facebook, StickyNote,
-  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt, SlidersHorizontal, Check, CheckCheck, PanelRight,
+  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt, SlidersHorizontal, Zap, Check, CheckCheck, PanelRight,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
 import { listWebsiteTours } from "@/lib/website.functions";
@@ -693,6 +693,7 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
             {!text.trim() && <p className="text-[11px] text-muted-foreground">Type a reply in the box to translate it into the guest's language.</p>}
           </PopoverContent>
         </Popover>
+        <CannedButton workspaceId={ws.workspaceId} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
         <QuoteButton workspaceId={ws.workspaceId} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
         {waTemplates && <TemplateSender workspaceId={ws.workspaceId} conversationId={conversationId} highlight={waClosed} />}
       </div>
@@ -719,6 +720,30 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
         {failed && <span className="flex items-center gap-1 text-destructive">{mode === "send" ? "Not sent:" : "Not saved:"} {failed} <button className="font-semibold underline" onClick={submit}>Retry</button></span>}
       </div>
     </div>
+  );
+}
+
+function CannedButton({ onInsert, workspaceId }: { onInsert: (text: string) => void; workspaceId?: string }) {
+  const [open, setOpen] = useState(false);
+  const q = useQuery({ queryKey: ["canned", workspaceId], enabled: open && !!workspaceId, queryFn: async () => (await supabase.from("canned_replies").select("id, title, body").eq("workspace_id", workspaceId!).order("sort")).data ?? [] });
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" title="Insert a saved reply"><Zap />Replies</Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-1" align="start">
+        {q.isLoading ? <p className="p-3 text-xs text-muted-foreground">Loading…</p> : !q.data?.length ? <p className="p-3 text-xs text-muted-foreground">No saved replies yet. Add them in Knowledge.</p> : (
+          <div className="max-h-80 overflow-y-auto">
+            {q.data.map((r) => (
+              <button key={r.id} type="button" className="block w-full rounded-md p-2 text-left hover:bg-muted" onClick={() => { onInsert(r.body); setOpen(false); }}>
+                <div className="text-sm font-medium">{r.title}</div>
+                <div className="line-clamp-2 text-xs text-muted-foreground">{r.body}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
