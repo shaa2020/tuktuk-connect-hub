@@ -366,6 +366,8 @@ export type Database = {
       bookings: {
         Row: {
           amount: number | null
+          checked_in_at: string | null
+          checked_in_by: string | null
           contact_id: string | null
           created_at: string
           created_by: string | null
@@ -400,6 +402,8 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -434,6 +438,8 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -2217,6 +2223,7 @@ export type Database = {
         Returns: boolean
       }
       can_view_conversation_id: { Args: { _conv: string }; Returns: boolean }
+      check_in_ticket: { Args: { _token: string }; Returns: Json }
       clear_demo_data: { Args: { _ws: string }; Returns: undefined }
       dashboard_stats: {
         Args: {

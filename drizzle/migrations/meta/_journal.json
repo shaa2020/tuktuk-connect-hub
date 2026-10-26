@@ -120,6 +120,13 @@
       "when": 1792941838751,
       "tag": "0016_guest_reminders_reviews_canned",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793026945963,
+      "tag": "0017_booking_conflict_guard_and_checkin",
+      "breakpoints": true
     }
   ]
 }
