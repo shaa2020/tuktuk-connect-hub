@@ -62,7 +62,8 @@ function FinancePage() {
     const r = await sync({ data: { workspaceId: ws.workspaceId } });
     setBusy(false);
     if (!r.ok) return toast.error(r.error);
-    toast.success(`PayPal checked: ${r.fetched ?? 0} payments, ${r.matched ?? 0} newly matched.`);
+    const x = r as { fetched?: number; matched?: number };
+    toast.success(`PayPal checked: ${x.fetched ?? 0} payments, ${x.matched ?? 0} newly matched.`);
     qc.invalidateQueries({ queryKey: ["paypal-tx"] }); qc.invalidateQueries({ queryKey: ["owed"] });
   };
 
