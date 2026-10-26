@@ -33,6 +33,8 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
           try { r.autoAssigned = await (await import("@/lib/driver-dispatch.server")).flushAutoAssigned(w.id); } catch (e) { r.autoAssignError = (e as Error).message.slice(0, 200); }
           try { r.drivers = await (await import("@/lib/driver-dispatch.server")).autoSendSchedulesFor(w.id); } catch (e) { r.driversError = (e as Error).message.slice(0, 200); }
           try { r.guests = await (await import("@/lib/guest-messages.server")).autoGuestMessagesFor(w.id); } catch (e) { r.guestsError = (e as Error).message.slice(0, 200); }
+          // PayPal roughly hourly (its reports lag up to 3h anyway).
+          if (new Date().getUTCMinutes() < 5) { try { r.paypal = await (await import("@/lib/paypal.server")).syncPaypalFor(w.id, 3); } catch (e) { r.paypalError = (e as Error).message.slice(0, 200); } }
           out[w.id] = r;
         }
         try { await recover(); } catch { /* retried next run */ }

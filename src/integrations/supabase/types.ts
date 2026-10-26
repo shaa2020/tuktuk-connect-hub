@@ -1615,6 +1615,72 @@ export type Database = {
           },
         ]
       }
+      paypal_transactions: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string
+          currency: string
+          fee: number
+          id: string
+          match_kind: string | null
+          occurred_at: string
+          payer_email: string | null
+          payer_name: string | null
+          reference_text: string | null
+          status: string
+          txn_id: string
+          workspace_id: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string
+          currency: string
+          fee?: number
+          id?: string
+          match_kind?: string | null
+          occurred_at: string
+          payer_email?: string | null
+          payer_name?: string | null
+          reference_text?: string | null
+          status: string
+          txn_id: string
+          workspace_id: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          fee?: number
+          id?: string
+          match_kind?: string | null
+          occurred_at?: string
+          payer_email?: string | null
+          payer_name?: string | null
+          reference_text?: string | null
+          status?: string
+          txn_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paypal_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paypal_transactions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_admins: {
         Row: {
           created_at: string
