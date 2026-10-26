@@ -27,6 +27,7 @@ export const NAV: NavItem[] = [
   { to: "/inbox", label: "Inbox", icon: Inbox, badge: "inbox", group: "Daily work" },
   { to: "/dispatch", label: "Tour Calendar", short: "Tours", icon: Truck, group: "Daily work" },
   { to: "/bookings", label: "Bookings", icon: CalendarCheck, group: "Daily work" },
+  { to: "/finance", label: "Finance", icon: Wallet, group: "Daily work" },
   { to: "/tasks", label: "Tasks", icon: CheckSquare, group: "Daily work" },
   { to: "/contacts", label: "Contacts", icon: Users, group: "Customers" },
   { to: "/leads", label: "Leads", icon: Target, group: "Customers" },
