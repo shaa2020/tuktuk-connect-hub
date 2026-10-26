@@ -32,3 +32,5 @@
 - MFA: TOTP is mandatory; MfaGate (src/components/mfa-gate.tsx) fails closed on lookup errors and forces enroll/verify; a phone can only be removed while another verified one exists; lost phones are reset by an admin via resetMemberMfa (audited) - no path leaves an account without MFA.
 - Background sync: pg_cron every 5 min POSTs /api/public/hooks/background-sync with a random token read from internal_job_tokens (service_role only) — Gmail push and website webhooks aren't available, and the token never leaves the server/DB.
 - Connect Account sheet (src/components/connect-account.tsx) derives card states only from real channel_connections rows via src/lib/connect-providers.ts (tested) and hands off to /integrations?connect=<channel> — one setup path per provider, no fake states.
+- Booking overlaps (same guide or tuk tuk, confirmed bookings) are blocked in the DB trigger booking_conflict_guard with a per-day advisory lock; a busy default guide is skipped instead of failing — client findConflicts is only a preview.
+- Ticket boarding uses the check_in_ticket RPC (members only, row-locked) so a second scan reports "already checked in".
