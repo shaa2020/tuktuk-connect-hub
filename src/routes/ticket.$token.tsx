@@ -39,6 +39,7 @@ function TicketPage() {
           </div>
           <p className="mt-4 text-center text-sm opacity-90">{pay.detail}{!pay.paid && t.amount ? ` Amount: ${t.amount} ${t.currency}.` : ""}</p>
           {t.pickup_location && <p className="mt-2 text-center text-sm opacity-80">Pickup: {t.pickup_location}</p>}
+          <CheckIn token={token} />
         </div>
         <div className="flex items-center justify-center gap-2 py-4 font-display text-lg font-extrabold text-primary-foreground"><BrandMark className="h-7 w-7" /> TUK TUK 24 LISBON</div>
       </div>
