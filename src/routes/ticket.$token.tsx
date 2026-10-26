@@ -46,3 +46,25 @@ function TicketPage() {
     </main>
   );
 }
+
+/** Shown only to signed-in team members: boards the guest once; a second scan shows "already checked in". */
+function CheckIn({ token }: { token: string }) {
+  const [member, setMember] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    import("@/integrations/supabase/client").then(({ supabase }) => supabase.auth.getSession().then(({ data }) => setMember(!!data.session))).catch(() => {});
+  }, []);
+  if (!member) return null;
+  const go = async () => {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data, error } = await supabase.rpc("check_in_ticket", { _token: token });
+    const r = (data ?? {}) as { result?: string; at?: string };
+    setMsg(error ? "Could not check in. Try again." : r.result === "ok" ? "Guest checked in." : r.result === "already" ? `Already checked in at ${new Date(r.at!).toLocaleTimeString("en-GB", { timeZone: "Europe/Lisbon", hour: "2-digit", minute: "2-digit" })}.` : r.result === "not_confirmed" ? "This tour is not confirmed." : "You can't check in this ticket.");
+  };
+  return (
+    <div className="mt-4 text-center">
+      <button onClick={go} className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground">Check in guest</button>
+      {msg && <p role="status" className="mt-2 text-sm font-semibold">{msg}</p>}
+    </div>
+  );
+}
