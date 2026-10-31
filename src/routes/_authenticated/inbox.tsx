@@ -90,9 +90,20 @@ function useEmailSync(workspaceId: string, enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     let stop = false;
-    const run = async () => {
+    let busy = false;
+    const doSync = async () => {
       const r = await sync({ data: { workspaceId } }).catch(() => null);
       if (!stop && r?.ok && r.imported > 0) qc.invalidateQueries();
+    };
+    const run = async () => {
+      if (busy || stop || !navigator.onLine) return;
+      busy = true;
+      try {
+        // Only one open tab on this device syncs at a time.
+        const locks = (navigator as Navigator & { locks?: LockManager }).locks;
+        if (locks) await locks.request(`email-sync-${workspaceId}`, { ifAvailable: true }, async (l) => { if (l) await doSync(); });
+        else await doSync();
+      } finally { busy = false; }
     };
     run();
     const t = setInterval(() => { if (document.visibilityState === "visible") run(); }, 20_000);

@@ -205,7 +205,15 @@ export const syncEmailNow = createServerFn({ method: "POST" })
     const { data: member } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
     if (member !== true) return { ok: false as const, error: "Not a member." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows } = await supabaseAdmin.from("channel_connections").select("id, status, config").eq("workspace_id", data.workspaceId).eq("channel", "email").eq("status", "connected");
+    // Shared claim: however many team members/tabs have the inbox open, each mailbox is
+    // checked at most once per ~15s — keeps updates instant while avoiding duplicate runs.
+    const cutoff = new Date(Date.now() - 15_000).toISOString();
+    const { data: rows } = await supabaseAdmin.from("channel_connections")
+      .update({ last_checked_at: new Date().toISOString() })
+      .eq("workspace_id", data.workspaceId).eq("channel", "email").eq("status", "connected")
+      .or(`last_checked_at.is.null,last_checked_at.lt.${cutoff}`)
+      .select("id, status, config");
+    if (!rows?.length) return { ok: true as const, imported: 0 };
     let imported = 0; const errors: string[] = [];
     for (const cc of rows ?? []) {
       const cfg = (cc.config ?? {}) as Record<string, string>;
