@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Home, Inbox, Users, Target, CalendarCheck, CheckSquare, Workflow, Sparkles, BarChart3,
   UsersRound, Truck, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
-  CalendarClock, ShieldCheck, Search, Wallet, Gauge,
+  CalendarClock, ShieldCheck, Search, Wallet, Gauge, CalendarDays,
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
 import { WorkspaceList } from "@/components/workspace-switcher";
@@ -30,6 +30,7 @@ export const NAV: NavItem[] = [
   { to: "/bookings", label: "Bookings", icon: CalendarCheck, group: "Daily work" },
   { to: "/finance", label: "Finance", icon: Wallet, group: "Daily work" },
   { to: "/tasks", label: "Tasks", icon: CheckSquare, group: "Daily work" },
+  { to: "/schedule", label: "Schedule", icon: CalendarDays, group: "Daily work" },
   { to: "/contacts", label: "Contacts", icon: Users, group: "Customers" },
   { to: "/leads", label: "Leads", icon: Target, group: "Customers" },
   { to: "/notifications", label: "Notifications", icon: Bell, badge: "notif", group: "Customers" },

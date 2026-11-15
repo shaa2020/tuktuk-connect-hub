@@ -176,6 +176,13 @@
       "when": 1794785404259,
       "tag": "0024_stripe_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794785627967,
+      "tag": "0025_staff_scheduling",
+      "breakpoints": true
     }
   ]
 }

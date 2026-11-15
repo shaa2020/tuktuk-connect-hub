@@ -1863,6 +1863,24 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           permission: string
@@ -1912,6 +1930,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shift_swap_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          from_user: string
+          id: string
+          note: string | null
+          shift_id: string
+          status: string
+          to_user: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          from_user?: string
+          id?: string
+          note?: string | null
+          shift_id: string
+          status?: string
+          to_user: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          from_user?: string
+          id?: string
+          note?: string | null
+          shift_id?: string
+          status?: string
+          to_user?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       social_posts: {
         Row: {
@@ -1977,6 +2034,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff_attendance: {
+        Row: {
+          clock_in: string
+          clock_out: string | null
+          id: string
+          shift_id: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          clock_in?: string
+          clock_out?: string | null
+          id?: string
+          shift_id?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          clock_in?: string
+          clock_out?: string | null
+          id?: string
+          shift_id?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      staff_shifts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          id: string
+          notes: string | null
+          position: string | null
+          starts_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          id?: string
+          notes?: string | null
+          position?: string | null
+          starts_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          notes?: string | null
+          position?: string | null
+          starts_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       tags: {
         Row: {
@@ -2112,6 +2232,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      time_off_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          ends_on: string
+          id: string
+          reason: string | null
+          starts_on: string
+          status: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          ends_on: string
+          id?: string
+          reason?: string | null
+          starts_on: string
+          status?: string
+          user_id?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          ends_on?: string
+          id?: string
+          reason?: string | null
+          starts_on?: string
+          status?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       usage_counters: {
         Row: {
@@ -2501,7 +2660,10 @@ export type Database = {
       }
       can_view_conversation_id: { Args: { _conv: string }; Returns: boolean }
       check_in_ticket: { Args: { _token: string }; Returns: Json }
+      check_rate_limit: { Args: { _key: string; _max: number; _window_seconds: number }; Returns: boolean }
       clear_demo_data: { Args: { _ws: string }; Returns: undefined }
+      clock_in: { Args: { _ws: string }; Returns: string }
+      clock_out: { Args: { _ws: string }; Returns: undefined }
       consume_usage: { Args: { _amount?: number; _metric: string; _ws: string }; Returns: Json }
       create_workspace: { Args: { _industry?: string; _locale?: string; _name: string; _timezone?: string }; Returns: string }
       dashboard_stats: {
@@ -2515,6 +2677,8 @@ export type Database = {
         }
         Returns: Json
       }
+      decide_shift_swap: { Args: { _approve: boolean; _id: string }; Returns: undefined }
+      decide_time_off: { Args: { _approve: boolean; _id: string }; Returns: undefined }
       has_membership: { Args: { _ws: string }; Returns: boolean }
       has_ws_role: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][]; _ws: string }

@@ -30,6 +30,7 @@ import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
+import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
@@ -154,6 +155,11 @@ const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
   path: '/platform',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/platform': typeof AuthenticatedPlatformRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/platform': typeof AuthenticatedPlatformRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -341,6 +349,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRoute
+  '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notifications'
     | '/platform'
+    | '/schedule'
     | '/settings'
     | '/social'
     | '/tasks'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notifications'
     | '/platform'
+    | '/schedule'
     | '/settings'
     | '/social'
     | '/tasks'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/notifications'
     | '/_authenticated/platform'
+    | '/_authenticated/schedule'
     | '/_authenticated/settings'
     | '/_authenticated/social'
     | '/_authenticated/tasks'
@@ -644,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlatformRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/schedule': {
+      id: '/_authenticated/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof AuthenticatedScheduleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -775,6 +794,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
+  AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
@@ -799,6 +819,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
+  AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
