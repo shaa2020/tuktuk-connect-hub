@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { aiAssist } from "@/lib/ai.functions";
 import { sendChannelMessage, syncEmailNow } from "@/lib/admin.functions";
+import { INTENT_LABEL } from "@/lib/classify";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -484,6 +485,15 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         <div ref={bottomRef} />
       </div>
 
+      {v.ai_intent && (
+        <div className="flex flex-wrap items-center gap-1.5 border-t bg-surface-2 px-3 py-1.5 text-[11px] text-muted-foreground">
+          <Sparkles className="size-3 text-primary" aria-hidden />
+          <span className="rounded bg-card px-1.5 py-0.5 font-medium">{INTENT_LABEL[v.ai_intent as keyof typeof INTENT_LABEL] ?? v.ai_intent}</span>
+          {v.ai_sentiment && <span className={cn("rounded px-1.5 py-0.5 font-medium", v.ai_sentiment === "negative" ? "bg-danger-soft text-destructive" : v.ai_sentiment === "positive" ? "bg-success-soft text-success" : "bg-card")}>{v.ai_sentiment}</span>}
+          {v.ai_summary && <span className="min-w-0 flex-1 truncate" title={v.ai_summary}>{v.ai_summary}</span>}
+          <span className="sr-only">AI classification — a suggestion, may be wrong</span>
+        </div>
+      )}
       <Composer conversationId={id} channel={v.channel} connected={connected} />
     </div>
       {details && <aside className="hidden w-80 shrink-0 overflow-y-auto border-l bg-card xl:block" aria-label="Customer details">{panel}</aside>}
@@ -587,6 +597,39 @@ function EmailBody({ body, outbound }: { body: string; outbound: boolean }) {
 
 const EMOJI = ["😀", "😊", "🙏", "👍", "👋", "🎉", "❤️", "🙌", "😅", "🤔", "✅", "📍", "🕒", "📅", "🛺", "☀️", "🌅", "🇵🇹", "🍷", "📸"];
 
+/** AI Operator reply waiting for approval (approval mode). Sent only when a person approves it. */
+function AiDraftCard({ conversationId, connected, onEdit }: { conversationId: string; connected: boolean; onEdit: (text: string) => void }) {
+  const qc = useQueryClient();
+  const sendFn = useServerFn(sendChannelMessage);
+  const [busy, setBusy] = useState(false);
+  const q = useQuery({
+    queryKey: ["ai-draft", conversationId],
+    queryFn: async () => (await supabase.from("ai_reply_drafts").select("id, body, created_at").eq("conversation_id", conversationId).eq("status", "pending").order("created_at", { ascending: false }).limit(1).maybeSingle()).data,
+  });
+  const d = q.data;
+  if (!d) return null;
+  const decide = async (status: "sent" | "discarded") => { await supabase.rpc("decide_ai_draft", { _id: d.id, _status: status }); qc.invalidateQueries({ queryKey: ["ai-draft", conversationId] }); };
+  return (
+    <div className="mb-2 rounded-lg border border-primary/40 bg-primary-soft p-2.5">
+      <div className="mb-1 text-[11px] font-semibold uppercase text-primary">AI reply waiting for your approval</div>
+      <p className="whitespace-pre-wrap text-sm">{d.body}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {connected && <Button size="sm" disabled={busy} onClick={async () => {
+          setBusy(true);
+          try {
+            const r = await sendFn({ data: { conversationId, body: d.body } });
+            if (!r.ok) return toast.error(r.error);
+            await decide("sent"); toast.success("Sent");
+            qc.invalidateQueries({ queryKey: ["timeline", conversationId] });
+          } finally { setBusy(false); }
+        }}>Approve & send</Button>}
+        <Button size="sm" variant="outline" onClick={() => { onEdit(d.body); void decide("discarded"); }}>Edit</Button>
+        <Button size="sm" variant="ghost" onClick={() => decide("discarded")}>Discard</Button>
+      </div>
+    </div>
+  );
+}
+
 function Composer({ conversationId, channel, connected }: { conversationId: string; channel: ChannelType; connected: boolean }) {
   const ws = useWorkspace();
   const qc = useQueryClient();
@@ -675,6 +718,7 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
           </NativeSelect>
         )}
       </div>
+      <AiDraftCard conversationId={conversationId} connected={connected} onEdit={(t) => setText(t)} />
       {ai && (
         <div className="mb-2 rounded-lg border border-primary/30 bg-primary-soft p-2.5">
           <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase text-primary">

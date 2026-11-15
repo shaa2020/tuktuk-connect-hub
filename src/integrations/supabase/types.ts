@@ -160,8 +160,45 @@ export type Database = {
           },
         ]
       }
+      ai_reply_drafts: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          source: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          source?: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          source?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       ai_settings: {
         Row: {
+          auto_classify: boolean
           base_url: string | null
           enabled: boolean
           instructions: string | null
@@ -171,6 +208,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          auto_classify?: boolean
           base_url?: string | null
           enabled?: boolean
           instructions?: string | null
@@ -180,6 +218,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          auto_classify?: boolean
           base_url?: string | null
           enabled?: boolean
           instructions?: string | null
@@ -1075,6 +1114,11 @@ export type Database = {
       }
       conversations: {
         Row: {
+          ai_classified_at: string | null
+          ai_classified_message_id: string | null
+          ai_intent: string | null
+          ai_sentiment: string | null
+          ai_summary: string | null
           assigned_to: string | null
           awaiting_reply: boolean
           booking_id: string | null
@@ -1100,6 +1144,11 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          ai_classified_at?: string | null
+          ai_classified_message_id?: string | null
+          ai_intent?: string | null
+          ai_sentiment?: string | null
+          ai_summary?: string | null
           assigned_to?: string | null
           awaiting_reply?: boolean
           booking_id?: string | null
@@ -1125,6 +1174,11 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          ai_classified_at?: string | null
+          ai_classified_message_id?: string | null
+          ai_intent?: string | null
+          ai_sentiment?: string | null
+          ai_summary?: string | null
           assigned_to?: string | null
           awaiting_reply?: boolean
           booking_id?: string | null
@@ -2820,6 +2874,7 @@ export type Database = {
         }
         Returns: Json
       }
+      decide_ai_draft: { Args: { _id: string; _status: string }; Returns: undefined }
       decide_shift_swap: { Args: { _approve: boolean; _id: string }; Returns: undefined }
       decide_time_off: { Args: { _approve: boolean; _id: string }; Returns: undefined }
       find_duplicate_contacts: { Args: { _limit?: number; _ws: string }; Returns: { keep_id: string; keep_name: string; dup_id: string; dup_name: string; reason: string }[] }

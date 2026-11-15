@@ -12,6 +12,7 @@ export async function processWorkspace(sb: Sb, w: { id: string; platform_connect
   if (w.platform_connectors) { try { r.bookings = await syncWebsiteBookingsFor(sb, w.id, null); } catch (e) { r.bookingsError = err(e); } }
   try { r.alerts = await alertBrokenChannels(w.id); } catch { /* next run */ }
   try { r.operator = await (await import("./ai-operator.server")).runOperatorFor(w.id); } catch (e) { r.operatorError = err(e); }
+  try { r.classified = await (await import("./classify.server")).classifyDue(w.id); } catch (e) { r.classifyError = err(e); }
   try { r.tickets = await (await import("./tickets.server")).autoSendTicketsFor(w.id); } catch (e) { r.ticketsError = err(e); }
   try { r.autoAssigned = await (await import("./driver-dispatch.server")).flushAutoAssigned(w.id); } catch (e) { r.autoAssignError = err(e); }
   // Operator-only: these send from the operator's WhatsApp number.

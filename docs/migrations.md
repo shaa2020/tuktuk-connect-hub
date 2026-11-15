@@ -34,3 +34,4 @@ All new migrations are idempotent and non-destructive (no DROP of tables/columns
 - `0026_crm_import_duplicates_custom_fields.sql` — contact_field_definitions + contacts.custom_fields (validated), import_contacts (dedupe), find_duplicate_contacts, norm_phone.
 - `0027_automation_workflows.sql` — automation_workflows + durable automation_events queue (idempotency, delay, plan-limit skip), source triggers, workspace_usage counts executions.
 - `0028_gdpr_ownership_retention.sql` — ownership transfer, deletion with 30-day grace (+ deletion log), message retention, cascade-safe audit/tombstone triggers.
+- `0029_ai_classification_approvals.sql` — conversation ai_intent/ai_sentiment/ai_summary, ai_settings.auto_classify, ai_reply_drafts approval queue + decide_ai_draft.

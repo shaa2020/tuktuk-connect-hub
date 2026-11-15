@@ -59,9 +59,16 @@ function AiPage() {
             <span><span className="block text-sm font-semibold">AI assistance</span><span className="text-xs text-muted-foreground">{enabled ? "On — available in every conversation." : "Off — no AI requests are made."}</span></span>
             <Switch checked={enabled} disabled={!admin} onCheckedChange={(v) => { setEnabled(v); save(v); }} />
           </label>
+          <label className="flex items-center justify-between gap-4">
+            <span><span className="block text-sm font-semibold">Classify conversations automatically</span><span className="text-xs text-muted-foreground">Labels each new customer message with intent and mood, plus a one-line summary. Uses your AI allowance.</span></span>
+            <Switch checked={!!s.data?.auto_classify} disabled={!admin || !enabled} onCheckedChange={async (v) => {
+              const { error } = await supabase.from("ai_settings").update({ auto_classify: v }).eq("workspace_id", ws.workspaceId);
+              if (error) toast.error(error.message); else s.refetch();
+            }} aria-label="Classify conversations automatically" />
+          </label>
           <div className="space-y-1.5">
             <label htmlFor="ai-instr" className="text-xs font-semibold text-muted-foreground">Business instructions & tone</label>
-            <Textarea id="ai-instr" rows={6} value={instr} disabled={!admin} onChange={(e) => setInstr(e.target.value)} placeholder="e.g. Always greet by first name. Sign off as 'The Tuk Tuk 24 team'. Offer the 2-hour Highlights tour first for families." />
+            <Textarea id="ai-instr" rows={6} value={instr} disabled={!admin} onChange={(e) => setInstr(e.target.value)} placeholder="e.g. Always greet by first name. Sign off as 'The team'. Offer the 2-hour Highlights tour first for families." />
           </div>
           {admin ? <Button onClick={() => save()}>Save instructions</Button> : <p className="text-xs text-muted-foreground">Only a Business Admin can change these settings.</p>}
           <p className="text-xs text-muted-foreground">Facts like prices and meeting points come from the <Link to="/knowledge" className="font-medium text-primary">Knowledge Base</Link>. Missing facts appear as placeholders like [confirm price].</p>

@@ -204,6 +204,13 @@
       "when": 1794786250659,
       "tag": "0028_gdpr_ownership_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794786402656,
+      "tag": "0029_ai_classification_approvals",
+      "breakpoints": true
     }
   ]
 }
