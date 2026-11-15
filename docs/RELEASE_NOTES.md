@@ -20,4 +20,16 @@
 * Suspended businesses are locked at the database level.
 * AI requests are counted per business and capped by plan for platform-paid AI.
 
-**Database**: migrations 0019, 0020 (idempotent, non-destructive). Regenerate types after applying.
+**Also new (later in the session)**
+* Channels: Telegram bots; website live chat widget.
+* Social: scheduled posts publish to connected Facebook Pages and Instagram (after Meta approval).
+* Billing: Stripe checkout and billing portal (appears once Stripe is configured).
+* Team: Schedule page — shifts, time off, swaps, clock in/out.
+* CRM: CSV import with duplicate skipping, duplicate finder, custom contact fields.
+* Automations: workflows with triggers, conditions, delays and actions, plus ready-made recipes.
+* AI: approval mode (AI drafts wait for your OK), automatic intent/mood labels.
+* Privacy: full data export, scheduled workspace deletion, ownership transfer, message retention.
+* Security: MFA recovery codes; time-limited support access you control; platform health views.
+* Businesses outside tourism no longer see tour-only tools; messages use their own business name.
+
+**Database**: migrations 0019–0030 (idempotent, non-destructive). Regenerate types after applying.

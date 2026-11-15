@@ -19,9 +19,9 @@ known limitations, tracking docs.
 | 1.6 | DB policy test harness | ✅ done (42 tests) |
 | 1.7 | SSRF guard for custom AI base URL (F-09) | ✅ done |
 | 1.8 | Rate limiting on public endpoints (F-10) | ✅ DB limiter done; Cloudflare edge rules recommended at deploy |
-| 1.9 | CI pipeline: typecheck, unit, db tests, build, `npm audit` | 🟡 workflow written (`.github/workflows/ci.yml`), not yet run on GitHub; secret scanning to add |
-| 1.10 | Fix ~4,900 pre-existing Prettier lint errors (mechanical `eslint --fix` in its own PR) | next |
-| 1.11 | MFA recovery codes (F-13) | P2 |
+| 1.9 | CI pipeline: typecheck, unit, db tests, lint, build, `npm audit` | ✅ green on GitHub; secret scanning to add |
+| 1.10 | Fix ~4,900 pre-existing lint errors | ✅ 0 errors; lint enforced in CI |
+| 1.11 | MFA recovery codes (F-13) | ✅ done |
 | 1.12 | Secrets v2 with AAD + key id, rotation script (F-11) | P2 |
 
 ## Phase 2 — SaaS foundations
@@ -32,12 +32,12 @@ known limitations, tracking docs.
 | 2.3 | Multi-workspace switching | ✅ built (UI not live-tested) |
 | 2.4 | Public signup | ⛔ built behind flag; owner must enable Supabase signups |
 | 2.5 | Invite emails via a transactional email provider | ⛔ needs sending domain |
-| 2.6 | Owner transfer, leave workspace, delete workspace (with export + 30-day grace) | next |
-| 2.7 | White-labelling: replace hard-coded TukTuk24 copy with workspace name/branding | next |
-| 2.8 | Industry modules: make tour/dispatch/tickets optional per workspace (`workspaces.industry`) | next |
-| 2.9 | Background job fan-out (one queued job per workspace, `background_jobs` table + lease) | next — required before ~20 active tenants |
+| 2.6 | Owner transfer, delete workspace (export + 30-day grace), retention | ✅ done |
+| 2.7 | White-labelling (business name in app/customer messages) | ✅ done (logo/colour upload open) |
+| 2.8 | Industry modules (tour tools optional) | ✅ done |
+| 2.9 | Background job fan-out per workspace | ✅ done (pg_net fan-out) |
 
-## Phase 3 — Billing
+## Phase 3 — Billing  _(✅ code complete: checkout, portal, signed idempotent webhook, plan sync; ⛔ Stripe account)_
 Recommendation: **Stripe Billing** as the initial provider (see comparison below), PayPal kept
 for TukTuk24's own customer payments. Build: checkout session server function, signed webhook
 (`/api/public/webhooks/stripe`) writing `billing_events` (dedupe by event id) →
@@ -55,30 +55,30 @@ days) then read-only mode; dunning emails from Stripe.
 | Webhook signing | HMAC (`Stripe-Signature`) | Verify via API call |
 **Owner decision required** (B-BIZ-2) — needs your Stripe account.
 
-## Phase 4 — Multi-channel inbox
+## Phase 4 — Multi-channel inbox  _(✅ Telegram, website chat; remaining below)_
 Gmail OAuth for tenants (Google verification), Outlook (Microsoft Graph, OAuth + webhooks),
 Telegram (Bot API, per-workspace bot token, webhook secret header), website live chat widget
 (public token per workspace, rate-limited), attachments via Supabase Storage (private bucket,
 signed URLs, size/type limits, malware-scan hook), platform Meta app (single webhook, App Review).
 
-## Phase 5 — Social media
+## Phase 5 — Social media  _(✅ Facebook/Instagram publishing worker; remaining below)_
 Publishing worker (claims due `social_posts` with lease → platform API → status/retry), media
 library (Storage), approval workflow, comments inbox, insights sync. Meta first (Pages + Instagram
 Graph API: feed, carousel, reels; stories limited), then LinkedIn, TikTok (Content Posting API,
 audit required), YouTube (uploads, quota).
 
-## Phase 6 — AI operator
+## Phase 6 — AI operator  _(✅ approval queue, classification, metering; remaining below)_
 Token/cost metering per call, intent/sentiment classification, auto-tagging, document knowledge
 (file upload + embeddings with pgvector), approval queue for outbound AI replies per workspace
 setting, escalation rules, working hours.
 
-## Phase 7 — CRM & operations
+## Phase 7 — CRM & operations  _(✅ import/dedupe/custom fields, staff scheduling, automation workflows; remaining: generic bookings, deposits, branching canvas)_
 Custom fields (JSONB + definitions), segments, CSV import/export, duplicate detection, generic
 resources/services booking model, deposits via the tenant's payment provider, staff shifts and
 time-off, visual automation builder with durable executions (`automation_runs` + queue, retries,
 idempotency keys).
 
-## Phase 8 — Platform administration
+## Phase 8 — Platform administration  _(✅ revenue, health, backlog, consented support access)_
 Revenue overview (from billing), job/queue health, error log view, AI usage/cost by tenant,
 time-limited audited support access (tenant admin grants, expiry, read-only by default).
 

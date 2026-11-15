@@ -24,13 +24,17 @@ npx tsc --noEmit && npm run build
 Never point local development at the production Supabase project.
 
 ## 3. Applying database migrations
-Migrations live in `drizzle/migrations/` and are registered in `meta/_journal.json`.
+Migrations live in `drizzle/migrations/` and are registered in `meta/_journal.json`. This PR adds
+0019–0030 (see `docs/migrations.md` for one line each).
 * Inside Lovable: Lovable applies new migrations from the connected branch.
 * Self-managed: `psql "$DATABASE_URL" -1 -f drizzle/migrations/00NN_*.sql` in order, on **staging
   first**, then production after a backup (§6).
-0019 and 0020 are idempotent and non-destructive (no table/column drops, no data deletes). They
-change behaviour in these visible ways: workspace admins can no longer edit plan/limit columns via
-the API (the app never did); the operator workspace is marked `platform_connectors = true`.
+All of them are idempotent and non-destructive: no table/column drops and no data deletion at
+migration time. (0028 adds a purge job that deletes a workspace only when its owner requested
+deletion 30+ days earlier, and a retention job only for workspaces that set a retention period.)
+Visible behaviour changes: workspace admins can no longer edit plan/limit columns via the API (the
+app never did); the operator workspace is marked `platform_connectors = true`; social posts can no
+longer be marked "published" from the browser.
 After applying, regenerate `src/integrations/supabase/types.ts`.
 
 ## 4. Moving off Lovable (independence plan — do not execute without approval)
@@ -48,16 +52,25 @@ staging Worker, (3) replace connectors, (4) full E2E on staging, (5) cut-over wi
 change, (6) rollback = point DNS back + keep the old project read-only for 14 days.
 
 ## 5. Release checklist for this branch
+See also `docs/LAUNCH_CHECKLIST.md`.
 1. Review PR. 2. Backup production database (Supabase dashboard → Backups, or `pg_dump`).
 3. Apply 0019, 0020 on a staging copy; run `npm run test:db` and smoke-test TukTuk24 flows
 (inbox send/receive, Gmail sync, website bookings import, AI draft, AI Operator, tickets).
 4. Apply to production. 5. Publish app. 6. Verify the background job log shows the TukTuk24
 workspace processed and no `isn't available for this workspace` errors for it.
-**Rollback**: the app code is backward compatible with the old schema except AI metering
-(`consume_usage` must exist) — so roll back the app first, then (only if needed) `drop function
-consume_usage` etc. Data is never removed by these migrations.
+**Rollback**: roll back the app first (Lovable version history / previous deploy). The new code needs the
+new migrations (AI metering, scheduling, workflows…), so app and migrations go forward together; the
+migrations themselves can stay in place under the old app version because they only add objects —
+except the column-level grants on `workspaces`/`social_posts`, which the old app does not rely on.
+Never drop the new tables after customers have used them.
 
 ## 6. Backups & disaster recovery
+
+### Encryption key rotation (if ever needed)
+Write a one-off script that, for each `workspace_secrets` row, decrypts with the old key and re-encrypts
+with the new one, inside a maintenance window; deploy the new key only after the script succeeds.
+Until secrets v2 (key ids) exists, both keys cannot be active at once.
+
 * Supabase Pro includes daily backups (7-day retention); Point-in-Time Recovery is a paid add-on —
   recommended once paying customers exist (RPO minutes instead of 24 h).
 * Additionally: weekly `pg_dump` to separate storage (e.g. Cloudflare R2 / Backblaze B2) with

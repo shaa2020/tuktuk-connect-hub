@@ -21,9 +21,13 @@ system. Security features existing does **not** imply legal (GDPR) compliance._
 | F-10 | Medium | No rate limiting on public endpoints (webhooks, invite redemption, ticket lookup, auth relies on Supabase's limits). Tokens are 122-bit UUIDs so brute force is impractical, but abuse/DoS is not throttled. | **Mitigated** — DB-backed fixed-window limiter (migration 0021, `rate-limit.server.ts`): ticket lookup 60/min/IP and invite redemption 10/10 min/IP (fail closed); hub + Meta webhooks per-workspace caps (fail open, providers retry on 429). Edge (Cloudflare) rules still recommended. |
 | F-11 | Low | `workspace_secrets` encryption has no associated data binding ciphertext to `(workspace_id, kind)` and no key version, so key rotation needs a manual re-encrypt script. Access already requires the service role. | **Open** — v2 format with AAD + key id, backward-compatible decrypt (roadmap P2). |
 | F-12 | Low | `.env` is committed although listed in `.gitignore` (contains only the Supabase URL and **publishable** key, which are public by design). | **Open** — `git rm --cached .env` once Lovable no longer needs it in the repo; no secret rotation required. |
-| F-13 | Low | MFA recovery is admin-reset only; no self-service recovery codes. A sole admin who loses their phone needs platform support. | **Open** — recovery codes (roadmap P2). |
+| F-13 | Low | MFA recovery was admin-reset only; a sole admin who lost their phone needed platform support. | **Fixed** — one-time recovery codes (hashes only, generate needs two-step, redeem rate-limited + audited, MFA still mandatory). |
 | F-14 | Info | `profiles` are readable by teammates (name/email) — intended. `shares_workspace` ignores `active` on the other side, so former teammates' names stay visible. | Accepted. |
-| F-15 | Low | Dependency/secret scanning not automated (no CI). `bun.lock` resolves through a private mirror. | **Open** — CI with `npm audit`, gitleaks (roadmap P1). |
+| F-15 | Low | Dependency/secret scanning not automated. `bun.lock` resolves through a private mirror. | **Partly fixed** — CI runs typecheck, unit + DB policy tests, lint, build and `npm audit` on every PR. Secret scanning (e.g. gitleaks / GitHub secret scanning) still to enable. |
+
+| F-16 | High (caught before release) | Two trigger bugs found by the new DB tests during this session: (a) a shared trigger read `new.direction` on tables without that column (PL/pgSQL does not short-circuit AND) — would have broken all conversation/booking/lead inserts; (b) deleting a workspace failed because audit/tombstone triggers wrote rows for the workspace being deleted. | **Fixed** before shipping; regression tests in `automation.test.ts` and `gdpr.test.ts`. |
+| F-17 | Medium | Support "impersonation" is a common SaaS risk. | **Designed out** — no login-as-customer; a business admin grants 1–72 h read-only access; every support view is written to that business's audit log. |
+| F-18 | Info | Public endpoints added this session: Telegram webhook (per-connection secret), website chat API (public key + visitor id, CORS allow-list, per-IP limits), Stripe webhook (signature + 5-min tolerance, idempotent). | Reviewed; rate-limited. |
 
 ## Controls verified by automated tests (`db-tests/`)
 
@@ -40,8 +44,9 @@ system. Security features existing does **not** imply legal (GDPR) compliance._
 * Plan limits enforced in the DB (members, channel accounts), metering stops exactly at the limit,
   browsers can't call the meter.
 
-**Proof the tests detect real defects:** `MIGRATIONS_UPTO=0018 npm run test:db` → 6 failures
-(exactly the F-02/F-03/F-04 tests); with all migrations → 42/42 pass.
+**Proof the tests detect real defects:** `MIGRATIONS_UPTO=0018 npm run test:db` → the F-02/F-03/F-04 tests fail;
+with all migrations → 81/81 pass across 10 files (isolation, SaaS, rate limits, jobs/social, scheduling, CRM,
+automation, GDPR, AI drafts, platform/support).
 
 ## Existing strengths (pre-existing, reviewed)
 

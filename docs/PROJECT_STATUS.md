@@ -1,27 +1,42 @@
 # Project Status
 
-_Updated: 2026-11-15 · Branch: `claude/tuktuk-connect-hub-saas-3awos9` (2 commits + docs, **not yet pushed** — see B-GIT-1)_
+_Updated: 2026-11-15 · Branch `claude/tuktuk-connect-hub-saas-3awos9` · Draft PR #1 · CI green on GitHub_
 
-## Where we are
-* **Phase 0 Discovery** — complete (8 assessment docs + tracking docs).
-* **Phase 1 Security** — 8 of 12 roadmap items done (1.1–1.8); CI workflow written but unverified (1.9). Remaining: lint cleanup, MFA recovery codes, secrets v2.
-* **Phase 2 SaaS foundations** — DB layer done and tested; UI built (onboarding, switcher, plan & usage, platform console, setup checklist) but not exercised against a live database. Public signup blocked on owner (B-AUTH-1).
-* **Phases 3–9** — not started.
+## Summary for the owner
+All phases have code in this PR, but **nothing is live yet**: the PR must be reviewed, the
+database migrations (0019–0030) applied after a backup, and the app published. Several features
+also need your accounts/approvals before they can work for real (Stripe, Meta, Google, Microsoft,
+email domain) — see `BLOCKERS.md`.
 
-## Acceptance evidence (from `FEATURE_INVENTORY.md`, counted mechanically)
-73 inventory rows: 16 ✅ verified by automated tests · 38 🟡/🟠 implemented/partial · 19 ❌/⛔.
+| Phase | State |
+|---|---|
+| 0 Discovery | ✅ Complete |
+| 1 Security & foundations | ✅ 11/12 roadmap items (secrets v2 open) |
+| 2 SaaS foundations | ✅ Built; public signup waits for your decision |
+| 3 Billing | ✅ Stripe code complete & tested; ⛔ needs Stripe account + prices |
+| 4 Inbox | 🟠 Telegram + website chat added; Outlook/Gmail OAuth ⛔ provider apps; attachments ❌ |
+| 5 Social | 🟠 Facebook/Instagram publishing worker; ⛔ Meta review; TikTok/LinkedIn ⛔; analytics ❌ |
+| 6 AI | 🟠 Metering, approval queue, classification; token cost + document KB ❌ |
+| 7 CRM & operations | 🟠 Import/dedupe/custom fields, scheduling, automation engine; generic bookings & deposits ❌ |
+| 8 Platform admin | ✅ Plans, suspension, revenue, health, backlog, consented support access |
+| 9 Production readiness | 🟠 CI + DB policy tests; staging E2E, load test, restore drill ❌ (need staging project) |
 
-## Latest checks (2026-11-15)
+## Acceptance evidence (`python3 scripts/inventory-count.py`)
+78 inventory rows: **42 ✅ verified**, 25 🟡/🟠, 11 ❌/⛔. (Session start: 73 rows, 16 ✅.)
+
+## Latest checks
 | Check | Result |
 |---|---|
-| `npm test` | 23 files, 113 tests — **pass** |
-| `npm run test:db` | 3 files, 45 tests — **pass**; with `MIGRATIONS_UPTO=0018`: 6 fail (expected — proves fixes) |
-| Migration idempotency (0019, 0020 applied twice) | **pass** |
-| `npx tsc --noEmit` | **pass** |
-| `npm run build` | **pass** |
-| `npm run lint` | **fail** — ~4,900 pre-existing Prettier errors (not introduced here) |
-| Browser check 384px: `/signup`, `/auth`, `/onboarding` redirect | **pass** (no horizontal scroll, no console errors) |
+| `npm test` | 34 files, 153 tests — pass |
+| `npm run test:db` | 10 files, 81 tests — pass (0019+ re-applied for idempotency) |
+| `npx tsc --noEmit` | pass |
+| `npm run lint` | pass — 0 errors (211 warnings, mostly `any`) |
+| `npm run build` | pass |
+| GitHub Actions CI on PR #1 | pass |
+| Browser checks (384 px) | `/signup`, `/auth`, `/onboarding` redirect, chat widget — pass |
+| Signed-in UI against a real database | **not done** (needs staging project, B-OPS-2) |
 
-## Next milestone
-Verify CI on GitHub once push access works; lint auto-fix PR; then Phase 2.7–2.9 (white-label copy,
-industry modules, background-job fan-out).
+## Next milestone (needs you)
+1. Review/merge PR #1 → apply migrations on staging, then production (DEPLOYMENT_GUIDE §5).
+2. Decide prices + public signup; create Stripe account; set up email domain.
+3. Create a staging Supabase project so signed-in flows can be browser-tested end to end.
