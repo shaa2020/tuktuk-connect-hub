@@ -29,6 +29,9 @@ export async function processGlobal(sb: Sb) {
   const out: Record<string, unknown> = {};
   try { await (await import("./whatsapp-inbox.server")).recover(); } catch { /* retried next run */ }
   try { out.push = await (await import("./push.server")).sendPendingPushes(sb); } catch (e) { out.pushError = err(e); }
+  // Business-requested data lifecycle: workspaces past their 30-day deletion grace, message retention.
+  try { out.purged = (await sb.rpc("purge_due_workspaces")).data; } catch (e) { out.purgeError = err(e); }
+  if (new Date().getUTCHours() === 3 && new Date().getUTCMinutes() < 5) { try { out.retention = (await sb.rpc("apply_message_retention")).data; } catch (e) { out.retentionError = err(e); } }
   return out;
 }
 

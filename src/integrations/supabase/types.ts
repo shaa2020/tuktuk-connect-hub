@@ -2701,12 +2701,16 @@ export type Database = {
           brand_color: string | null
           created_at: string
           default_driver_id: string | null
+          deletion_requested_at: string | null
+          deletion_requested_by: string | null
+          deletion_scheduled_for: string | null
           driver_auto: boolean
           google_review_url: string | null
           guest_reminder_auto: boolean
           id: string
           industry: string | null
           locale: string
+          message_retention_days: number | null
           name: string
           onboarding_completed_at: string | null
           owner_id: string | null
@@ -2727,12 +2731,16 @@ export type Database = {
           brand_color?: string | null
           created_at?: string
           default_driver_id?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
+          deletion_scheduled_for?: string | null
           driver_auto?: boolean
           google_review_url?: string | null
           guest_reminder_auto?: boolean
           id?: string
           industry?: string | null
           locale?: string
+          message_retention_days?: number | null
           name: string
           onboarding_completed_at?: string | null
           owner_id?: string | null
@@ -2753,12 +2761,16 @@ export type Database = {
           brand_color?: string | null
           created_at?: string
           default_driver_id?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
+          deletion_scheduled_for?: string | null
           driver_auto?: boolean
           google_review_url?: string | null
           guest_reminder_auto?: boolean
           id?: string
           industry?: string | null
           locale?: string
+          message_retention_days?: number | null
           name?: string
           onboarding_completed_at?: string | null
           owner_id?: string | null
@@ -2782,12 +2794,14 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: string }
       anonymize_contact: { Args: { _id: string }; Returns: undefined }
+      apply_message_retention: { Args: never; Returns: number }
       assert_entitlement: { Args: { _increment?: number; _key: string; _ws: string }; Returns: undefined }
       can_view_conversation: {
         Args: { _assigned: string; _ws: string }
         Returns: boolean
       }
       can_view_conversation_id: { Args: { _conv: string }; Returns: boolean }
+      cancel_workspace_deletion: { Args: { _ws: string }; Returns: undefined }
       check_in_ticket: { Args: { _token: string }; Returns: Json }
       check_rate_limit: { Args: { _key: string; _max: number; _window_seconds: number }; Returns: boolean }
       clear_demo_data: { Args: { _ws: string }; Returns: undefined }
@@ -2817,6 +2831,7 @@ export type Database = {
       import_contacts: { Args: { _rows: Json; _ws: string }; Returns: Json }
       is_member: { Args: { _ws: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      is_workspace_owner: { Args: { _ws: string }; Returns: boolean }
       kick_ai_operator: { Args: { _ws: string }; Returns: undefined }
       load_demo_data: { Args: { _ws: string }; Returns: undefined }
       merge_contacts: {
@@ -2827,7 +2842,10 @@ export type Database = {
       platform_set_workspace_plan: { Args: { _plan: string; _ws: string }; Returns: undefined }
       platform_set_workspace_suspension: { Args: { _reason?: string; _suspend: boolean; _ws: string }; Returns: undefined }
       platform_workspace_overview: { Args: never; Returns: { id: string; name: string; plan: string; industry: string | null; created_at: string; suspended_at: string | null; suspended_reason: string | null; owner_email: string | null; members: number; connected_channels: number; conversations_this_month: number; ai_requests_this_month: number; subscription_status: string | null }[] }
+      purge_due_workspaces: { Args: never; Returns: number }
+      request_workspace_deletion: { Args: { _confirm_name: string; _ws: string }; Returns: string }
       shares_workspace: { Args: { _other: string }; Returns: boolean }
+      transfer_workspace_ownership: { Args: { _new_owner: string; _ws: string }; Returns: undefined }
       trigger_background_sync_fanout: { Args: never; Returns: number }
       trigger_background_sync: { Args: { _body: Json }; Returns: undefined }
       workspace_limit: { Args: { _key: string; _ws: string }; Returns: number }

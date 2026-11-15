@@ -15,6 +15,7 @@ import { ROLE_LABEL, canManageWorkspace } from "@/lib/domain";
 import { INDUSTRIES } from "@/lib/signup";
 import { NativeSelect } from "@/components/kit";
 import { CustomFieldDefinitions } from "@/components/custom-fields";
+import { DataPrivacyPanel } from "@/components/data-privacy";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — TeamInbox" }, { name: "description", content: "Profile and workspace settings." }] }),
@@ -95,6 +96,7 @@ function SettingsPage() {
               </label>
             </Panel>
             <CustomFieldDefinitions workspaceId={ws.workspaceId} />
+            <DataPrivacyPanel />
             <Panel className="space-y-3 p-4">
               <h2 className="text-sm font-semibold">Sample data</h2>
               <p className="text-sm text-muted-foreground">Add a few clearly marked "[SAMPLE]" records to explore the app. They're never mixed up with real customers and can be removed in one tap.</p>
