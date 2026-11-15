@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { billingConfig, openBillingPortal, startCheckout } from "@/lib/billing.functions";
+import { Button } from "@/components/ui/button";
 import { Gauge } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -16,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/billing")({
 });
 
 type Summary = { plan: string; usage: Record<string, UsageRow> };
-type Plan = { key: string; name: string; sort: number; monthly_price_cents: number | null; annual_price_cents: number | null; currency: string; limits: Record<string, number | null> };
+type Plan = { key: string; name: string; sort: number; monthly_price_cents: number | null; annual_price_cents: number | null; currency: string; limits: Record<string, number | null>; stripe_price_monthly: string | null; stripe_price_annual: string | null };
 
 const LEVEL_TONE = { ok: "bg-primary", warning: "bg-warning", full: "bg-destructive", over: "bg-destructive", unlimited: "bg-teal" } as const;
 
@@ -35,11 +40,28 @@ function BillingPage() {
   const plans = useQuery({
     queryKey: ["plans"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("plans").select("key, name, sort, monthly_price_cents, annual_price_cents, currency, limits").eq("public", true).order("sort");
+      const { data, error } = await supabase.from("plans").select("key, name, sort, monthly_price_cents, annual_price_cents, currency, limits, stripe_price_monthly, stripe_price_annual").eq("public", true).order("sort");
       if (error) throw error;
       return (data ?? []) as unknown as Plan[];
     },
   });
+
+  const isAdmin = ws.role === "admin";
+  const [interval, setBillingInterval] = useState<"month" | "year">("month");
+  const [busy, setBusy] = useState<string | null>(null);
+  const cfgFn = useServerFn(billingConfig);
+  const checkoutFn = useServerFn(startCheckout);
+  const portalFn = useServerFn(openBillingPortal);
+  const cfg = useQuery({ queryKey: ["billing-config"], queryFn: () => cfgFn(), enabled: allowed });
+  const sub = useQuery({
+    queryKey: ["subscription", ws.workspaceId],
+    enabled: isAdmin,
+    queryFn: async () => (await supabase.from("workspace_subscriptions").select("status, plan_key, billing_interval, current_period_end, cancel_at, grace_until").eq("workspace_id", ws.workspaceId).maybeSingle()).data,
+  });
+  async function go(fn: () => Promise<{ ok: true; url: string } | { ok: false; error: string }>, id: string) {
+    setBusy(id);
+    try { const r = await fn(); if (!r.ok) return toast.error(r.error); window.location.assign(r.url); } finally { setBusy(null); }
+  }
 
   if (!allowed) {
     return <PageContainer><Panel><EmptyState icon={<Gauge />} title="Admins and managers only" description="Ask your workspace admin about the plan." /></Panel></PageContainer>;
@@ -81,7 +103,31 @@ function BillingPage() {
         </Panel>
       )}
 
-      <h2 className="mb-3 mt-8 text-base font-semibold">Plans</h2>
+      {sub.data && (
+        <Panel className="mt-4 flex flex-wrap items-center gap-3 p-4">
+          <div className="min-w-0 flex-1 text-sm">
+            <div className="font-semibold">Subscription: {sub.data.status.replace("_", " ")}</div>
+            <div className="text-xs text-muted-foreground">
+              {sub.data.billing_interval === "year" ? "Annual" : "Monthly"} billing
+              {sub.data.current_period_end ? ` · renews ${new Date(sub.data.current_period_end).toLocaleDateString()}` : ""}
+              {sub.data.cancel_at ? ` · ends ${new Date(sub.data.cancel_at).toLocaleDateString()}` : ""}
+            </div>
+            {sub.data.status === "past_due" && <div className="mt-1 text-xs text-destructive">Payment failed — please update your card. Your plan stays active while we retry.</div>}
+          </div>
+          {cfg.data?.online && <Button size="sm" variant="outline" disabled={busy === "portal"} onClick={() => go(() => portalFn({ data: { workspaceId: ws.workspaceId } }), "portal")}>Manage billing & invoices</Button>}
+        </Panel>
+      )}
+
+      <div className="mb-3 mt-8 flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">Plans</h2>
+        {cfg.data?.online && (
+          <div className="inline-flex rounded-lg border bg-card p-1 text-xs" role="tablist" aria-label="Billing period">
+            {(["month", "year"] as const).map((i) => (
+              <button key={i} role="tab" aria-selected={interval === i} onClick={() => setBillingInterval(i)} className={cn("rounded-md px-2.5 py-1 font-medium", interval === i ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>{i === "month" ? "Monthly" : "Annual"}</button>
+            ))}
+          </div>
+        )}
+      </div>
       {plans.isLoading ? <Panel><ListSkeleton /></Panel> : plans.error ? <ErrorState message={(plans.error as Error).message} onRetry={() => plans.refetch()} /> : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(plans.data ?? []).map((p) => (
@@ -93,6 +139,9 @@ function BillingPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {p.monthly_price_cents === null ? (p.key === "free" ? "Free" : p.key === "enterprise" ? "Custom pricing" : "Price coming soon") : `${(p.monthly_price_cents / 100).toFixed(0)} ${p.currency} / month`}
               </p>
+              {isAdmin && cfg.data?.online && p.key !== summary.data?.plan && (interval === "year" ? p.stripe_price_annual : p.stripe_price_monthly) && !(sub.data && ["active", "trialing", "past_due"].includes(sub.data.status)) && (
+                <Button size="sm" className="mt-3 w-full" disabled={busy === p.key} onClick={() => go(() => checkoutFn({ data: { workspaceId: ws.workspaceId, plan: p.key, interval } }), p.key)}>Choose {p.name}</Button>
+              )}
               <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
                 {["members", "channel_accounts", "monthly_ai_requests", "monthly_bookings"].map((k) => (
                   <li key={k}>{LIMIT_LABEL[k]}: <span className="font-medium text-foreground">{formatLimit(p.limits?.[k] ?? null)}</span></li>
@@ -103,7 +152,7 @@ function BillingPage() {
         </div>
       )}
       <p className="mt-4 text-xs text-muted-foreground">
-        Online checkout isn't switched on yet. To change plan, contact the platform team — your data is never deleted when a plan changes.
+        {cfg.data?.online ? "Payments are handled securely by Stripe; card details never touch our servers." : "Online checkout isn't switched on yet. To change plan, contact the platform team"} — your data is never deleted when a plan changes.
       </p>
     </PageContainer>
   );

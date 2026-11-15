@@ -40,6 +40,7 @@ import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as ApiPublicChatKeyRouteImport } from './routes/api/public/chat/$key'
 import { Route as ApiPublicHooksBackgroundSyncRouteImport } from './routes/api/public/hooks/background-sync'
+import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicOauthMetaCallbackRouteImport } from './routes/api/public/oauth/meta/callback'
 import { Route as ApiPublicWebhooksHubWorkspaceIdRouteImport } from './routes/api/public/webhooks/hub.$workspaceId'
@@ -205,6 +206,11 @@ const ApiPublicHooksBackgroundSyncRoute =
     path: '/api/public/hooks/background-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
+  id: '/api/public/webhooks/stripe',
+  path: '/api/public/webhooks/stripe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/contacts': typeof AuthenticatedContactsIndexRoute
   '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
@@ -343,6 +351,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/contacts/'
     | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
+    | '/api/public/webhooks/stripe'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
+    | '/api/public/webhooks/stripe'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/'
     | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
+    | '/api/public/webhooks/stripe'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
@@ -475,6 +487,7 @@ export interface RootRouteChildren {
   TicketTokenRoute: typeof TicketTokenRoute
   ApiPublicChatKeyRoute: typeof ApiPublicChatKeyRoute
   ApiPublicHooksBackgroundSyncRoute: typeof ApiPublicHooksBackgroundSyncRoute
+  ApiPublicWebhooksStripeRoute: typeof ApiPublicWebhooksStripeRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicOauthMetaCallbackRoute: typeof ApiPublicOauthMetaCallbackRoute
   ApiPublicWebhooksHubWorkspaceIdRoute: typeof ApiPublicWebhooksHubWorkspaceIdRoute
@@ -701,6 +714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackgroundSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/stripe': {
+      id: '/api/public/webhooks/stripe'
+      path: '/api/public/webhooks/stripe'
+      fullPath: '/api/public/webhooks/stripe'
+      preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -801,6 +821,7 @@ const rootRouteChildren: RootRouteChildren = {
   TicketTokenRoute: TicketTokenRoute,
   ApiPublicChatKeyRoute: ApiPublicChatKeyRoute,
   ApiPublicHooksBackgroundSyncRoute: ApiPublicHooksBackgroundSyncRoute,
+  ApiPublicWebhooksStripeRoute: ApiPublicWebhooksStripeRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicOauthMetaCallbackRoute: ApiPublicOauthMetaCallbackRoute,
   ApiPublicWebhooksHubWorkspaceIdRoute: ApiPublicWebhooksHubWorkspaceIdRoute,

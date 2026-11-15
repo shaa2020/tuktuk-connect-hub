@@ -169,6 +169,13 @@
       "when": 1794785018679,
       "tag": "0023_telegram_webchat_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794785404259,
+      "tag": "0024_stripe_prices",
+      "breakpoints": true
     }
   ]
 }

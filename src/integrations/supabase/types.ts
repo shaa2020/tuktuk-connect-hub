@@ -1747,6 +1747,8 @@ export type Database = {
           name: string
           public: boolean
           sort: number
+          stripe_price_annual: string | null
+          stripe_price_monthly: string | null
           trial_days: number
           updated_at: string
         }
@@ -1761,6 +1763,8 @@ export type Database = {
           name: string
           public?: boolean
           sort?: number
+          stripe_price_annual?: string | null
+          stripe_price_monthly?: string | null
           trial_days?: number
           updated_at?: string
         }
@@ -1775,6 +1779,8 @@ export type Database = {
           name?: string
           public?: boolean
           sort?: number
+          stripe_price_annual?: string | null
+          stripe_price_monthly?: string | null
           trial_days?: number
           updated_at?: string
         }
