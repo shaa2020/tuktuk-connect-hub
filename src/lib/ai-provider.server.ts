@@ -90,6 +90,10 @@ export async function callProvider(s: ProviderSettings, apiKey: string, opts: { 
   } else {
     const base = s.provider === "custom" ? s.base_url : PROVIDER_BASE[s.provider];
     if (!base || !base.startsWith("https://")) throw new AiError("A secure (https) provider address is required.", 400);
+    // Tenant-supplied addresses are re-checked at call time (SSRF guard).
+    const { unsafeUrlReason } = await import("./url-safety");
+    const unsafe = s.provider === "custom" ? unsafeUrlReason(base) : null;
+    if (unsafe) throw new AiError(`Provider address rejected: ${unsafe}`, 400);
     const model = s.provider === "gemini" ? String(s.model ?? "").trim().replace(/^models\//, "") : s.model;
     res = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",

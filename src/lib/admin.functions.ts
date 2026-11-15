@@ -40,6 +40,11 @@ export const saveAiProvider = createServerFn({ method: "POST" })
     const settings = { provider, model: (detected && detected !== data.provider ? "" : data.model) || null, base_url: provider === "custom" ? data.baseUrl || null : null };
     if (provider !== "lovable") {
       if (provider === "custom" && !settings.base_url) return { ok: false as const, error: "Enter the provider's https address." };
+      if (provider === "custom") {
+        const { unsafeUrlReason } = await import("./url-safety");
+        const unsafe = unsafeUrlReason(settings.base_url ?? "");
+        if (unsafe) return { ok: false as const, error: unsafe };
+      }
       const key = data.apiKey || (await getSecret(data.workspaceId, "ai_api_key"));
       if (!key) return { ok: false as const, error: "Paste your API key." };
       if (!settings.model) settings.model = await autoModel(provider, key);

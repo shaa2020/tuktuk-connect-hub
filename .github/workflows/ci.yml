@@ -1,0 +1,42 @@
+name: CI
+# Runs on every pull request and push to main. Never deploys and never touches production.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # bun.lock resolves through Lovable's private mirror, so CI installs from the public registry.
+      - name: Install dependencies
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
+          npm install --no-save --no-package-lock --legacy-peer-deps @testing-library/dom@10
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm test
+      - name: Install PostgreSQL 16 (for database policy tests)
+        run: |
+          if ! ls /usr/lib/postgresql/16/bin/initdb >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y postgresql-16
+          fi
+      - name: Database policy tests (throwaway local Postgres)
+        run: npm run test:db
+      - name: Build
+        run: npm run build
+      - name: Dependency audit (high+ only, report)
+        run: npm audit --omit=dev --audit-level=high || echo "::warning::npm audit reported issues"
+      # Lint is not enforced yet: ~4,900 pre-existing Prettier errors (roadmap 1.10).
+      - name: Lint (informational)
+        run: npm run lint || echo "::warning::lint has pre-existing errors (roadmap 1.10)"
