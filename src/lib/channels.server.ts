@@ -58,7 +58,7 @@ export async function sendMeta(ws: string, channel: MetaChannel, config: Record<
   return (j.messages?.[0]?.id ?? j.message_id) as string;
 }
 
-export async function ingestInbound(ws: string, channel: MetaChannel | "email", ev: { from: string; name?: string; externalMessageId: string; text: string; at?: Date; connectionId?: string | null; direction?: "inbound" | "outbound" }) {
+export async function ingestInbound(ws: string, channel: MetaChannel | "email" | "telegram" | "webchat", ev: { from: string; name?: string; externalMessageId: string; text: string; at?: Date; connectionId?: string | null; direction?: "inbound" | "outbound" }) {
   const sb = await db();
   let { data: ident } = await sb.from("external_identities").select("id, contact_id").eq("workspace_id", ws).eq("channel", channel).eq("external_id", ev.from).maybeSingle();
   if (!ident) {
@@ -92,7 +92,7 @@ export async function ingestInbound(ws: string, channel: MetaChannel | "email", 
   if (!error && (ev.direction ?? "inbound") === "inbound" && fresh) {
     try {
       const { notifyTeam } = await import("./push.server");
-      const label = { whatsapp: "WhatsApp", messenger: "Messenger", instagram: "Instagram", email: "Email" }[channel] ?? channel;
+      const label = ({ whatsapp: "WhatsApp", messenger: "Messenger", instagram: "Instagram", email: "Email", telegram: "Telegram", webchat: "Website chat" } as Record<string, string>)[channel] ?? channel;
       await notifyTeam(sb as any, ws, { kind: "message", title: `New ${label} from ${(ev.name || ev.from).slice(0, 60)}`, body: (ev.text || "New message").slice(0, 200), link: `/inbox?c=${convId}` });
     } catch { /* never block message saving on alerts */ }
   }

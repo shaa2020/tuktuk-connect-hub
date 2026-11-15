@@ -2541,7 +2541,14 @@ export type Database = {
         | "confirmed"
         | "cancelled"
         | "completed"
-      channel_type: "whatsapp" | "instagram" | "messenger" | "email" | "manual"
+      channel_type:
+        | "whatsapp"
+        | "instagram"
+        | "messenger"
+        | "email"
+        | "manual"
+        | "telegram"
+        | "webchat"
       connection_status:
         | "not_connected"
         | "pending"
@@ -2719,7 +2726,7 @@ export const Constants = {
         "cancelled",
         "completed",
       ],
-      channel_type: ["whatsapp", "instagram", "messenger", "email", "manual"],
+      channel_type: ["whatsapp", "instagram", "messenger", "email", "manual", "telegram", "webchat"],
       connection_status: [
         "not_connected",
         "pending",

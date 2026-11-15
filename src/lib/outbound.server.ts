@@ -5,7 +5,7 @@ export async function sendToConversation(convId: string, body: string, authorId:
   const { sendMeta } = await import("./channels.server");
   const { data: conv } = await supabaseAdmin.from("conversations").select("id, workspace_id, channel, connection_id").eq("id", convId).maybeSingle();
   if (!conv) return { ok: false, error: "Conversation not found." };
-  if (!["whatsapp", "messenger", "instagram", "email"].includes(conv.channel)) return { ok: false, error: "This channel can't send messages." };
+  if (!["whatsapp", "messenger", "instagram", "email", "telegram", "webchat"].includes(conv.channel)) return { ok: false, error: "This channel can't send messages." };
   const [{ data: cc }, { data: part }] = await Promise.all([
     conv.connection_id
       ? supabaseAdmin.from("channel_connections").select("id, status, config").eq("id", conv.connection_id).maybeSingle()
@@ -17,7 +17,11 @@ export async function sendToConversation(convId: string, body: string, authorId:
   if (!to) return { ok: false, error: "No customer address for this conversation." };
   try {
     const cfg = (cc.config ?? {}) as Record<string, string>;
-    const extId = cfg.mode === "hub"
+    const extId = conv.channel === "telegram"
+      ? await (await import("./telegram.server")).sendTelegram(conv.workspace_id, cc.id, to, body)
+      : conv.channel === "webchat"
+      ? `wc-out:${crypto.randomUUID()}` // delivered when the visitor's widget polls (webchat.server.ts)
+      : cfg.mode === "hub"
       ? await (await import("./hub.server")).sendViaHub(conv.workspace_id, conv.channel, cfg, to, body, conv.id)
       : conv.channel === "email" && cfg.mode === "imap"
       ? await sendViaApp(conv.workspace_id, conv.id, cc.id, cfg, to, body)

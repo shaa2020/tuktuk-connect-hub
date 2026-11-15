@@ -142,6 +142,10 @@ export const disconnectChannel = createServerFn({ method: "POST" })
       await supabaseAdmin.from("channel_connections").update({ status: "disconnected", last_error: null }).eq("id", row.id);
       return { ok: true as const };
     }
+    if (row?.channel === "telegram") {
+      await (await import("./telegram.server")).disconnectBot(data.workspaceId, row.id);
+      return { ok: true as const };
+    }
     if (!row || !["whatsapp", "messenger", "instagram"].includes(row.channel)) return { ok: false as const, error: "Connection not found." };
     const ch = row.channel as "whatsapp";
     await deleteSecrets(data.workspaceId, [tokenKind(ch, row.id), tokenKind(ch)]);
@@ -291,4 +295,24 @@ export const resetMemberMfa = createServerFn({ method: "POST" })
     await supabaseAdmin.auth.admin.signOut(data.userId).catch(() => {});
     await supabaseAdmin.from("audit_logs").insert({ workspace_id: data.workspaceId, actor_id: context.userId, action: "mfa_reset", entity_type: "profiles", entity_id: data.userId, details: { factors_removed: list?.factors?.length ?? 0 } });
     return { ok: true };
+  });
+
+/** Admin: connect a Telegram bot (token from @BotFather). Registers the webhook automatically. */
+export const connectTelegramBot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    workspaceId: z.string().uuid(),
+    token: z.string().trim().max(100),
+    label: z.string().trim().max(60).optional().or(z.literal("")),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, data.workspaceId);
+    const { isBotToken } = await import("./telegram");
+    if (!isBotToken(data.token)) return { ok: false as const, error: "That doesn't look like a bot token. Copy the full token from @BotFather (numbers:letters)." };
+    try {
+      const r = await (await import("./telegram.server")).connectBot(data.workspaceId, data.token, data.label || null, context.userId);
+      return { ok: true as const, name: r.name };
+    } catch (e) {
+      return { ok: false as const, error: (e as Error).message.slice(0, 300) };
+    }
   });

@@ -43,6 +43,7 @@ import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicOauthMetaCallbackRouteImport } from './routes/api/public/oauth/meta/callback'
 import { Route as ApiPublicWebhooksHubWorkspaceIdRouteImport } from './routes/api/public/webhooks/hub.$workspaceId'
 import { Route as ApiPublicWebhooksMetaWorkspaceIdRouteImport } from './routes/api/public/webhooks/meta.$workspaceId'
+import { Route as ApiPublicWebhooksTelegramConnectionIdRouteImport } from './routes/api/public/webhooks/telegram.$connectionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -222,6 +223,12 @@ const ApiPublicWebhooksMetaWorkspaceIdRoute =
     path: '/api/public/webhooks/meta/$workspaceId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksTelegramConnectionIdRoute =
+  ApiPublicWebhooksTelegramConnectionIdRouteImport.update({
+    id: '/api/public/webhooks/telegram/$connectionId',
+    path: '/api/public/webhooks/telegram/$connectionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  '/api/public/webhooks/telegram/$connectionId': typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -292,6 +300,7 @@ export interface FileRoutesByTo {
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  '/api/public/webhooks/telegram/$connectionId': typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -329,6 +338,7 @@ export interface FileRoutesById {
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  '/api/public/webhooks/telegram/$connectionId': typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
     | '/api/public/webhooks/meta/$workspaceId'
+    | '/api/public/webhooks/telegram/$connectionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
     | '/api/public/webhooks/meta/$workspaceId'
+    | '/api/public/webhooks/telegram/$connectionId'
   id:
     | '__root__'
     | '/'
@@ -437,6 +449,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
     | '/api/public/webhooks/meta/$workspaceId'
+    | '/api/public/webhooks/telegram/$connectionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -453,6 +466,7 @@ export interface RootRouteChildren {
   ApiPublicOauthMetaCallbackRoute: typeof ApiPublicOauthMetaCallbackRoute
   ApiPublicWebhooksHubWorkspaceIdRoute: typeof ApiPublicWebhooksHubWorkspaceIdRoute
   ApiPublicWebhooksMetaWorkspaceIdRoute: typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  ApiPublicWebhooksTelegramConnectionIdRoute: typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -695,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksMetaWorkspaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/telegram/$connectionId': {
+      id: '/api/public/webhooks/telegram/$connectionId'
+      path: '/api/public/webhooks/telegram/$connectionId'
+      fullPath: '/api/public/webhooks/telegram/$connectionId'
+      preLoaderRoute: typeof ApiPublicWebhooksTelegramConnectionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -763,6 +784,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOauthMetaCallbackRoute: ApiPublicOauthMetaCallbackRoute,
   ApiPublicWebhooksHubWorkspaceIdRoute: ApiPublicWebhooksHubWorkspaceIdRoute,
   ApiPublicWebhooksMetaWorkspaceIdRoute: ApiPublicWebhooksMetaWorkspaceIdRoute,
+  ApiPublicWebhooksTelegramConnectionIdRoute:
+    ApiPublicWebhooksTelegramConnectionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

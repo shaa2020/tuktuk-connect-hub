@@ -1,6 +1,6 @@
 export type ProviderKey = "whatsapp" | "instagram" | "messenger" | "email" | "outlook" | "telegram" | "tiktok" | "linkedin";
 
-const LIVE: ProviderKey[] = ["whatsapp", "instagram", "messenger", "email"];
+const LIVE: ProviderKey[] = ["whatsapp", "instagram", "messenger", "email", "telegram"];
 
 export type ProviderState =
   | { kind: "soon"; badge: "Coming soon"; action: null }

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, ArrowLeft, Inbox as InboxIcon, Phone, MessageCircle, Instagram, Mail, Facebook, StickyNote,
-  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt, SlidersHorizontal, Zap, Check, CheckCheck, PanelRight,
+  MoreVertical, Send, Sparkles, Languages, Loader2, Smile, AlertTriangle, Tag, Flag, CheckSquare, Target, CalendarCheck, User, Lock, X, MailOpen, Receipt, SlidersHorizontal, Zap, Check, CheckCheck, PanelRight, Globe,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
 import { listWebsiteTours } from "@/lib/website.functions";
@@ -50,11 +50,11 @@ export const Route = createFileRoute("/_authenticated/inbox")({
 });
 
 export function ChannelIcon({ channel, className }: { channel: ChannelType; className?: string }) {
-  const I = { whatsapp: MessageCircle, instagram: Instagram, messenger: Facebook, email: Mail, manual: Phone }[channel];
+  const I = ({ whatsapp: MessageCircle, instagram: Instagram, messenger: Facebook, email: Mail, manual: Phone, telegram: Send, webchat: Globe } as const)[channel] ?? MessageCircle;
   return <I className={cn("size-3.5", className)} aria-label={CHANNEL_LABEL[channel]} />;
 }
 export const CHANNEL_COLOR: Record<ChannelType, string> = {
-  whatsapp: "text-whatsapp", instagram: "text-instagram", messenger: "text-facebook", email: "text-gmail", manual: "text-muted-foreground",
+  whatsapp: "text-whatsapp", instagram: "text-instagram", messenger: "text-facebook", email: "text-gmail", manual: "text-muted-foreground", telegram: "text-info", webchat: "text-primary",
 };
 
 function useChannelStatus() {

@@ -3,7 +3,8 @@ import { providerState } from "./connect-providers";
 
 describe("providerState", () => {
   it("never shows unbuilt providers as available", () => {
-    expect(providerState("telegram", [{ channel: "telegram", status: "connected" }]).kind).toBe("soon");
+    expect(providerState("outlook", [{ channel: "outlook", status: "connected" }]).kind).toBe("soon");
+    expect(providerState("telegram", [{ channel: "telegram", status: "connected" }]).kind).toBe("connected");
   });
   it("offers another account once one is connected", () => {
     expect(providerState("email", [{ channel: "email", status: "connected" }]).action).toBe("Connect another account");

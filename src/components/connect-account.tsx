@@ -33,7 +33,8 @@ const PROVIDERS: Provider[] = [
   { key: "email", name: "Gmail", blurb: "Add as many Gmail inboxes as you need.", icon: <Mail className="size-5" />, group: "Email",
     appLink: { label: "Open Google account", href: "https://myaccount.google.com/apppasswords" } },
   { key: "outlook", name: "Outlook / Microsoft 365", blurb: "Not available yet.", icon: <Mail className="size-5" />, group: "Coming soon" },
-  { key: "telegram", name: "Telegram", blurb: "Not available yet.", icon: <Send className="size-5" />, group: "Coming soon" },
+  { key: "telegram", name: "Telegram", blurb: "Your own Telegram bot — customers message it, you reply here.", icon: <Send className="size-5" />, group: "Messaging & social",
+    appLink: { label: "Open @BotFather", href: "https://t.me/BotFather" } },
   { key: "tiktok", name: "TikTok", blurb: "Needs TikTok partner approval.", icon: <Music2 className="size-5" />, group: "Coming soon" },
   { key: "linkedin", name: "LinkedIn", blurb: "Needs LinkedIn partner approval.", icon: <Linkedin className="size-5" />, group: "Coming soon" },
 ];

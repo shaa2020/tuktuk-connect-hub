@@ -162,6 +162,13 @@
       "when": 1794784668243,
       "tag": "0022_job_fanout_social_publishing",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794785018679,
+      "tag": "0023_telegram_webchat_channels",
+      "breakpoints": true
     }
   ]
 }

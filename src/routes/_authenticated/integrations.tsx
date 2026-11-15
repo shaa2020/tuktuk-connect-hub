@@ -14,7 +14,7 @@ import { MetaConnectForm } from "@/components/admin-connections";
 import { MetaOneClick, MetaPicker } from "@/components/meta-one-click";
 import { TemplatesPanel } from "@/components/wa-templates";
 import { useServerFn } from "@tanstack/react-start";
-import { connectEmailChannel, connectGmailAppPassword, disconnectChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
+import { connectEmailChannel, connectGmailAppPassword, connectTelegramBot, disconnectChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Globe, Plus, RefreshCw } from "lucide-react";
 import { syncWebsiteKnowledge, websiteStatus } from "@/lib/website.functions";
@@ -72,7 +72,7 @@ function GmailAppForm({ workspaceId, connectionId, initialAddress, initialLabel,
 }
 
 const META = ["whatsapp", "instagram", "messenger"] as const;
-const ORDER: ChannelType[] = ["whatsapp", "instagram", "messenger", "email"];
+const ORDER: ChannelType[] = ["whatsapp", "instagram", "messenger", "email", "telegram"];
 
 function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: boolean }) {
   const status = useServerFn(websiteStatus);
@@ -100,6 +100,32 @@ function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: 
         if (r.ok) { toast.success(`Synced ${r.tours} tours and business info`); q.refetch(); } else toast.error(r.error);
       }}><RefreshCw className={busy ? "animate-spin" : ""} />Sync now</Button>}
     </Panel>
+  );
+}
+
+function TelegramForm({ workspaceId, onDone }: { workspaceId: string; onDone: () => void }) {
+  const connect = useServerFn(connectTelegramBot);
+  const [token, setToken] = useState("");
+  const [label, setLabel] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="mt-3 space-y-2 rounded-lg border p-3">
+      <ol className="list-decimal space-y-1 pl-5 text-xs text-muted-foreground">
+        <li>In Telegram, open <a className="text-primary underline" href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather</a> and send <b>/newbot</b>.</li>
+        <li>Choose a name and username; BotFather replies with a token like <code>123456:ABC…</code>.</li>
+        <li>Paste the token here. Customers message your bot; replies are sent from it.</li>
+      </ol>
+      <Input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Bot token" autoComplete="off" aria-label="Telegram bot token" />
+      <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Account name (optional)" maxLength={60} aria-label="Account name" />
+      <Button size="sm" disabled={busy || !token.trim()} onClick={async () => {
+        setBusy(true);
+        try {
+          const r = await connect({ data: { workspaceId, token: token.trim(), label: label.trim() } });
+          if (!r.ok) return toast.error(r.error);
+          toast.success(`Connected ${r.name}`); setToken(""); onDone();
+        } finally { setBusy(false); }
+      }}>Connect bot</Button>
+    </div>
   );
 }
 
@@ -182,6 +208,15 @@ function IntegrationsPage() {
                     {open === `new-${ch}` && (ch === "whatsapp" ? <MetaConnectForm workspaceId={workspaceId} channel="whatsapp" connected={false} onDone={() => { q.refetch(); setOpen(null); }} /> : <MetaOneClick workspaceId={workspaceId} channel={ch as "instagram"} onDone={() => { q.refetch(); setOpen(null); }} />)}
                   </>
                 )}
+                {ch === "telegram" && isAdmin && (
+                  <>
+                    {rows.filter((r) => r.status === "connected").map((r) => (
+                      <Button key={r.id} size="sm" variant="ghost" className="mt-2" onClick={async () => { const x = await disconnect({ data: { workspaceId, connectionId: r.id } }); if (x.ok) { toast.success("Bot disconnected"); q.refetch(); } else toast.error(x.error); }}>Disconnect {r.display_name}</Button>
+                    ))}
+                    <Button size="sm" variant="secondary" className="mt-2" onClick={() => setOpen(open === "new-telegram" ? null : "new-telegram")}><Plus />{rows.some((r) => r.status === "connected") ? "Add another bot" : "Connect a Telegram bot"}</Button>
+                    {open === "new-telegram" && <TelegramForm workspaceId={workspaceId} onDone={() => { q.refetch(); setOpen(null); }} />}
+                  </>
+                )}
                 {ch === "email" && isAdmin && (
                   <>
                     <Button size="sm" variant="secondary" className="mt-2" onClick={() => setOpen(open === "new-gmail" ? null : "new-gmail")}><Plus />{platformConnectors || rows.length ? "Add another Gmail" : "Connect Gmail (app password)"}</Button>
@@ -197,7 +232,7 @@ function IntegrationsPage() {
   );
 }
 
-const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email", "website"] as const;
+const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email", "website", "telegram"] as const;
 export const Route = createFileRoute("/_authenticated/integrations")({
   validateSearch: (s: Record<string, unknown>): { connect?: (typeof CONNECT_KEYS)[number]; meta_pick?: string; meta_channel?: "messenger" | "instagram"; meta_error?: string } => ({
     ...(CONNECT_KEYS.includes(s.connect as any) ? { connect: s.connect as (typeof CONNECT_KEYS)[number] } : {}),

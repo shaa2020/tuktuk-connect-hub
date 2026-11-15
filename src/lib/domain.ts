@@ -24,6 +24,8 @@ export const CHANNEL_LABEL: Record<ChannelType, string> = {
   messenger: "Messenger",
   email: "Email",
   manual: "Phone / Manual",
+  telegram: "Telegram",
+  webchat: "Website chat",
 };
 
 export const STATUS_META: Record<ConversationStatus, { label: string; tone: Tone }> = {
