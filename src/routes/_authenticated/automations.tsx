@@ -1,3 +1,4 @@
+import { AutomationWorkflows } from "@/components/automation-workflows";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -69,6 +70,7 @@ function AutomationsPage() {
       <PageHeader title="Automations" description="Let the AI Operator run things while you're away, and set simple auto-assign rules." />
       <AiOperatorPanel />
       <div className="my-6"><AiOperatorMonitor /></div>
+      <div className="mb-8"><AutomationWorkflows /></div>
       <h2 className="mb-2 text-sm font-semibold text-muted-foreground">Auto-assign rules</h2>
       {admin && (
         <Panel className="mb-4 space-y-3 p-4">

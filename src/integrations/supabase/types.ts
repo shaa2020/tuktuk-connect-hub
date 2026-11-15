@@ -257,6 +257,57 @@ export type Database = {
           },
         ]
       }
+      automation_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          entity_id: string
+          entity_type: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          idempotency_key: string
+          result: Json | null
+          run_at: string
+          status: string
+          trigger: string
+          workflow_id: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          idempotency_key: string
+          result?: Json | null
+          run_at?: string
+          status?: string
+          trigger: string
+          workflow_id: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string
+          result?: Json | null
+          run_at?: string
+          status?: string
+          trigger?: string
+          workflow_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       automation_rules: {
         Row: {
           actions: Json | null
@@ -336,6 +387,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      automation_workflows: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          delay_minutes: number
+          enabled: boolean
+          id: string
+          name: string
+          trigger: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          delay_minutes?: number
+          enabled?: boolean
+          id?: string
+          name: string
+          trigger: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          delay_minutes?: number
+          enabled?: boolean
+          id?: string
+          name?: string
+          trigger?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       background_jobs: {
         Row: {

@@ -20,6 +20,7 @@ export async function processWorkspace(sb: Sb, w: { id: string; platform_connect
   // PayPal roughly hourly (its reports lag up to 3h anyway).
   if (now.getUTCMinutes() < 5) { try { r.paypal = await (await import("./paypal.server")).syncPaypalFor(w.id, 3); } catch (e) { r.paypalError = err(e); } }
   try { r.social = await (await import("./social-publish.server")).publishDuePosts(w.id); } catch (e) { r.socialError = err(e); }
+  try { r.automations = await (await import("./automation.server")).processAutomationEvents(w.id); } catch (e) { r.automationsError = err(e); }
   return r;
 }
 
