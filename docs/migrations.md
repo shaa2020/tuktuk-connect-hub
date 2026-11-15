@@ -31,3 +31,4 @@ All new migrations are idempotent and non-destructive (no DROP of tables/columns
 - `0023_telegram_webchat_channels.sql` — adds channel types telegram, webchat.
 - `0024_stripe_prices.sql` — Stripe price ids per plan; unique provider subscription id.
 - `0025_staff_scheduling.sql` — staff_shifts, time_off_requests, shift_swap_requests, staff_attendance + guards, notifications, decide_* and clock_in/out RPCs.
+- `0026_crm_import_duplicates_custom_fields.sql` — contact_field_definitions + contacts.custom_fields (validated), import_contacts (dedupe), find_duplicate_contacts, norm_phone.

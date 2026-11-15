@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { PageContainer } from "@/components/app-shell";
 import { ErrorState, ListSkeleton, Panel } from "@/components/states";
+import { ContactCustomFields } from "@/components/custom-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -130,6 +131,7 @@ function ContactDetail() {
             ))}
           </dl>
           {c.notes && <div className="mt-4 rounded-lg bg-note p-3 text-sm whitespace-pre-wrap">{c.notes}</div>}
+          <ContactCustomFields key={c.id} workspaceId={ws.workspaceId} contactId={c.id} values={(c.custom_fields ?? {}) as Record<string, unknown>} onSaved={() => q.refetch()} />
         </Panel>
 
         <div className="space-y-4 lg:col-span-2">

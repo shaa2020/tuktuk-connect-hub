@@ -183,6 +183,13 @@
       "when": 1794785627967,
       "tag": "0025_staff_scheduling",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794785838261,
+      "tag": "0026_crm_import_duplicates_custom_fields",
+      "breakpoints": true
     }
   ]
 }

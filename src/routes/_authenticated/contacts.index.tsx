@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, SampleBadge, fmtRelative } from "@/components/kit";
 import { ContactFormDialog } from "@/components/contact-form";
+import { DuplicateFinder, ImportContacts } from "@/components/contact-tools";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
   head: () => ({ meta: [{ title: "Contacts — TeamInbox" }, { name: "description", content: "Customer contacts." }] }),
@@ -20,7 +21,8 @@ export const Route = createFileRoute("/_authenticated/contacts/")({
 const PAGE = 50;
 
 function ContactsPage() {
-  const { workspaceId, memberName, userId } = useWorkspace();
+  const { workspaceId, memberName, userId, role } = useWorkspace();
+  const staff = role === "admin" || role === "manager";
   const [q, setQ] = useState("");
   const [mine, setMine] = useState(false);
   const [limit, setLimit] = useState(PAGE);
@@ -62,6 +64,8 @@ function ContactsPage() {
         description={query.data ? `${query.data.count} contacts` : undefined}
         actions={<>
           <Button variant="outline" size="sm" onClick={exportCsv}><Download /> Export</Button>
+          {staff && <ImportContacts workspaceId={workspaceId} />}
+          {staff && <DuplicateFinder workspaceId={workspaceId} />}
           <Button size="sm" onClick={() => setOpen(true)}><Plus /> New contact</Button>
         </>}
       />

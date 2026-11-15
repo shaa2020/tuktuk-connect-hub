@@ -697,6 +697,39 @@ export type Database = {
           },
         ]
       }
+      contact_field_definitions: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          label: string
+          options: string[]
+          sort: number
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          options?: string[]
+          sort?: number
+          type?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          options?: string[]
+          sort?: number
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       contact_tags: {
         Row: {
           contact_id: string
@@ -744,6 +777,7 @@ export type Database = {
           country: string | null
           created_at: string
           created_by: string | null
+          custom_fields: Json
           email: string | null
           full_name: string
           id: string
@@ -763,6 +797,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          custom_fields?: Json
           email?: string | null
           full_name: string
           id?: string
@@ -782,6 +817,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          custom_fields?: Json
           email?: string | null
           full_name?: string
           id?: string
@@ -2679,11 +2715,13 @@ export type Database = {
       }
       decide_shift_swap: { Args: { _approve: boolean; _id: string }; Returns: undefined }
       decide_time_off: { Args: { _approve: boolean; _id: string }; Returns: undefined }
+      find_duplicate_contacts: { Args: { _limit?: number; _ws: string }; Returns: { keep_id: string; keep_name: string; dup_id: string; dup_name: string; reason: string }[] }
       has_membership: { Args: { _ws: string }; Returns: boolean }
       has_ws_role: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][]; _ws: string }
         Returns: boolean
       }
+      import_contacts: { Args: { _rows: Json; _ws: string }; Returns: Json }
       is_member: { Args: { _ws: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       kick_ai_operator: { Args: { _ws: string }; Returns: undefined }
@@ -2692,6 +2730,7 @@ export type Database = {
         Args: { _keep: string; _merge: string }
         Returns: undefined
       }
+      norm_phone: { Args: { _p: string }; Returns: string }
       platform_set_workspace_plan: { Args: { _plan: string; _ws: string }; Returns: undefined }
       platform_set_workspace_suspension: { Args: { _reason?: string; _suspend: boolean; _ws: string }; Returns: undefined }
       platform_workspace_overview: { Args: never; Returns: { id: string; name: string; plan: string; industry: string | null; created_at: string; suspended_at: string | null; suspended_reason: string | null; owner_email: string | null; members: number; connected_channels: number; conversations_this_month: number; ai_requests_this_month: number; subscription_status: string | null }[] }
