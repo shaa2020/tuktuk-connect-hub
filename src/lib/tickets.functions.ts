@@ -32,6 +32,9 @@ export const setTicketAuto = createServerFn({ method: "POST" })
 export const getPublicTicket = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ token: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    // Public, token-based lookup: throttle per IP to stop token guessing.
+    const { rateLimit, clientIp } = await import("./rate-limit.server");
+    if (!(await rateLimit(`ticket:${clientIp()}`, 60, 60, { failClosed: true }))) return null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: b } = await (supabaseAdmin.from("bookings") as any).select("reference, tour_name, tour_date, start_time, guests, pickup_location, status, payment_status, amount, currency, contacts(full_name)").eq("ticket_token", data.token).maybeSingle();
     if (!b || (b.status !== "confirmed" && b.status !== "completed")) return null;

@@ -31,3 +31,9 @@
   TESTING_STRATEGY, DEPLOYMENT_GUIDE, KNOWN_LIMITATIONS, PROJECT_STATUS, IMPLEMENTATION_LOG,
   BLOCKERS, RELEASE_NOTES; `.env.example`.
 * Corrected Social Planner copy that claimed scheduled posts would publish automatically.
+
+## 2026-11-15 — Milestone 4: Phase 1 hardening continued
+* SSRF guard (`url-safety.ts`) for tenant "custom" AI base URLs — save + call time. 15 tests.
+* Migration 0021 + `rate-limit.server.ts`: public ticket lookup, invite redemption (fail closed),
+  hub + Meta webhooks (fail open). 3 db tests.
+* `.github/workflows/ci.yml` (typecheck, unit, db tests, build, audit; lint informational) — unverified.

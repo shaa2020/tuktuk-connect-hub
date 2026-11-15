@@ -42,3 +42,5 @@
 - Plans & limits live in the plans table (+ workspaces.plan_limits overrides); hard limits are DB triggers/assert_entitlement, metered actions use consume_usage (service role only); conversations are a soft limit so customer messages are never dropped. Every AI call is metered in generate() (ai-provider.server.ts).
 - New tenants are created only by the create_workspace RPC (verified email, max 3 owned) — the caller becomes owner + admin, plan 'free', platform_connectors false.
 - Database policy tests: `npm run test:db` starts a throwaway local Postgres, applies every migration (0019+ twice for idempotency) and runs db-tests/ — add a test there for any RLS/RPC change.
+- Public, unauthenticated endpoints are throttled with check_rate_limit (src/lib/rate-limit.server.ts): credential-like lookups fail closed, provider webhooks fail open (providers retry on 429) — never drop customer messages because the limiter is down.
+- Tenant-supplied outbound URLs (custom AI provider) must pass unsafeUrlReason (src/lib/url-safety.ts) on save and at call time — SSRF guard.

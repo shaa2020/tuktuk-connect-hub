@@ -20,6 +20,9 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
       POST: async ({ request, params }) => {
         const ws = params.workspaceId;
         if (!UUID.test(ws)) return new Response("Not found", { status: 404 });
+        // Generous cap per workspace; Meta retries on 429 so nothing is lost.
+        const { rateLimit, tooMany } = await import("@/lib/rate-limit.server");
+        if (!(await rateLimit(`meta:${ws}`, 3000, 60))) return tooMany();
         const raw = await request.text();
         const { getSecret, hmacSha256Hex, safeEqual } = await import("@/lib/secrets.server");
         const appSecret = await getSecret(ws, "meta_app_secret");

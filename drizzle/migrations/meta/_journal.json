@@ -148,6 +148,13 @@
       "when": 1794779635033,
       "tag": "0020_saas_plans_entitlements",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794780408184,
+      "tag": "0021_rate_limits",
+      "breakpoints": true
     }
   ]
 }

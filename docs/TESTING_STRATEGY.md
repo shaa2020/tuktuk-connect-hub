@@ -4,10 +4,10 @@
 
 | Layer | Tool | Command | Runs where | Status |
 |---|---|---|---|---|
-| Unit (pure logic) | Vitest | `npm test` | anywhere | 22 files / 98 tests passing |
+| Unit (pure logic) | Vitest | `npm test` | anywhere | 23 files / 113 tests passing |
 | Component / routing | Vitest + Testing Library (jsdom) | `npm test` | anywhere | `src/test/app-routing.test.tsx` |
 | Server-module guards (mocked Supabase + fetch) | Vitest | `npm test` | anywhere | `src/lib/tenancy.test.ts` |
-| **Database policies & RPCs** | Vitest + `postgres` driver against throwaway PG16 | `npm run test:db` | needs local PostgreSQL 16 binaries | 2 files / 42 tests passing |
+| **Database policies & RPCs** | Vitest + `postgres` driver against throwaway PG16 | `npm run test:db` | needs local PostgreSQL 16 binaries | 3 files / 45 tests passing |
 | Migration idempotency | `scripts/db-test/run.sh` re-applies 0019+ | `npm run test:db` | same | passing |
 | Typecheck | `tsc --noEmit` | `npx tsc --noEmit` | anywhere | clean |
 | Lint | ESLint + Prettier | `npm run lint` | anywhere | **failing: ~4,900 pre-existing formatting errors** (roadmap 1.10) |
@@ -42,7 +42,7 @@ secrets unreadable; agents limited; privileged columns locked; platform-admin-on
 Mobile viewports: 384×800 and 768×1024 for every page; assert no horizontal scroll.
 
 ## Gaps (honest)
-* No CI yet — tests run only when someone runs them.
+* CI workflow exists but has not run on GitHub yet (push access pending).
 * Webhook handlers (Meta, WhatsApp, hub) have no automated tests with signed fixture payloads — next.
 * `booking_conflict_guard`, `check_in_ticket`, `merge_contacts`, `anonymize_contact` not yet in db-tests.
 * No load/performance tests; no backup-restore drill.

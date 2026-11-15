@@ -23,5 +23,7 @@ Later migrations (0002–0018) are listed in `drizzle/migrations/meta/_journal.j
   `usage_counters`, `workspace_limit/usage/usage_summary`, `assert_entitlement`, `consume_usage`,
   plan-limit triggers, `workspace_subscriptions`, `billing_events`, `create_workspace`, platform RPCs.
 
+- `0021_rate_limits.sql` — `rate_limits` table + `check_rate_limit()` (service role only).
+
 Testing: `npm run test:db` (requires a local PostgreSQL 16 install; no production access).
 All new migrations are idempotent and non-destructive (no DROP of tables/columns, no data deletion).

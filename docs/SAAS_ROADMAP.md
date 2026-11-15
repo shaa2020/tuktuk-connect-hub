@@ -17,9 +17,9 @@ known limitations, tracking docs.
 | 1.4 | Suspension (F-03) | ✅ done |
 | 1.5 | Schema drift + portable job URL (F-05/F-06) | ✅ done |
 | 1.6 | DB policy test harness | ✅ done (42 tests) |
-| 1.7 | SSRF guard for custom AI base URL (F-09) | next |
-| 1.8 | Rate limiting on public endpoints (F-10) | next (Cloudflare rules or DB limiter) |
-| 1.9 | CI pipeline: typecheck, unit, db tests, build, `npm audit`, secret scan | next — needs GitHub Actions enabled |
+| 1.7 | SSRF guard for custom AI base URL (F-09) | ✅ done |
+| 1.8 | Rate limiting on public endpoints (F-10) | ✅ DB limiter done; Cloudflare edge rules recommended at deploy |
+| 1.9 | CI pipeline: typecheck, unit, db tests, build, `npm audit` | 🟡 workflow written (`.github/workflows/ci.yml`), not yet run on GitHub; secret scanning to add |
 | 1.10 | Fix ~4,900 pre-existing Prettier lint errors (mechanical `eslint --fix` in its own PR) | next |
 | 1.11 | MFA recovery codes (F-13) | P2 |
 | 1.12 | Secrets v2 with AAD + key id, rotation script (F-11) | P2 |
