@@ -15,8 +15,8 @@ import { paypalStatus, savePaypal, syncPaypalNow } from "@/lib/paypal.functions"
 
 export const Route = createFileRoute("/_authenticated/finance")({
   head: () => ({ meta: [
-    { title: "Finance — Tuk Tuk 24 Lisbon" }, { name: "description", content: "PayPal payments matched to tour bookings." },
-    { property: "og:title", content: "Finance — Tuk Tuk 24 Lisbon" }, { property: "og:description", content: "PayPal payments matched to tour bookings." },
+    { title: "Finance — TeamInbox" }, { name: "description", content: "PayPal payments matched to tour bookings." },
+    { property: "og:title", content: "Finance — TeamInbox" }, { property: "og:description", content: "PayPal payments matched to tour bookings." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
   component: FinancePage,

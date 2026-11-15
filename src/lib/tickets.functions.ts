@@ -36,7 +36,7 @@ export const getPublicTicket = createServerFn({ method: "GET" })
     const { rateLimit, clientIp } = await import("./rate-limit.server");
     if (!(await rateLimit(`ticket:${clientIp()}`, 60, 60, { failClosed: true }))) return null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: b } = await (supabaseAdmin.from("bookings") as any).select("reference, tour_name, tour_date, start_time, guests, pickup_location, status, payment_status, amount, currency, contacts(full_name)").eq("ticket_token", data.token).maybeSingle();
+    const { data: b } = await (supabaseAdmin.from("bookings") as any).select("reference, tour_name, tour_date, start_time, guests, pickup_location, status, payment_status, amount, currency, contacts(full_name), workspaces(name)").eq("ticket_token", data.token).maybeSingle();
     if (!b || (b.status !== "confirmed" && b.status !== "completed")) return null;
-    return { completed: b.status === "completed", reference: b.reference, tour_name: b.tour_name, tour_date: b.tour_date, start_time: b.start_time, guests: b.guests, pickup_location: b.pickup_location, payment_status: b.payment_status, amount: b.amount, currency: b.currency, guest: (b as any).contacts?.full_name ?? null };
+    return { completed: b.status === "completed", reference: b.reference, tour_name: b.tour_name, tour_date: b.tour_date, start_time: b.start_time, guests: b.guests, pickup_location: b.pickup_location, payment_status: b.payment_status, amount: b.amount, currency: b.currency, guest: (b as any).contacts?.full_name ?? null, business: ((b as any).workspaces?.name as string | undefined) ?? null };
   });

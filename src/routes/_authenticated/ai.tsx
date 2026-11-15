@@ -15,7 +15,7 @@ import { aiAsk } from "@/lib/ai.functions";
 import { AiProviderPanel } from "@/components/admin-connections";
 
 export const Route = createFileRoute("/_authenticated/ai")({
-  head: () => ({ meta: [{ title: "AI Assistant — Tuk Tuk 24 Lisbon" }, { name: "description", content: "AI drafting and translation settings." }] }),
+  head: () => ({ meta: [{ title: "AI Assistant — TeamInbox" }, { name: "description", content: "AI drafting and translation settings." }] }),
   component: AiPage,
 });
 

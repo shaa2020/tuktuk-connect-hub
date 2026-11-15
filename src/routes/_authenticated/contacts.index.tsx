@@ -13,7 +13,7 @@ import { Avatar, SampleBadge, fmtRelative } from "@/components/kit";
 import { ContactFormDialog } from "@/components/contact-form";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
-  head: () => ({ meta: [{ title: "Contacts — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Customer contacts." }] }),
+  head: () => ({ meta: [{ title: "Contacts — TeamInbox" }, { name: "description", content: "Customer contacts." }] }),
   component: ContactsPage,
 });
 

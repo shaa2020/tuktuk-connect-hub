@@ -10,9 +10,9 @@ import { BrandLockup } from "@/components/brand";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Set a new password — Tuk Tuk 24 Lisbon" },
+      { title: "Set a new password — TeamInbox" },
       { name: "description", content: "Choose a new password for your team account." },
-      { property: "og:title", content: "Set a new password — Tuk Tuk 24 Lisbon" },
+      { property: "og:title", content: "Set a new password — TeamInbox" },
       { property: "og:description", content: "Choose a new password for your team account." },
     ],
   }),

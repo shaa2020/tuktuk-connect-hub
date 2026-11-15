@@ -15,7 +15,7 @@ import { fmtRelative } from "@/components/kit";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Your notifications." }] }),
+  head: () => ({ meta: [{ title: "Notifications — TeamInbox" }, { name: "description", content: "Your notifications." }] }),
   component: NotificationsPage,
 });
 

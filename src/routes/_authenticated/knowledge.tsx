@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Confirm, Field, NativeSelect, ToneBadge, fmtDate } from "@/components/kit";
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
-  head: () => ({ meta: [{ title: "Knowledge Base — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Tours, prices and policies." }] }),
+  head: () => ({ meta: [{ title: "Knowledge Base — TeamInbox" }, { name: "description", content: "Tours, prices and policies." }] }),
   component: KnowledgePage,
 });
 

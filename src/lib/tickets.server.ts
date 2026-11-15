@@ -1,4 +1,4 @@
-import { ticketEligible, ticketMessage, type TicketAuto } from "./tickets";
+import { TICKET_BASE_URL, ticketEligible, ticketMessage, type TicketAuto } from "./tickets";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
 
@@ -7,7 +7,10 @@ export async function sendTicket(bookingId: string, authorId: string | null): Pr
   const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
   const { data: b } = await sb.from("bookings").select("*, contacts(email)").eq("id", bookingId).maybeSingle();
   if (!b) return { ok: false, error: "Booking not found." };
-  const body = ticketMessage(b as any);
+  // Business name + ticket address come from the booking's own workspace (operator keeps its ticket domain).
+  const { data: w } = await (sb.from("workspaces") as any).select("name, platform_connectors").eq("id", b.workspace_id).maybeSingle();
+  const { data: cfg } = await (sb.from("app_config") as any).select("value").eq("key", "app_base_url").maybeSingle();
+  const body = w?.platform_connectors ? ticketMessage(b as any) : ticketMessage(b as any, w?.name ?? "Your booking", cfg?.value ?? TICKET_BASE_URL);
   const mark = () => sb.from("bookings").update({ ticket_sent_at: new Date().toISOString() } as any).eq("id", b.id);
   const { sendToConversation } = await import("./outbound.server");
 

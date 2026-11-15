@@ -178,7 +178,7 @@ export function MfaGate({ children }: { children: ReactNode }) {
 
   if (needsVerify && verified[0]) {
     return (
-      <MfaScreen title="Enter your security code" description="Open your authenticator app and enter the 6-digit code for Tuk Tuk 24 Lisbon.">
+      <MfaScreen title="Enter your security code" description="Open your authenticator app and enter the 6-digit code for TeamInbox.">
         <CodeForm factorId={verified[0].id} onDone={() => state.refetch()} />
       </MfaScreen>
     );

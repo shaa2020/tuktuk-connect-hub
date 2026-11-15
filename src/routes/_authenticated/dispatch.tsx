@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dispatch")({
   head: () => ({ meta: [
-    { title: "Tour Calendar & Dispatch — Tuk Tuk 24 Lisbon" },
+    { title: "Tour Calendar & Dispatch — TeamInbox" },
     { name: "description", content: "Daily tour run sheet with tuk tuk and driver assignment." },
   ] }),
   component: DispatchPage,
@@ -58,7 +58,7 @@ function tourIssues(t: { pickup_location: string | null; vehicle_id: string | nu
 }
 
 function DispatchPage() {
-  const { workspaceId, role, members } = useWorkspace();
+  const { workspaceId, role, members, workspaceName } = useWorkspace();
   const qc = useQueryClient();
   const [day, setDay] = useState(iso(new Date()));
   const [view, setView] = useState<"day" | "week">("day");
@@ -185,7 +185,7 @@ function DispatchPage() {
                 `🛺 ${vName(t.vehicle_id) ?? "No tuk tuk"} · 🧑‍✈️ ${dName(t.driver_id) ?? "No driver"}`,
                 t.notes ? `📝 ${t.notes}` : null,
               ].filter(Boolean).join("\n"));
-              navigator.clipboard.writeText(`Tuk Tuk 24 Lisbon — ${head}\n${live.length} tours · ${pax} guests\n\n${lines.join("\n\n")}`)
+              navigator.clipboard.writeText(`${workspaceName} — ${head}\n${live.length} tours · ${pax} guests\n\n${lines.join("\n\n")}`)
                 .then(() => toast.success("Run sheet copied — paste it in WhatsApp"), () => toast.error("Could not copy"));
             };
             return (
@@ -223,7 +223,7 @@ function DispatchPage() {
                       const nx = nextDispatch(ds);
                       const phone = t.contacts?.phone?.replace(/[^\d+]/g, "");
                       const first = t.contacts?.full_name?.split(" ")[0] ?? "";
-                      const wa = phone ? `https://wa.me/${phone.replace(/^\+/, "")}?text=${encodeURIComponent(`Hello ${first}, this is Tuk Tuk 24 Lisbon about your ${t.tour_name} on ${new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" })}${t.start_time ? ` at ${t.start_time.slice(0, 5)}` : ""}.`)}` : null;
+                      const wa = phone ? `https://wa.me/${phone.replace(/^\+/, "")}?text=${encodeURIComponent(`Hello ${first}, this is ${workspaceName} about your ${t.tour_name} on ${new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" })}${t.start_time ? ` at ${t.start_time.slice(0, 5)}` : ""}.`)}` : null;
                       return (
                         <Panel key={t.id} className={cn("relative overflow-hidden p-0", c && "border-destructive ring-1 ring-destructive/40", t.status === "cancelled" && "opacity-50")}>
                           <span className={cn("absolute -left-[23px] top-5 size-3 rounded-full border-2 border-background", DOT[ds])} />
@@ -335,7 +335,7 @@ function Fleet({ canEdit, rows, onChange }: { canEdit: boolean; rows: { id: stri
       </ul>
       {canEdit && (
         <div className="flex flex-wrap gap-2">
-          <Input placeholder="Name, e.g. Tuk Tuk 1" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
+          <Input placeholder="Name, e.g. Vehicle 1" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
           <Input placeholder="Plate (optional)" value={plate} onChange={(e) => setPlate(e.target.value)} className="w-40" />
           <Button onClick={add}><Plus /> Add</Button>
         </div>

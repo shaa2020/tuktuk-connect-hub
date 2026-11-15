@@ -14,7 +14,7 @@ import { NativeSelect } from "@/components/kit";
 import { BOOKING_STATUS_META, LEAD_STAGES, LEAD_STAGE_META, type BookingStatus } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
-  head: () => ({ meta: [{ title: "Analytics — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Reports from your real data." }] }),
+  head: () => ({ meta: [{ title: "Analytics — TeamInbox" }, { name: "description", content: "Reports from your real data." }] }),
   component: AnalyticsPage,
 });
 

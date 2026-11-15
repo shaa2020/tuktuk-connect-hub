@@ -13,7 +13,7 @@ import { NativeSelect, ToneBadge, fmtRelative } from "@/components/kit";
 import { CHANNEL_LABEL, STATUS_META, type ChannelType, type ConversationStatus } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Home — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Team dashboard." }] }),
+  head: () => ({ meta: [{ title: "Home — TeamInbox" }, { name: "description", content: "Team dashboard." }] }),
   component: Dashboard,
 });
 

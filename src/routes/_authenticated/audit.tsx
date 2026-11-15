@@ -11,7 +11,7 @@ import { NativeSelect, fmtDateTime } from "@/components/kit";
 import { canViewAudit } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/audit")({
-  head: () => ({ meta: [{ title: "Audit log — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Record of important changes." }] }),
+  head: () => ({ meta: [{ title: "Audit log — TeamInbox" }, { name: "description", content: "Record of important changes." }] }),
   component: AuditPage,
 });
 

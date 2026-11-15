@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   validateSearch: z.object({ new: z.boolean().optional(), conversation: z.string().optional(), contact: z.string().optional(), lead: z.string().optional() }),
-  head: () => ({ meta: [{ title: "Tasks — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Follow-ups and team tasks." }] }),
+  head: () => ({ meta: [{ title: "Tasks — TeamInbox" }, { name: "description", content: "Follow-ups and team tasks." }] }),
   component: TasksPage,
 });
 

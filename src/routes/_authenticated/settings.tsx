@@ -12,9 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { Confirm, Field } from "@/components/kit";
 import { MfaSettingsPanel } from "@/components/mfa-gate";
 import { ROLE_LABEL, canManageWorkspace } from "@/lib/domain";
+import { INDUSTRIES } from "@/lib/signup";
+import { NativeSelect } from "@/components/kit";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Settings — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Profile and workspace settings." }] }),
+  head: () => ({ meta: [{ title: "Settings — TeamInbox" }, { name: "description", content: "Profile and workspace settings." }] }),
   component: SettingsPage,
 });
 
@@ -40,7 +42,7 @@ function SettingsPage() {
     if (error) return toast.error(error.message);
     setPw(""); setCur(""); toast.success("Password changed");
   }
-  async function saveWs(patch: { name?: string; agents_see_unassigned?: boolean }) {
+  async function saveWs(patch: { name?: string; agents_see_unassigned?: boolean; industry?: string }) {
     const { error } = await supabase.from("workspaces").update(patch).eq("id", ws.workspaceId);
     if (error) return toast.error(error.message);
     toast.success("Workspace updated"); refresh();
@@ -81,6 +83,14 @@ function SettingsPage() {
               <label className="flex items-center justify-between gap-4">
                 <span><span className="block text-sm font-medium">Agents can see unassigned conversations</span><span className="text-xs text-muted-foreground">When off, agents only see conversations assigned to them.</span></span>
                 <Switch checked={ws.agentsSeeUnassigned} onCheckedChange={(v) => saveWs({ agents_see_unassigned: v })} />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="block text-sm font-medium">Industry</span>
+                <span className="block text-xs text-muted-foreground">Decides which modules appear (tour calendar, dispatch and quotes are for tour and travel businesses).</span>
+                <NativeSelect value={ws.industry ?? ""} onChange={(e) => saveWs({ industry: e.target.value })} aria-label="Industry">
+                  {!ws.industry && <option value="">Not set</option>}
+                  {INDUSTRIES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
+                </NativeSelect>
               </label>
             </Panel>
             <Panel className="space-y-3 p-4">

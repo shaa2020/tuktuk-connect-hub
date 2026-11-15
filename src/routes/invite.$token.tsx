@@ -10,10 +10,10 @@ import { redeemInvitation } from "@/lib/invite.functions";
 export const Route = createFileRoute("/invite/$token")({
   head: () => ({
     meta: [
-      { title: "Join the team — Tuk Tuk 24 Lisbon" },
-      { name: "description", content: "Accept your invitation to the Tuk Tuk 24 Lisbon workspace." },
-      { property: "og:title", content: "Join the team — Tuk Tuk 24 Lisbon" },
-      { property: "og:description", content: "Accept your invitation to the Tuk Tuk 24 Lisbon workspace." },
+      { title: "Join the team — TeamInbox" },
+      { name: "description", content: "Accept your invitation to your team workspace." },
+      { property: "og:title", content: "Join the team — TeamInbox" },
+      { property: "og:description", content: "Accept your invitation to your team workspace." },
     ],
   }),
   component: InvitePage,
@@ -82,7 +82,7 @@ function InvitePage() {
       <div className="w-full max-w-sm text-center">
         <div className="mb-8 flex justify-center"><BrandLockup /></div>
         <h1 className="text-2xl font-bold">You're invited</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Join the Tuk Tuk 24 Lisbon team workspace.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Join your team workspace.</p>
         <div className="mt-6 space-y-3">
           {state.kind === "checking" && <Loader2 className="mx-auto animate-spin text-primary" />}
           {state.kind === "existing" && (

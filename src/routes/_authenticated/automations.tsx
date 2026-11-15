@@ -17,7 +17,7 @@ import { AiOperatorPanel } from "@/components/ai-operator-panel";
 import { AiOperatorMonitor } from "@/components/ai-operator-monitor";
 
 export const Route = createFileRoute("/_authenticated/automations")({
-  head: () => ({ meta: [{ title: "Automations — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Automatic assignment rules." }] }),
+  head: () => ({ meta: [{ title: "Automations — TeamInbox" }, { name: "description", content: "Automatic assignment rules." }] }),
   component: AutomationsPage,
 });
 

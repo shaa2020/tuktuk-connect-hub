@@ -45,7 +45,7 @@ type FilterKey = keyof typeof FILTERS;
 
 export const Route = createFileRoute("/_authenticated/inbox")({
   validateSearch: z.object({ c: z.string().optional() }),
-  head: () => ({ meta: [{ title: "Inbox — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Unified customer inbox." }] }),
+  head: () => ({ meta: [{ title: "Inbox — TeamInbox" }, { name: "description", content: "Unified customer inbox." }] }),
   component: InboxPage,
 });
 
@@ -705,7 +705,7 @@ function Composer({ conversationId, channel, connected }: { conversationId: stri
           </PopoverContent>
         </Popover>
         <CannedButton workspaceId={ws.workspaceId} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
-        <QuoteButton workspaceId={ws.workspaceId} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />
+        {ws.modules.tours && <QuoteButton workspaceId={ws.workspaceId} businessName={ws.platformConnectors ? undefined : ws.workspaceName} onInsert={(q) => setText((t) => (t.trim() ? `${t}\n\n${q}` : q))} />}
         {waTemplates && <TemplateSender workspaceId={ws.workspaceId} conversationId={conversationId} highlight={waClosed} />}
       </div>
       <div className={cn("flex items-end gap-2 rounded-xl border p-1.5", mode === "note" && "border-note-border bg-note")}>
@@ -758,7 +758,7 @@ function CannedButton({ onInsert, workspaceId }: { onInsert: (text: string) => v
   );
 }
 
-function QuoteButton({ onInsert, workspaceId }: { onInsert: (quote: string) => void; workspaceId?: string }) {
+function QuoteButton({ onInsert, workspaceId, businessName }: { onInsert: (quote: string) => void; workspaceId?: string; businessName?: string }) {
   const [open, setOpen] = useState(false);
   const listTours = useServerFn(listWebsiteTours);
   const live = useQuery({ queryKey: ["website-tours", workspaceId], enabled: open && !!workspaceId, staleTime: 5 * 60_000, queryFn: () => listTours({ data: { workspaceId: workspaceId! } }) });
@@ -789,7 +789,7 @@ function QuoteButton({ onInsert, workspaceId }: { onInsert: (quote: string) => v
             <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" />
           </div>
           <p className="text-xs text-muted-foreground">{g} guests · {tuks} tuk tuk{tuks > 1 ? "s" : ""} · <span className="font-semibold text-foreground">€{total} total</span></p>
-          <Button size="sm" className="w-full" onClick={() => { onInsert(formatQuote(pkg, g, date, time, pickup.trim())); setOpen(false); }}>Insert quote into reply</Button>
+          <Button size="sm" className="w-full" onClick={() => { onInsert(formatQuote(pkg, g, date, time, pickup.trim(), businessName)); setOpen(false); }}>Insert quote into reply</Button>
         </div>
       </PopoverContent>
     </Popover>

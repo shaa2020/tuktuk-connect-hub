@@ -16,10 +16,10 @@ export const Route = createFileRoute("/auth")({
   validateSearch: search,
   head: () => ({
     meta: [
-      { title: "Sign in — Tuk Tuk 24 Lisbon" },
-      { name: "description", content: "Sign in to the Tuk Tuk 24 Lisbon team workspace." },
-      { property: "og:title", content: "Sign in — Tuk Tuk 24 Lisbon" },
-      { property: "og:description", content: "Team workspace for Tuk Tuk 24 Lisbon." },
+      { title: "Sign in — TeamInbox" },
+      { name: "description", content: "Sign in to your team workspace." },
+      { property: "og:title", content: "Sign in — TeamInbox" },
+      { property: "og:description", content: "Your team workspace." },
     ],
   }),
   component: AuthPage,
@@ -85,7 +85,7 @@ function AuthPage() {
             Reply faster, keep leads moving and never lose track of a booking, from your phone or your desk.
           </p>
         </div>
-        <p className="text-xs text-sidebar-foreground">Tuk Tuk 24 Lisbon · Team access only</p>
+        <p className="text-xs text-sidebar-foreground">Secure team access · two-step sign-in required</p>
       </div>
       <div className="flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-sm">

@@ -22,7 +22,7 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/leads")({
   validateSearch: z.object({ l: z.string().optional(), new: z.boolean().optional(), contact: z.string().optional(), conversation: z.string().optional() }),
-  head: () => ({ meta: [{ title: "Leads — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Tour enquiry pipeline." }] }),
+  head: () => ({ meta: [{ title: "Leads — TeamInbox" }, { name: "description", content: "Tour enquiry pipeline." }] }),
   component: LeadsPage,
 });
 

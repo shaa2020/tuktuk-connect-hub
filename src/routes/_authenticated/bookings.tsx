@@ -150,14 +150,14 @@ type Booking = Database["public"]["Tables"]["bookings"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/bookings")({
   validateSearch: z.object({ b: z.string().optional(), new: z.boolean().optional(), lead: z.string().optional(), contact: z.string().optional() }),
-  head: () => ({ meta: [{ title: "Bookings — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Tour bookings." }] }),
+  head: () => ({ meta: [{ title: "Bookings — TeamInbox" }, { name: "description", content: "Tour bookings." }] }),
   component: BookingsPage,
 });
 
 const STATUSES = Object.keys(BOOKING_STATUS_META) as BookingStatus[];
 
 function BookingsPage() {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, platformConnectors } = useWorkspace();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/bookings" });
   const [status, setStatus] = useState("");
@@ -167,7 +167,7 @@ function BookingsPage() {
   const syncFn = useServerFn(syncWebsiteBookings);
   const qcSync = useQueryClient();
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!workspaceId || !platformConnectors) return;
     syncFn({ data: { workspaceId } }).then((r) => { if (r.ok && r.added > 0) { toast.success(`${r.added} new website booking${r.added > 1 ? "s" : ""} added`); qcSync.invalidateQueries({ queryKey: ["bookings"] }); qcSync.invalidateQueries({ queryKey: ["dispatch"] }); } }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId]);
@@ -194,14 +194,14 @@ function BookingsPage() {
   return (
     <PageContainer>
       <PageHeader title="Bookings" description="Inquiries, quotes and confirmed tours." actions={<Button size="sm" onClick={() => navigate({ search: { new: true } })}><Plus /> New booking</Button>} />
-      <div className="mb-3 inline-flex rounded-lg border bg-card p-1" role="tablist">
+      {platformConnectors && <div className="mb-3 inline-flex rounded-lg border bg-card p-1" role="tablist">
         {(["team", "website"] as const).map((v) => (
           <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 text-sm font-medium ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
             {v === "team" ? "Our bookings" : "Website bookings"}
           </button>
         ))}
-      </div>
-      {view === "website" ? <WebsiteBookings workspaceId={workspaceId} onOpen={(id) => navigate({ search: { b: id } })} /> : <>
+      </div>}
+      {view === "website" && platformConnectors ? <WebsiteBookings workspaceId={workspaceId} onOpen={(id) => navigate({ search: { b: id } })} /> : <>
       <div className="mb-3 flex flex-wrap gap-2">
         <Input className="max-w-xs" placeholder="Search reference, tour or guest" value={term} onChange={(e) => setTerm(e.target.value)} aria-label="Search bookings" />
         <NativeSelect className="w-auto" value={when} onChange={(e) => setWhen(e.target.value as typeof when)} aria-label="Date range">
@@ -365,7 +365,7 @@ function BookingForm({ b, defaults, onClose }: { b?: Booking; defaults: { lead_i
         <Field label="External reference" htmlFor="b-ext"><Input id="b-ext" value={f.external_reference} onChange={set("external_reference")} /></Field>
         <Field label="Notes" htmlFor="b-notes" className="sm:col-span-2"><Textarea id="b-notes" rows={3} value={f.notes} onChange={set("notes")} /></Field>
       </div>
-      {!b && (
+      {!b && ws.platformConnectors && (
         <div className="space-y-3 rounded-lg border p-3">
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={web.on} onChange={(e) => setWeb((p) => ({ ...p, on: e.target.checked }))} />

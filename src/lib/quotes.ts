@@ -30,10 +30,10 @@ export function quoteTotal(pkg: TourPackage, guests: number): { tuks: number; to
 const fmtDur = (m: number) => (m <= 0 ? "flexible" : m % 60 === 0 ? `${m / 60}h` : `${Math.floor(m / 60)}h${m % 60}`);
 
 /** Ready-to-send booking summary the agent reviews before sending. */
-export function formatQuote(pkg: TourPackage, guests: number, date: string, time: string, pickup: string): string {
+export function formatQuote(pkg: TourPackage, guests: number, date: string, time: string, pickup: string, businessName = "Tuk Tuk 24 Lisbon"): string {
   const { tuks, total } = quoteTotal(pkg, guests);
   const lines = [
-    `🛺 Tuk Tuk 24 Lisbon — Tour Quote`,
+    `🛺 ${businessName} — Tour Quote`,
     ``,
     `Tour: ${pkg.name} (${fmtDur(pkg.durationMinutes)})`,
     `Guests: ${guests}${tuks > 1 ? ` · ${tuks} tuk tuks` : ""}`,

@@ -21,9 +21,9 @@ export function ticketEligible(mode: TicketAuto, b: { status: string; payment_st
   return true;
 }
 
-export function ticketMessage(b: { tour_name: string; tour_date: string | null; start_time: string | null; reference: string; payment_status: PayStatus; amount: number | null; currency: string; ticket_token: string }) {
+export function ticketMessage(b: { tour_name: string; tour_date: string | null; start_time: string | null; reference: string; payment_status: PayStatus; amount: number | null; currency: string; ticket_token: string }, businessName = "Tuk Tuk 24 Lisbon", baseUrl: string = TICKET_BASE_URL) {
   const pay = payLabel(b.payment_status);
   const when = [b.tour_date, b.start_time?.slice(0, 5)].filter(Boolean).join(" at ");
   const amt = !pay.paid && b.amount ? ` Amount: ${b.amount} ${b.currency}.` : "";
-  return `Your Tuk Tuk 24 Lisbon ticket\n${b.tour_name}${when ? ` — ${when}` : ""}\nBooking ${b.reference}\nPayment: ${pay.label}. ${pay.detail}${amt}\n\nShow this ticket to your driver: ${TICKET_BASE_URL}/ticket/${b.ticket_token}`;
+  return `Your ${businessName} ticket\n${b.tour_name}${when ? ` — ${when}` : ""}\nBooking ${b.reference}\nPayment: ${pay.label}. ${pay.detail}${amt}\n\n${baseUrl === TICKET_BASE_URL ? "Show this ticket to your driver" : "Show this ticket when you arrive"}: ${baseUrl.replace(/\/$/, "")}/ticket/${b.ticket_token}`;
 }

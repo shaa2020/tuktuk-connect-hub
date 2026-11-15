@@ -15,7 +15,7 @@ import { ContactFormDialog } from "@/components/contact-form";
 import { BOOKING_STATUS_META, CHANNEL_LABEL, LEAD_STAGE_META, STATUS_META, canDeleteContacts } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
-  head: () => ({ meta: [{ title: "Contact — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Contact details and history." }] }),
+  head: () => ({ meta: [{ title: "Contact — TeamInbox" }, { name: "description", content: "Contact details and history." }] }),
   component: ContactDetail,
 });
 

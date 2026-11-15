@@ -8,8 +8,8 @@ import { BrandMark } from "@/components/brand";
 export const Route = createFileRoute("/ticket/$token")({
   loader: ({ params }) => (/^[0-9a-f-]{36}$/.test(params.token) ? getPublicTicket({ data: { token: params.token } }) : null),
   head: () => ({ meta: [
-    { title: "Your tour ticket — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Your Tuk Tuk 24 Lisbon tour ticket." },
-    { property: "og:title", content: "Your tour ticket — Tuk Tuk 24 Lisbon" }, { property: "og:description", content: "Show this ticket to your driver." },
+    { title: "Your tour ticket — TeamInbox" }, { name: "description", content: "Your booking ticket." },
+    { property: "og:title", content: "Your tour ticket — TeamInbox" }, { property: "og:description", content: "Show this ticket to your driver." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
   ] }),
   component: TicketPage,
@@ -19,13 +19,13 @@ function TicketPage() {
   const t = Route.useLoaderData();
   const { token } = Route.useParams();
   const [qr, setQr] = useState("");
-  useEffect(() => { QRCode.toDataURL(`${TICKET_BASE_URL}/ticket/${token}`, { margin: 1, width: 480 }).then(setQr).catch(() => {}); }, [token]);
-  if (!t) return <main className="grid min-h-dvh place-items-center bg-sidebar p-6 text-center text-sidebar-foreground"><p>This ticket isn't available. Please contact Tuk Tuk 24 Lisbon.</p></main>;
+  useEffect(() => { QRCode.toDataURL(`${typeof window !== "undefined" ? window.location.origin : TICKET_BASE_URL}/ticket/${token}`, { margin: 1, width: 480 }).then(setQr).catch(() => {}); }, [token]);
+  if (!t) return <main className="grid min-h-dvh place-items-center bg-sidebar p-6 text-center text-sidebar-foreground"><p>This ticket isn't available. Please contact the business that sent it.</p></main>;
   const pay = payLabel(t.payment_status);
   const date = t.tour_date ? new Date(t.tour_date + "T00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "Date to be confirmed";
   return (
     <main className="min-h-dvh bg-sidebar px-4 py-6 text-sidebar-foreground">
-      <h1 className="mx-auto mb-4 max-w-sm font-display text-xl font-bold">Your ticket</h1>
+      <h1 className="mx-auto mb-4 max-w-sm font-display text-xl font-bold">Your ticket{t.business ? ` · ${t.business}` : ""}</h1>
       <div className="relative mx-auto max-w-sm rounded-3xl bg-primary p-3">
         <div className="rounded-2xl bg-sidebar p-5">
           {t.completed && <div className="mx-auto mb-2 w-fit rounded-md bg-muted px-4 py-1.5 text-center text-sm font-extrabold tracking-wide text-muted-foreground">TOUR COMPLETED</div>}

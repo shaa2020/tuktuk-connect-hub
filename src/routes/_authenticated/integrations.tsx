@@ -104,7 +104,7 @@ function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: 
 }
 
 function IntegrationsPage() {
-  const { workspaceId, role } = useWorkspace();
+  const { workspaceId, role, platformConnectors } = useWorkspace();
   const { connect, meta_pick, meta_channel, meta_error } = Route.useSearch();
   const [open, setOpen] = useState<string | null>(connect ? (connect === "email" ? "new-gmail" : `new-${connect}`) : null);
   useEffect(() => {
@@ -129,7 +129,7 @@ function IntegrationsPage() {
       {q.isLoading ? <ListSkeleton /> : q.error ? <ErrorState message={(q.error as Error).message} /> : (
         <div className="space-y-4">
           {isAdmin && <MetaPicker workspaceId={workspaceId} nonce={meta_pick} channel={meta_channel} error={meta_error} onDone={() => q.refetch()} />}
-          <WebsitePanel workspaceId={workspaceId} canSync={role === "admin" || role === "manager"} />
+          {platformConnectors && <WebsitePanel workspaceId={workspaceId} canSync={role === "admin" || role === "manager"} />}
           {ORDER.map((ch) => {
             const rows = (q.data ?? []).filter((c) => c.channel === ch);
             const isMeta = (META as readonly string[]).includes(ch);
@@ -170,10 +170,10 @@ function IntegrationsPage() {
                         </div>
                       )}
                       {open === c.id && ch === "email" && <GmailAppForm workspaceId={workspaceId} connectionId={c.id} initialAddress={c.account_id} initialLabel={c.account_label} onDone={() => { q.refetch(); setOpen(null); }} />}
-                      {ch === "email" && isAdmin && (c.config as any)?.mode !== "imap" && <EmailControls workspaceId={workspaceId} connected={c.status === "connected"} onDone={() => q.refetch()} />}
+                      {ch === "email" && isAdmin && platformConnectors && (c.config as any)?.mode !== "imap" && <EmailControls workspaceId={workspaceId} connected={c.status === "connected"} onDone={() => q.refetch()} />}
                     </div>
                   ))}
-                  {rows.length === 0 && ch === "email" && isAdmin && <EmailControls workspaceId={workspaceId} connected={false} onDone={() => q.refetch()} />}
+                  {rows.length === 0 && ch === "email" && isAdmin && platformConnectors && <EmailControls workspaceId={workspaceId} connected={false} onDone={() => q.refetch()} />}
                 </div>
                 {ch === "whatsapp" && rows.some((r) => r.status === "connected" && (r.config as any)?.mode === "connector") && <TemplatesPanel workspaceId={workspaceId} isAdmin={isAdmin} />}
                 {isAdmin && isMeta && (
@@ -184,7 +184,7 @@ function IntegrationsPage() {
                 )}
                 {ch === "email" && isAdmin && (
                   <>
-                    <Button size="sm" variant="secondary" className="mt-2" onClick={() => setOpen(open === "new-gmail" ? null : "new-gmail")}><Plus />Add another Gmail</Button>
+                    <Button size="sm" variant="secondary" className="mt-2" onClick={() => setOpen(open === "new-gmail" ? null : "new-gmail")}><Plus />{platformConnectors || rows.length ? "Add another Gmail" : "Connect Gmail (app password)"}</Button>
                     {open === "new-gmail" && <GmailAppForm workspaceId={workspaceId} onDone={() => { q.refetch(); setOpen(null); }} />}
                   </>
                 )}
@@ -205,6 +205,6 @@ export const Route = createFileRoute("/_authenticated/integrations")({
     ...(s.meta_channel === "messenger" || s.meta_channel === "instagram" ? { meta_channel: s.meta_channel } : {}),
     ...(typeof s.meta_error === "string" ? { meta_error: s.meta_error.slice(0, 200) } : {}),
   }),
-  head: () => ({ meta: [{ title: "Connected accounts — Tuk Tuk 24 Lisbon" }] }),
+  head: () => ({ meta: [{ title: "Connected accounts — TeamInbox" }] }),
   component: IntegrationsPage,
 });

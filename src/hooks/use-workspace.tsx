@@ -28,7 +28,18 @@ export type WorkspaceCtx = {
   /** Every business this person belongs to (for the switcher). */
   workspaces: WorkspaceSummary[];
   plan: string;
+  industry: string | null;
+  /** True only for the platform operator's own workspace (operator-owned integrations). */
+  platformConnectors: boolean;
+  /** Optional feature modules switched on for this business. */
+  modules: Modules;
 };
+
+export type Modules = { tours: boolean };
+/** Tour tools (tour calendar, dispatch, tickets) are for tour/travel businesses and legacy workspaces. */
+export function modulesFor(industry: string | null | undefined, platformConnectors: boolean): Modules {
+  return { tours: platformConnectors || !industry || industry === "tour_operator" || industry === "travel_agency" };
+}
 
 // The chosen business is remembered per browser. Access is still decided by the database:
 // a stale or foreign id here simply falls back to the first membership.
@@ -60,7 +71,7 @@ async function loadWorkspace() {
   const user = u.user;
   const { data: mems, error } = await supabase
     .from("workspace_members")
-    .select("workspace_id, role, active, created_at, workspaces(name, agents_see_unassigned, plan, suspended_at, suspended_reason)")
+    .select("workspace_id, role, active, created_at, workspaces(name, agents_see_unassigned, plan, suspended_at, suspended_reason, industry, platform_connectors)")
     .eq("user_id", user.id)
     .eq("active", true)
     .order("created_at");
@@ -111,7 +122,7 @@ export function WorkspaceProvider({
   if (q.error) return <>{error((q.error as Error).message, () => q.refetch())}</>;
   const d = q.data!;
   if (!d.mem) return <>{noAccess}</>;
-  const ws = d.mem.workspaces as { name: string; agents_see_unassigned: boolean; plan: string; suspended_at: string | null; suspended_reason: string | null } | null;
+  const ws = d.mem.workspaces as { name: string; agents_see_unassigned: boolean; plan: string; suspended_at: string | null; suspended_reason: string | null; industry: string | null; platform_connectors: boolean } | null;
   if (ws?.suspended_at) return <>{suspended({ name: ws.name, reason: ws.suspended_reason, workspaces: d.workspaces })}</>;
   const value: WorkspaceCtx = {
     userId: d.user.id,
@@ -124,6 +135,9 @@ export function WorkspaceProvider({
     members: d.members,
     workspaces: d.workspaces,
     plan: ws?.plan ?? "free",
+    industry: ws?.industry ?? null,
+    platformConnectors: ws?.platform_connectors === true,
+    modules: modulesFor(ws?.industry, ws?.platform_connectors === true),
     memberName: (id) => {
       if (!id) return "Unassigned";
       const m = d.members.find((x) => x.user_id === id);

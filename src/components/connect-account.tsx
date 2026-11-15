@@ -73,7 +73,7 @@ export function ConnectAccountButton({ className, label = "Connect account", siz
 }
 
 export function ConnectAccountSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
-  const { workspaceId, role } = useWorkspace();
+  const { workspaceId, role, platformConnectors } = useWorkspace();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const isAdmin = role === "admin";
@@ -96,7 +96,7 @@ export function ConnectAccountSheet({ open, onOpenChange }: { open: boolean; onO
         </SheetHeader>
         {!isAdmin && <p className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">Only a Business Admin can connect accounts. Ask your admin to add one.</p>}
         <div className="mt-4 space-y-5 pb-4">
-          <WebsiteCard open={open} isAdmin={isAdmin} go={() => { onOpenChange(false); navigate({ to: "/integrations", search: { connect: "website" } }); }} />
+          {platformConnectors && <WebsiteCard open={open} isAdmin={isAdmin} go={() => { onOpenChange(false); navigate({ to: "/integrations", search: { connect: "website" } }); }} />}
           {groups.map((g) => (
             <div key={g}>
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{g}</div>

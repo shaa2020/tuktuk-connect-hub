@@ -14,3 +14,18 @@ describe("ticket rules", () => {
     expect(ticketMessage({ ...base, payment_status: "pending" })).toContain("Payment: NOT PAID");
   });
 });
+
+import { ticketMessage as tm } from "./tickets";
+describe("ticket message branding", () => {
+  const b = { tour_name: "Spa day", tour_date: null, start_time: null, reference: "R1", payment_status: "paid" as const, amount: null, currency: "EUR", ticket_token: "tok" };
+  it("keeps the operator's wording and domain by default", () => {
+    expect(tm(b)).toContain("Your Tuk Tuk 24 Lisbon ticket");
+    expect(tm(b)).toContain("to your driver: https://tickets.tuktuk24lisbon.com/ticket/tok");
+  });
+  it("uses another business's own name and app address", () => {
+    const m = tm(b, "Hotel Sol", "https://app.example.com/");
+    expect(m).toContain("Your Hotel Sol ticket");
+    expect(m).toContain("when you arrive: https://app.example.com/ticket/tok");
+    expect(m).not.toMatch(/Tuk Tuk/);
+  });
+});

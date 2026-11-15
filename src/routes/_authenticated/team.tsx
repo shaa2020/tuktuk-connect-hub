@@ -15,7 +15,7 @@ import { resetMemberMfa } from "@/lib/admin.functions";
 import { ROLE_LABEL, canManageTeam, type AppRole } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/team")({
-  head: () => ({ meta: [{ title: "Team — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Team members and invitations." }] }),
+  head: () => ({ meta: [{ title: "Team — TeamInbox" }, { name: "description", content: "Team members and invitations." }] }),
   component: TeamPage,
 });
 

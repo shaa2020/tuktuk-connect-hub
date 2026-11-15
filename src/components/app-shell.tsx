@@ -21,12 +21,12 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type NavGroup = "Daily work" | "Customers" | "Growth" | "Admin";
-type NavItem = { to: string; label: string; short?: string; icon: typeof Home; group: NavGroup; badge?: "inbox" | "notif"; audit?: boolean; platform?: boolean };
+type NavItem = { to: string; label: string; short?: string; icon: typeof Home; group: NavGroup; badge?: "inbox" | "notif"; audit?: boolean; platform?: boolean; module?: "tours" };
 
 export const NAV: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: Home, group: "Daily work" },
   { to: "/inbox", label: "Inbox", icon: Inbox, badge: "inbox", group: "Daily work" },
-  { to: "/dispatch", label: "Tour Calendar", short: "Tours", icon: Truck, group: "Daily work" },
+  { to: "/dispatch", label: "Tour Calendar", short: "Tours", icon: Truck, group: "Daily work", module: "tours" },
   { to: "/bookings", label: "Bookings", icon: CalendarCheck, group: "Daily work" },
   { to: "/finance", label: "Finance", icon: Wallet, group: "Daily work" },
   { to: "/tasks", label: "Tasks", icon: CheckSquare, group: "Daily work" },
@@ -46,7 +46,7 @@ export const NAV: NavItem[] = [
   { to: "/platform", label: "Platform", icon: ShieldCheck, platform: true, group: "Admin" },
 ];
 const GROUPS: NavGroup[] = ["Daily work", "Customers", "Growth", "Admin"];
-const MOBILE_MAIN = ["/dashboard", "/inbox", "/dispatch", "/bookings"];
+const MOBILE_MAIN_ALL = ["/dashboard", "/inbox", "/dispatch", "/bookings", "/contacts"];
 
 function useCounts() {
   const { workspaceId, userId } = useWorkspace();
@@ -118,7 +118,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     queryFn: async () => (await supabase.rpc("is_platform_admin")).data === true,
     staleTime: 300_000,
   });
-  const items = NAV.filter((n) => (!n.audit || canViewAudit(ws.role)) && (!n.platform || platformAdmin.data));
+  const items = NAV.filter((n) => (!n.audit || canViewAudit(ws.role)) && (!n.platform || platformAdmin.data) && (!n.module || ws.modules[n.module]));
+  const mobileMain = MOBILE_MAIN_ALL.filter((to) => items.some((n) => n.to === to)).slice(0, 4);
   const isActive = (to: string) => loc.pathname === to || loc.pathname.startsWith(to + "/");
   const countFor = (b?: NavItem["badge"]) => (b === "inbox" ? counts.inbox : b === "notif" ? counts.notif : 0);
 
@@ -257,7 +258,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile bottom nav */}
       <nav className={cn("pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 shadow-pop backdrop-blur-md md:hidden", inThread && "hidden")} aria-label="Main">
         <div className="grid grid-cols-5 px-1">
-          {MOBILE_MAIN.map((to) => {
+          {mobileMain.map((to) => {
             const n = NAV.find((x) => x.to === to)!;
             const active = isActive(to);
             const c = countFor(n.badge);
@@ -271,8 +272,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          <button onClick={() => setMoreOpen(true)} className={cn("pressable flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", !MOBILE_MAIN.some(isActive) ? "text-primary" : "text-muted-foreground")}>
-            <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !MOBILE_MAIN.some(isActive) && "bg-primary-soft")}><MoreHorizontal className="size-5" /></span>
+          <button onClick={() => setMoreOpen(true)} className={cn("pressable flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", !mobileMain.some(isActive) ? "text-primary" : "text-muted-foreground")}>
+            <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !mobileMain.some(isActive) && "bg-primary-soft")}><MoreHorizontal className="size-5" /></span>
             More
           </button>
         </div>
@@ -294,7 +295,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <WorkspaceList onPicked={() => setMoreOpen(false)} className="rounded-2xl border p-1" />
           </div>
           {GROUPS.map((g) => {
-            const groupItems = items.filter((n) => n.group === g && !MOBILE_MAIN.includes(n.to));
+            const groupItems = items.filter((n) => n.group === g && !mobileMain.includes(n.to));
             if (!groupItems.length) return null;
             return (
               <div key={g} className="mt-4">
