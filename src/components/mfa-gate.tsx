@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UseRecoveryCode } from "@/components/mfa-recovery";
 
 type Factor = { id: string; friendly_name?: string; status: string };
 
@@ -180,6 +181,7 @@ export function MfaGate({ children }: { children: ReactNode }) {
     return (
       <MfaScreen title="Enter your security code" description="Open your authenticator app and enter the 6-digit code for TeamInbox.">
         <CodeForm factorId={verified[0].id} onDone={() => state.refetch()} />
+        <UseRecoveryCode />
       </MfaScreen>
     );
   }

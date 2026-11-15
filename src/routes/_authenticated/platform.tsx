@@ -10,6 +10,7 @@ import { NativeSelect, fmtDateTime } from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PlatformOps } from "@/components/platform-ops";
 
 // Platform owner console. Every call is a SECURITY DEFINER RPC that re-checks platform_admins
 // and writes an audit entry; it shows counts only — never conversation content or secrets.
@@ -72,6 +73,7 @@ function PlatformPage() {
         forbidden ? <Panel><EmptyState icon={<ShieldCheck />} title="Owner only" description="This page is only available to platform administrators." /></Panel> :
         q.error ? <ErrorState message={(q.error as Error).message} onRetry={() => q.refetch()} /> : (
           <>
+            <PlatformOps workspaces={(q.data ?? []).map((w) => ({ id: w.id, name: w.name }))} />
             <div className="mb-3 flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

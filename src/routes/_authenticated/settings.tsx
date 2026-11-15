@@ -11,11 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Confirm, Field } from "@/components/kit";
 import { MfaSettingsPanel } from "@/components/mfa-gate";
+import { RecoveryCodesPanel } from "@/components/mfa-recovery";
 import { ROLE_LABEL, canManageWorkspace } from "@/lib/domain";
 import { INDUSTRIES } from "@/lib/signup";
 import { NativeSelect } from "@/components/kit";
 import { CustomFieldDefinitions } from "@/components/custom-fields";
 import { DataPrivacyPanel } from "@/components/data-privacy";
+import { SupportAccessPanel } from "@/components/platform-ops";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — TeamInbox" }, { name: "description", content: "Profile and workspace settings." }] }),
@@ -76,6 +78,7 @@ function SettingsPage() {
         <Panel className="space-y-3 p-4">
           <h2 className="text-sm font-semibold">Two-step sign-in</h2>
           <MfaSettingsPanel />
+          <RecoveryCodesPanel />
         </Panel>
         {admin && (
           <>
@@ -97,6 +100,7 @@ function SettingsPage() {
             </Panel>
             <CustomFieldDefinitions workspaceId={ws.workspaceId} />
             <DataPrivacyPanel />
+            <SupportAccessPanel />
             <Panel className="space-y-3 p-4">
               <h2 className="text-sm font-semibold">Sample data</h2>
               <p className="text-sm text-muted-foreground">Add a few clearly marked "[SAMPLE]" records to explore the app. They're never mixed up with real customers and can be removed in one tap.</p>
