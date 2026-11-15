@@ -38,6 +38,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as TicketTokenRouteImport } from './routes/ticket.$token'
 import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts.index'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
+import { Route as ApiPublicChatKeyRouteImport } from './routes/api/public/chat/$key'
 import { Route as ApiPublicHooksBackgroundSyncRouteImport } from './routes/api/public/hooks/background-sync'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicOauthMetaCallbackRouteImport } from './routes/api/public/oauth/meta/callback'
@@ -193,6 +194,11 @@ const AuthenticatedContactsIdRoute = AuthenticatedContactsIdRouteImport.update({
   path: '/contacts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicChatKeyRoute = ApiPublicChatKeyRouteImport.update({
+  id: '/api/public/chat/$key',
+  path: '/api/public/chat/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksBackgroundSyncRoute =
   ApiPublicHooksBackgroundSyncRouteImport.update({
     id: '/api/public/hooks/background-sync',
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
@@ -295,6 +302,7 @@ export interface FileRoutesByTo {
   '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
+  '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
@@ -333,6 +341,7 @@ export interface FileRoutesById {
   '/ticket/$token': typeof TicketTokenRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/ticket/$token'
     | '/contacts/$id'
     | '/contacts/'
+    | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/ticket/$token'
     | '/contacts/$id'
     | '/contacts'
+    | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
@@ -444,6 +455,7 @@ export interface FileRouteTypes {
     | '/ticket/$token'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contacts/'
+    | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
@@ -461,6 +473,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
   TicketTokenRoute: typeof TicketTokenRoute
+  ApiPublicChatKeyRoute: typeof ApiPublicChatKeyRoute
   ApiPublicHooksBackgroundSyncRoute: typeof ApiPublicHooksBackgroundSyncRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicOauthMetaCallbackRoute: typeof ApiPublicOauthMetaCallbackRoute
@@ -674,6 +687,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContactsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/chat/$key': {
+      id: '/api/public/chat/$key'
+      path: '/api/public/chat/$key'
+      fullPath: '/api/public/chat/$key'
+      preLoaderRoute: typeof ApiPublicChatKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/background-sync': {
       id: '/api/public/hooks/background-sync'
       path: '/api/public/hooks/background-sync'
@@ -779,6 +799,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   InviteTokenRoute: InviteTokenRoute,
   TicketTokenRoute: TicketTokenRoute,
+  ApiPublicChatKeyRoute: ApiPublicChatKeyRoute,
   ApiPublicHooksBackgroundSyncRoute: ApiPublicHooksBackgroundSyncRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicOauthMetaCallbackRoute: ApiPublicOauthMetaCallbackRoute,

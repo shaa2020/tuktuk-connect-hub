@@ -14,10 +14,11 @@ import { MetaConnectForm } from "@/components/admin-connections";
 import { MetaOneClick, MetaPicker } from "@/components/meta-one-click";
 import { TemplatesPanel } from "@/components/wa-templates";
 import { useServerFn } from "@tanstack/react-start";
-import { connectEmailChannel, connectGmailAppPassword, connectTelegramBot, disconnectChannel, renameConnection, syncEmailNow } from "@/lib/admin.functions";
+import { connectEmailChannel, connectGmailAppPassword, connectTelegramBot, disconnectChannel, saveWebchat, renameConnection, syncEmailNow } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Globe, Plus, RefreshCw } from "lucide-react";
 import { syncWebsiteKnowledge, websiteStatus } from "@/lib/website.functions";
+import { embedSnippet } from "@/lib/webchat";
 import { toast } from "sonner";
 
 function EmailControls({ workspaceId, connected, onDone }: { workspaceId: string; connected: boolean; onDone: () => void }) {
@@ -72,7 +73,7 @@ function GmailAppForm({ workspaceId, connectionId, initialAddress, initialLabel,
 }
 
 const META = ["whatsapp", "instagram", "messenger"] as const;
-const ORDER: ChannelType[] = ["whatsapp", "instagram", "messenger", "email", "telegram"];
+const ORDER: ChannelType[] = ["whatsapp", "instagram", "messenger", "email", "telegram", "webchat"];
 
 function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: boolean }) {
   const status = useServerFn(websiteStatus);
@@ -100,6 +101,35 @@ function WebsitePanel({ workspaceId, canSync }: { workspaceId: string; canSync: 
         if (r.ok) { toast.success(`Synced ${r.tours} tours and business info`); q.refetch(); } else toast.error(r.error);
       }}><RefreshCw className={busy ? "animate-spin" : ""} />Sync now</Button>}
     </Panel>
+  );
+}
+
+function WebchatSetup({ workspaceId, row, onDone }: { workspaceId: string; row?: { account_id: string | null; status: string; config: unknown }; onDone: () => void }) {
+  const save = useServerFn(saveWebchat);
+  const cfg = (row?.config ?? {}) as { allowed_origins?: string[]; greeting?: string };
+  const [origins, setOrigins] = useState((cfg.allowed_origins ?? []).join(", "));
+  const [greeting, setGreeting] = useState(cfg.greeting ?? "Hi! How can we help?");
+  const [busy, setBusy] = useState(false);
+  const on = row?.status === "connected" && row.account_id;
+  const snippet = on ? embedSnippet(window.location.origin, row!.account_id!) : "";
+  return (
+    <div className="mt-3 space-y-2 rounded-lg border p-3">
+      <p className="text-xs text-muted-foreground">Adds a chat bubble to your own website. Visitor messages arrive in the Inbox; your replies appear in the bubble within a few seconds.</p>
+      <Input value={greeting} onChange={(e) => setGreeting(e.target.value)} maxLength={200} aria-label="Greeting message" placeholder="Greeting message" />
+      <Input value={origins} onChange={(e) => setOrigins(e.target.value)} aria-label="Allowed websites" placeholder="Allowed websites (e.g. www.mysite.com) — empty = any" />
+      <Button size="sm" disabled={busy} onClick={async () => {
+        setBusy(true);
+        try { const r = await save({ data: { workspaceId, allowedOrigins: origins, greeting } }); if (!r.ok) return toast.error(r.error); toast.success(on ? "Chat settings saved" : "Website chat switched on"); onDone(); }
+        finally { setBusy(false); }
+      }}>{on ? "Save chat settings" : "Switch on website chat"}</Button>
+      {on && (
+        <div className="space-y-1">
+          <div className="text-xs font-medium">Paste this before &lt;/body&gt; on your website:</div>
+          <code className="block break-all rounded bg-muted p-2 text-[11px]">{snippet}</code>
+          <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(snippet).then(() => toast.success("Copied"))}>Copy code</Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -208,6 +238,7 @@ function IntegrationsPage() {
                     {open === `new-${ch}` && (ch === "whatsapp" ? <MetaConnectForm workspaceId={workspaceId} channel="whatsapp" connected={false} onDone={() => { q.refetch(); setOpen(null); }} /> : <MetaOneClick workspaceId={workspaceId} channel={ch as "instagram"} onDone={() => { q.refetch(); setOpen(null); }} />)}
                   </>
                 )}
+                {ch === "webchat" && isAdmin && <WebchatSetup workspaceId={workspaceId} row={rows[0]} onDone={() => q.refetch()} />}
                 {ch === "telegram" && isAdmin && (
                   <>
                     {rows.filter((r) => r.status === "connected").map((r) => (
@@ -232,7 +263,7 @@ function IntegrationsPage() {
   );
 }
 
-const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email", "website", "telegram"] as const;
+const CONNECT_KEYS = ["whatsapp", "instagram", "messenger", "email", "website", "telegram", "webchat"] as const;
 export const Route = createFileRoute("/_authenticated/integrations")({
   validateSearch: (s: Record<string, unknown>): { connect?: (typeof CONNECT_KEYS)[number]; meta_pick?: string; meta_channel?: "messenger" | "instagram"; meta_error?: string } => ({
     ...(CONNECT_KEYS.includes(s.connect as any) ? { connect: s.connect as (typeof CONNECT_KEYS)[number] } : {}),

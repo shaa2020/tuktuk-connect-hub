@@ -142,6 +142,10 @@ export const disconnectChannel = createServerFn({ method: "POST" })
       await supabaseAdmin.from("channel_connections").update({ status: "disconnected", last_error: null }).eq("id", row.id);
       return { ok: true as const };
     }
+    if (row?.channel === "webchat") {
+      await supabaseAdmin.from("channel_connections").update({ status: "disconnected" }).eq("id", row.id);
+      return { ok: true as const };
+    }
     if (row?.channel === "telegram") {
       await (await import("./telegram.server")).disconnectBot(data.workspaceId, row.id);
       return { ok: true as const };
@@ -315,4 +319,29 @@ export const connectTelegramBot = createServerFn({ method: "POST" })
     } catch (e) {
       return { ok: false as const, error: (e as Error).message.slice(0, 300) };
     }
+  });
+
+/** Admin: turn on website live chat (or update its settings). Returns the public widget key. */
+export const saveWebchat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    workspaceId: z.string().uuid(),
+    allowedOrigins: z.string().max(2000).optional().or(z.literal("")),
+    greeting: z.string().trim().max(200).optional().or(z.literal("")),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, data.workspaceId);
+    const { newWidgetKey, normaliseOrigins } = await import("./webchat");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const config = { allowed_origins: normaliseOrigins(data.allowedOrigins ?? ""), greeting: data.greeting || "Hi! How can we help?" };
+    const { data: row } = await supabaseAdmin.from("channel_connections").select("id, account_id").eq("workspace_id", data.workspaceId).eq("channel", "webchat").limit(1).maybeSingle();
+    if (row) {
+      const { error } = await supabaseAdmin.from("channel_connections").update({ status: "connected", config, display_name: "Website chat", last_error: null }).eq("id", row.id);
+      if (error) return { ok: false as const, error: error.message };
+      return { ok: true as const, key: row.account_id as string };
+    }
+    const key = newWidgetKey();
+    const { error } = await supabaseAdmin.from("channel_connections").insert({ workspace_id: data.workspaceId, channel: "webchat", status: "connected", account_id: key, display_name: "Website chat", config });
+    if (error) return { ok: false as const, error: error.message.includes("PLAN_LIMIT") ? "Your plan's connected-account limit is reached." : error.message };
+    return { ok: true as const, key };
   });
