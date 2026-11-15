@@ -2,6 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 
 // Scheduled every few minutes by the database. Token is a server-only random value
 // stored in a table with no browser access. Work is idempotent (imports skip duplicates).
+//
+// Body shapes:
+//   {}                                   scheduler tick → global tasks + fan-out (one request per workspace)
+//   { workspace }                        process one workspace (sent by the fan-out)
+//   { operatorOnly: true, workspace }    immediate AI Operator run (sent by webhooks)
+const UUID = /^[0-9a-f-]{36}$/;
+
 export const Route = createFileRoute("/api/public/hooks/background-sync")({
   server: {
     handlers: {
@@ -12,38 +19,36 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
         const { safeEqual } = await import("@/lib/secrets.server");
         const { data: row } = await sb.from("internal_job_tokens").select("token").eq("name", "background_sync").maybeSingle();
         if (!row || !safeEqual(token, row.token)) return new Response("Unauthorized", { status: 401 });
-        // Fast path: a webhook asked for an immediate AI Operator run for one workspace.
         const body = (await request.json().catch(() => ({}))) as { operatorOnly?: unknown; workspace?: unknown };
-        if (body.operatorOnly === true && typeof body.workspace === "string" && /^[0-9a-f-]{36}$/.test(body.workspace)) {
+        const ws = typeof body.workspace === "string" && UUID.test(body.workspace) ? body.workspace : null;
+
+        if (body.operatorOnly === true && ws) {
           let r: unknown;
-          try { r = await (await import("@/lib/ai-operator.server")).runOperatorFor(body.workspace); } catch (e) { r = { error: (e as Error).message.slice(0, 200) }; }
+          try { r = await (await import("@/lib/ai-operator.server")).runOperatorFor(ws); } catch (e) { r = { error: (e as Error).message.slice(0, 200) }; }
           return Response.json({ ok: true, operator: r });
         }
-        const { syncAllEmailFor, syncWebsiteBookingsFor, alertBrokenChannels } = await import("@/lib/background-sync.server");
-        const { recover } = await import("@/lib/whatsapp-inbox.server");
-        // Suspended workspaces are skipped; operator-only integrations run only for the operator.
+
+        const jobs = await import("@/lib/background-jobs.server");
         const { activeWorkspaces } = await import("@/lib/tenancy.server");
-        const wss = await activeWorkspaces();
-        const out: Record<string, unknown> = {};
-        for (const w of wss) {
-          const r: Record<string, unknown> = {};
-          try { r.email = await syncAllEmailFor(w.id); } catch (e) { r.emailError = (e as Error).message.slice(0, 200); }
-          if (w.platform_connectors) { try { r.bookings = await syncWebsiteBookingsFor(sb, w.id, null); } catch (e) { r.bookingsError = (e as Error).message.slice(0, 200); } }
-          try { r.alerts = await alertBrokenChannels(w.id); } catch { /* next run */ }
-          try { r.operator = await (await import("@/lib/ai-operator.server")).runOperatorFor(w.id); } catch (e) { r.operatorError = (e as Error).message.slice(0, 200); }
-          try { r.tickets = await (await import("@/lib/tickets.server")).autoSendTicketsFor(w.id); } catch (e) { r.ticketsError = (e as Error).message.slice(0, 200); }
-          try { r.autoAssigned = await (await import("@/lib/driver-dispatch.server")).flushAutoAssigned(w.id); } catch (e) { r.autoAssignError = (e as Error).message.slice(0, 200); }
-          if (w.platform_connectors) { try { r.drivers = await (await import("@/lib/driver-dispatch.server")).autoSendSchedulesFor(w.id); } catch (e) { r.driversError = (e as Error).message.slice(0, 200); } }
-          if (w.platform_connectors) { try { r.guests = await (await import("@/lib/guest-messages.server")).autoGuestMessagesFor(w.id); } catch (e) { r.guestsError = (e as Error).message.slice(0, 200); } }
-          // PayPal roughly hourly (its reports lag up to 3h anyway).
-          if (new Date().getUTCMinutes() < 5) { try { r.paypal = await (await import("@/lib/paypal.server")).syncPaypalFor(w.id, 3); } catch (e) { r.paypalError = (e as Error).message.slice(0, 200); } }
-          out[w.id] = r;
+
+        if (ws) {
+          // One workspace (fan-out request). Suspended workspaces are skipped.
+          const w = (await activeWorkspaces()).find((x) => x.id === ws);
+          if (!w) return Response.json({ ok: true, skipped: "inactive" });
+          const r = await jobs.processWorkspace(sb, w);
+          console.log("background-sync workspace", ws, JSON.stringify(r));
+          return Response.json({ ok: true });
         }
-        try { await recover(); } catch { /* retried next run */ }
-        try {
-          const { sendPendingPushes } = await import("@/lib/push.server");
-          out.push = await sendPendingPushes(sb);
-        } catch (e) { out.pushError = (e as Error).message.slice(0, 200); }
+
+        // Scheduler tick.
+        const out: Record<string, unknown> = await jobs.processGlobal(sb);
+        const queued = await jobs.fanOut(sb);
+        if (queued === null) {
+          // Database without fan-out support: process serially (previous behaviour).
+          for (const w of await activeWorkspaces()) out[w.id] = await jobs.processWorkspace(sb, w);
+        } else {
+          out.fannedOut = queued;
+        }
         console.log("background-sync", JSON.stringify(out));
         return Response.json({ ok: true });
       },

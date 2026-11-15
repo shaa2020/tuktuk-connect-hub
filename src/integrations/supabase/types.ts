@@ -1915,6 +1915,9 @@ export type Database = {
           error: string | null
           id: string
           media_urls: string[]
+          publish_attempts: number
+          publish_results: Json
+          publish_started_at: string | null
           published_at: string | null
           scheduled_at: string | null
           status: string
@@ -1930,6 +1933,9 @@ export type Database = {
           error?: string | null
           id?: string
           media_urls?: string[]
+          publish_attempts?: number
+          publish_results?: Json
+          publish_started_at?: string | null
           published_at?: string | null
           scheduled_at?: string | null
           status?: string
@@ -1945,6 +1951,9 @@ export type Database = {
           error?: string | null
           id?: string
           media_urls?: string[]
+          publish_attempts?: number
+          publish_results?: Json
+          publish_started_at?: string | null
           published_at?: string | null
           scheduled_at?: string | null
           status?: string
@@ -2517,6 +2526,7 @@ export type Database = {
       platform_set_workspace_suspension: { Args: { _reason?: string; _suspend: boolean; _ws: string }; Returns: undefined }
       platform_workspace_overview: { Args: never; Returns: { id: string; name: string; plan: string; industry: string | null; created_at: string; suspended_at: string | null; suspended_reason: string | null; owner_email: string | null; members: number; connected_channels: number; conversations_this_month: number; ai_requests_this_month: number; subscription_status: string | null }[] }
       shares_workspace: { Args: { _other: string }; Returns: boolean }
+      trigger_background_sync_fanout: { Args: never; Returns: number }
       trigger_background_sync: { Args: { _body: Json }; Returns: undefined }
       workspace_limit: { Args: { _key: string; _ws: string }; Returns: number }
       workspace_usage: { Args: { _key: string; _ws: string }; Returns: number }
