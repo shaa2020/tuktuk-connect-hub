@@ -101,7 +101,7 @@ export function AiOperatorPanel() {
           <div className="flex flex-wrap items-center gap-2 border-t bg-destructive/10 px-4 py-2 text-sm"><AlertTriangle className="size-4 shrink-0" /> Paused: {form.paused_reason}. Fix it, then press Run now.</div>
         )}
         <div className="grid gap-2 border-t p-4 sm:grid-cols-2">
-          <Toggle icon={<MessageSquare className="size-4" />} label="Reply to guests" hint="Off = it only suggests replies in the activity list" checked={form.allow_reply} disabled={!canEdit} onChange={(v) => save({ allow_reply: v })} />
+          <Toggle icon={<MessageSquare className="size-4" />} label="Reply to guests" hint="Off = approval mode: replies wait in the inbox until a team member approves them" checked={form.allow_reply} disabled={!canEdit} onChange={(v) => save({ allow_reply: v })} />
           <Toggle icon={<CalendarPlus className="size-4" />} label="Create booking requests" hint="Added as Tentative in the Tour Calendar for you to confirm" checked={form.allow_booking} disabled={!canEdit} onChange={(v) => save({ allow_booking: v })} />
           <Toggle icon={<UserCheck className="size-4" />} label="Assign & tag chats" hint="Labels chats, marks urgent ones, assigns hand-offs" checked={form.allow_assign} disabled={!canEdit} onChange={(v) => save({ allow_assign: v })} />
           <Toggle icon={<Bell className="size-4" />} label="Alert me" hint="Push alerts for complaints, urgent chats, new bookings" checked={form.allow_alert} disabled={!canEdit} onChange={(v) => save({ allow_alert: v })} />
