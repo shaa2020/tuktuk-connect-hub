@@ -106,7 +106,7 @@ function SocialPage() {
     <PageContainer className="max-w-4xl">
       <PageHeader
         title="Social Planner"
-        description="Draft and schedule posts for Instagram, Facebook and TikTok. Publishing switches on automatically once your Meta app is approved — everything you schedule here will go out at its time."
+        description="Plan and draft posts for Instagram, Facebook and TikTok. Automatic publishing is not built yet — posts saved here are NOT sent to social media; publish them manually for now."
       />
       <Panel className="mb-4 space-y-3 p-4">
         <h2 className="text-sm font-semibold">New post</h2>
@@ -134,7 +134,7 @@ function SocialPage() {
 
       {posts.isLoading ? <Panel><ListSkeleton /></Panel> : posts.error ? <ErrorState message={(posts.error as Error).message} /> :
         !posts.data?.length ? (
-          <Panel><EmptyState icon={<CalendarClock />} title="No posts yet" description="Create your first post above — it will be ready to publish the moment your social accounts are approved." /></Panel>
+          <Panel><EmptyState icon={<CalendarClock />} title="No posts yet" description="Create your first post above to plan your content calendar." /></Panel>
         ) : (
           <div className="space-y-4">
             {[
