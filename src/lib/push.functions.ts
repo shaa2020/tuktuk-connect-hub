@@ -11,10 +11,18 @@ export const sendTestPush = createServerFn({ method: "POST" })
     if (!ok) throw new Error("Not allowed.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendPendingPushes } = await import("./push.server");
-    const { data: row, error } = await supabaseAdmin.from("notifications").insert({
-      workspace_id: data.workspaceId, user_id: context.userId, kind: "test",
-      title: "Phone alerts are working ✅", body: "You'll get alerts like this for new WhatsApp, email and other messages.", link: "/notifications",
-    }).select("id").single();
+    const { data: row, error } = await supabaseAdmin
+      .from("notifications")
+      .insert({
+        workspace_id: data.workspaceId,
+        user_id: context.userId,
+        kind: "test",
+        title: "Phone alerts are working ✅",
+        body: "You'll get alerts like this for new WhatsApp, email and other messages.",
+        link: "/notifications",
+      })
+      .select("id")
+      .single();
     if (error || !row) throw new Error("Could not create the test alert.");
     const r = await sendPendingPushes(supabaseAdmin as any, [row.id]);
     return { sent: r.sent };

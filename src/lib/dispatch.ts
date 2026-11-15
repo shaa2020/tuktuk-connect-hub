@@ -41,9 +41,11 @@ export function findConflicts(slots: Slot[]): Map<string, string[]> {
   const live = slots.filter((s) => s.status !== "cancelled");
   for (let i = 0; i < live.length; i++) {
     for (let j = i + 1; j < live.length; j++) {
-      const a = live[i]!, b = live[j]!;
+      const a = live[i]!,
+        b = live[j]!;
       if (a.tour_date !== b.tour_date) continue;
-      const ra = range(a), rb = range(b);
+      const ra = range(a),
+        rb = range(b);
       if (!ra || !rb || !(ra[0] < rb[1] && rb[0] < ra[1])) continue;
       const reasons: string[] = [];
       if (a.vehicle_id && a.vehicle_id === b.vehicle_id) reasons.push("vehicle");

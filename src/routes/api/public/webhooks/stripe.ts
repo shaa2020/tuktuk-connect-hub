@@ -9,9 +9,14 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
         if (!secret) return new Response("Not configured", { status: 503 });
         const raw = await request.text();
         const { verifyStripeSignature } = await import("@/lib/stripe");
-        if (!(await verifyStripeSignature(raw, request.headers.get("stripe-signature"), secret))) return new Response("Bad signature", { status: 400 });
+        if (!(await verifyStripeSignature(raw, request.headers.get("stripe-signature"), secret)))
+          return new Response("Bad signature", { status: 400 });
         let event: any;
-        try { event = JSON.parse(raw); } catch { return new Response("Bad request", { status: 400 }); }
+        try {
+          event = JSON.parse(raw);
+        } catch {
+          return new Response("Bad request", { status: 400 });
+        }
         try {
           const r = await (await import("@/lib/stripe.server")).handleEvent(event);
           return Response.json({ received: true, result: r });

@@ -1,7 +1,14 @@
 // Browser-safe plan helpers. The database is the enforcer (migration 0020: assert_entitlement,
 // consume_usage, enforce_plan_limits); this module only formats limits and errors for people.
 
-export const PLAN_KEYS = ["free", "starter", "professional", "business", "enterprise", "internal"] as const;
+export const PLAN_KEYS = [
+  "free",
+  "starter",
+  "professional",
+  "business",
+  "enterprise",
+  "internal",
+] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
 export const LIMIT_LABEL: Record<string, string> = {
@@ -49,7 +56,9 @@ export function planLimitError(metric: string, limit: number): string {
  * Turns a database PLAN_LIMIT error ("PLAN_LIMIT:members: your plan allows 2 …") into a friendly
  * sentence; returns null for any other error so callers can show the original message.
  */
-export function parsePlanLimitError(message: string | null | undefined): { metric: string; text: string } | null {
+export function parsePlanLimitError(
+  message: string | null | undefined,
+): { metric: string; text: string } | null {
   const m = /PLAN_LIMIT:([a-z_]+):\s*your plan allows (\d+)/.exec(message ?? "");
   if (!m) return null;
   const metric = m[1] ?? "";
@@ -58,5 +67,7 @@ export function parsePlanLimitError(message: string | null | undefined): { metri
 
 /** Friendly message for any Supabase/server error, mapping plan limits specially. */
 export function friendlyError(message: string | null | undefined): string {
-  return parsePlanLimitError(message)?.text ?? (message || "Something went wrong. Please try again.");
+  return (
+    parsePlanLimitError(message)?.text ?? (message || "Something went wrong. Please try again.")
+  );
 }

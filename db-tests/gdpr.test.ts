@@ -10,16 +10,21 @@ beforeAll(async () => {
   await addMember(ids.ws, ids.admin2, "admin");
   await addMember(ids.ws, ids.agent, "agent");
 });
-afterAll(async () => { await sql.end(); });
+afterAll(async () => {
+  await sql.end();
+});
 
 describe("ownership transfer", () => {
   it("only the owner can transfer; the new owner is promoted to admin", async () => {
-    await expect(asUser(ids.admin2, (tx) => tx`select transfer_workspace_ownership(${ids.ws}, ${ids.admin2})`)).rejects.toThrow(/Only the workspace owner/);
+    await expect(
+      asUser(ids.admin2, (tx) => tx`select transfer_workspace_ownership(${ids.ws}, ${ids.admin2})`),
+    ).rejects.toThrow(/Only the workspace owner/);
     const r = await asUser(ids.owner, async (tx) => {
       await tx`select transfer_workspace_ownership(${ids.ws}, ${ids.agent})`;
       await tx.unsafe("reset role");
       const [w] = await tx`select owner_id from workspaces where id = ${ids.ws}`;
-      const [m] = await tx`select role from workspace_members where workspace_id = ${ids.ws} and user_id = ${ids.agent}`;
+      const [m] =
+        await tx`select role from workspace_members where workspace_id = ${ids.ws} and user_id = ${ids.agent}`;
       return { owner: w.owner_id, role: m.role };
     });
     expect(r).toEqual({ owner: ids.agent, role: "admin" });
@@ -28,10 +33,15 @@ describe("ownership transfer", () => {
 
 describe("workspace deletion", () => {
   it("requires the owner and the exact name; scheduled 30 days out; cancellable", async () => {
-    await expect(asUser(ids.admin2, (tx) => tx`select request_workspace_deletion(${ids.ws}, 'Gdpr Biz')`)).rejects.toThrow(/Only the workspace owner/);
-    await expect(asUser(ids.owner, (tx) => tx`select request_workspace_deletion(${ids.ws}, 'wrong')`)).rejects.toThrow(/exactly/);
+    await expect(
+      asUser(ids.admin2, (tx) => tx`select request_workspace_deletion(${ids.ws}, 'Gdpr Biz')`),
+    ).rejects.toThrow(/Only the workspace owner/);
+    await expect(
+      asUser(ids.owner, (tx) => tx`select request_workspace_deletion(${ids.ws}, 'wrong')`),
+    ).rejects.toThrow(/exactly/);
     const days = await asUser(ids.owner, async (tx) => {
-      const [{ request_workspace_deletion: when }] = await tx`select request_workspace_deletion(${ids.ws}, 'Gdpr Biz')`;
+      const [{ request_workspace_deletion: when }] =
+        await tx`select request_workspace_deletion(${ids.ws}, 'Gdpr Biz')`;
       await tx`select cancel_workspace_deletion(${ids.ws})`;
       return Math.round((new Date(when).getTime() - Date.now()) / 86400_000);
     });
@@ -67,10 +77,15 @@ describe("retention", () => {
     await sql`update workspaces set message_retention_days = 30 where id = ${ws}`;
     const [c] = await sql`insert into conversations(workspace_id) values (${ws}) returning id`;
     await sql`insert into messages(workspace_id, conversation_id, direction, body, created_at) values (${ws}, ${c.id}, 'inbound', 'old', now() - interval '40 days'), (${ws}, ${c.id}, 'inbound', 'new', now())`;
-    const left = await asService(async (tx) => { await tx`select apply_message_retention()`; return (await tx`select body from messages where workspace_id = ${ws}`).map((m) => m.body); });
+    const left = await asService(async (tx) => {
+      await tx`select apply_message_retention()`;
+      return (await tx`select body from messages where workspace_id = ${ws}`).map((m) => m.body);
+    });
     expect(left).toEqual(["new"]);
   });
   it("browsers can't trigger purges", async () => {
-    await expect(asUser(ids.owner, (tx) => tx`select purge_due_workspaces()`)).rejects.toThrow(/permission denied/);
+    await expect(asUser(ids.owner, (tx) => tx`select purge_due_workspaces()`)).rejects.toThrow(
+      /permission denied/,
+    );
   });
 });

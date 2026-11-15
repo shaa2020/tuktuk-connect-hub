@@ -2,15 +2,47 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncWebsiteBookings } from "@/lib/website.functions";
-import { notifyDriverFn, sendDriverScheduleFn, flushAutoAssignedFn, setAutoAssign, setGuestAutomations } from "@/lib/driver-dispatch.functions";
+import {
+  notifyDriverFn,
+  sendDriverScheduleFn,
+  flushAutoAssignedFn,
+  setAutoAssign,
+  setGuestAutomations,
+} from "@/lib/driver-dispatch.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Euro, Globe, MapPin, MessageCircle, Pencil, Phone, Plus, RefreshCw, Send, StickyNote, Truck, Trash2, User, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Euro,
+  Globe,
+  MapPin,
+  MessageCircle,
+  Pencil,
+  Phone,
+  Plus,
+  RefreshCw,
+  Send,
+  StickyNote,
+  Truck,
+  Trash2,
+  User,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { PageContainer } from "@/components/app-shell";
-import { EmptyState, ErrorState, ListSkeleton, PageHeader, Panel, errMsg } from "@/components/states";
+import {
+  EmptyState,
+  ErrorState,
+  ListSkeleton,
+  PageHeader,
+  Panel,
+  errMsg,
+} from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -20,35 +52,70 @@ import { DISPATCH_LABEL, findConflicts, nextDispatch, type DispatchStatus } from
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dispatch")({
-  head: () => ({ meta: [
-    { title: "Tour Calendar & Dispatch — TeamInbox" },
-    { name: "description", content: "Daily tour run sheet with tuk tuk and driver assignment." },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Tour Calendar & Dispatch — TeamInbox" },
+      { name: "description", content: "Daily tour run sheet with tuk tuk and driver assignment." },
+    ],
+  }),
   component: DispatchPage,
 });
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
-const addDays = (s: string, n: number) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
+const addDays = (s: string, n: number) => {
+  const d = new Date(s + "T12:00:00");
+  d.setDate(d.getDate() + n);
+  return iso(d);
+};
 const endTime = (start: string, mins: number | null) => {
   const [h, m] = start.split(":").map(Number);
   const t = (h ?? 0) * 60 + (m ?? 0) + (mins ?? 60);
   return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 };
-const DOT: Record<DispatchStatus, string> = { scheduled: "bg-muted-foreground", dispatched: "bg-primary", on_tour: "bg-accent-foreground", done: "bg-success" };
-const PILL: Record<DispatchStatus, string> = { scheduled: "bg-secondary text-secondary-foreground", dispatched: "bg-primary-soft text-primary", on_tour: "bg-accent text-accent-foreground", done: "bg-success/15 text-success" };
+const DOT: Record<DispatchStatus, string> = {
+  scheduled: "bg-muted-foreground",
+  dispatched: "bg-primary",
+  on_tour: "bg-accent-foreground",
+  done: "bg-success",
+};
+const PILL: Record<DispatchStatus, string> = {
+  scheduled: "bg-secondary text-secondary-foreground",
+  dispatched: "bg-primary-soft text-primary",
+  on_tour: "bg-accent text-accent-foreground",
+  done: "bg-success/15 text-success",
+};
 function Stat({ label, value, warn }: { label: string; value: number; warn?: boolean }) {
   return (
-    <div className={cn("rounded-xl border bg-card px-3 py-2", warn && "border-destructive/40 bg-destructive/5")}>
-      <div className={cn("text-xl font-bold tabular-nums", warn && "text-destructive")}>{value}</div>
-      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+    <div
+      className={cn(
+        "rounded-xl border bg-card px-3 py-2",
+        warn && "border-destructive/40 bg-destructive/5",
+      )}
+    >
+      <div className={cn("text-xl font-bold tabular-nums", warn && "text-destructive")}>
+        {value}
+      </div>
+      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
 function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-  return <div className="flex min-w-0 items-start gap-2"><span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span><span className="min-w-0">{children}</span></div>;
+  return (
+    <div className="flex min-w-0 items-start gap-2">
+      <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>
+      <span className="min-w-0">{children}</span>
+    </div>
+  );
 }
 /** Missing details that would stop a tour running smoothly. */
-function tourIssues(t: { pickup_location: string | null; vehicle_id: string | null; driver_id: string | null; contacts: { phone: string | null } | null }) {
+function tourIssues(t: {
+  pickup_location: string | null;
+  vehicle_id: string | null;
+  driver_id: string | null;
+  contacts: { phone: string | null } | null;
+}) {
   const out: string[] = [];
   if (!t.pickup_location?.trim()) out.push("No pickup location");
   if (!t.contacts?.phone?.trim()) out.push("No guest phone");
@@ -68,7 +135,11 @@ function DispatchPage() {
   const vehicles = useQuery({
     queryKey: ["vehicles", workspaceId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vehicles").select("*").eq("workspace_id", workspaceId).order("name");
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -76,10 +147,16 @@ function DispatchPage() {
   const tours = useQuery({
     queryKey: ["dispatch", workspaceId, day, end],
     queryFn: async () => {
-      const { data, error } = await supabase.from("bookings")
-        .select("id, reference, tour_name, tour_date, start_time, duration_minutes, guests, pickup_location, status, payment_status, amount, currency, language, notes, vehicle_id, driver_id, dispatch_status, is_demo, source_system, external_reference, contacts(full_name, phone)")
-        .eq("workspace_id", workspaceId).gte("tour_date", day).lte("tour_date", end)
-        .order("tour_date").order("start_time", { nullsFirst: false });
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          "id, reference, tour_name, tour_date, start_time, duration_minutes, guests, pickup_location, status, payment_status, amount, currency, language, notes, vehicle_id, driver_id, dispatch_status, is_demo, source_system, external_reference, contacts(full_name, phone)",
+        )
+        .eq("workspace_id", workspaceId)
+        .gte("tour_date", day)
+        .lte("tour_date", end)
+        .order("tour_date")
+        .order("start_time", { nullsFirst: false });
       if (error) throw error;
       return data;
     },
@@ -87,8 +164,13 @@ function DispatchPage() {
   const undated = useQuery({
     queryKey: ["dispatch", workspaceId, "undated"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("bookings").select("id, reference, tour_name, contacts(full_name)")
-        .eq("workspace_id", workspaceId).is("tour_date", null).neq("status", "cancelled").limit(100);
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("id, reference, tour_name, contacts(full_name)")
+        .eq("workspace_id", workspaceId)
+        .is("tour_date", null)
+        .neq("status", "cancelled")
+        .limit(100);
       if (error) throw error;
       return data;
     },
@@ -101,16 +183,41 @@ function DispatchPage() {
   const flushFn = useServerFn(flushAutoAssignedFn);
   async function syncWeb(manual: boolean) {
     setSyncing(true);
-    const r = await syncFn({ data: { workspaceId } }).catch((e) => ({ ok: false as const, error: (e as Error).message, added: 0 }));
+    const r = await syncFn({ data: { workspaceId } }).catch((e) => ({
+      ok: false as const,
+      error: (e as Error).message,
+      added: 0,
+    }));
     setSyncing(false);
-    if (!r.ok) { if (manual) toast.error(`Website: ${r.error}`); return; }
-    if (r.added > 0 || manual) toast.success(r.added ? `${r.added} new website booking${r.added > 1 ? "s" : ""} added` : "Website bookings are up to date");
-    flushFn({ data: { workspaceId } }).then((x) => { if (x.sent) { toast.success(`Default guide sent ${x.sent} new tour${x.sent > 1 ? "s" : ""} on WhatsApp`); refresh(); } }).catch(() => {});
-    if (r.added > 0) { refresh(); qc.invalidateQueries({ queryKey: ["bookings"] }); }
+    if (!r.ok) {
+      if (manual) toast.error(`Website: ${r.error}`);
+      return;
+    }
+    if (r.added > 0 || manual)
+      toast.success(
+        r.added
+          ? `${r.added} new website booking${r.added > 1 ? "s" : ""} added`
+          : "Website bookings are up to date",
+      );
+    flushFn({ data: { workspaceId } })
+      .then((x) => {
+        if (x.sent) {
+          toast.success(
+            `Default guide sent ${x.sent} new tour${x.sent > 1 ? "s" : ""} on WhatsApp`,
+          );
+          refresh();
+        }
+      })
+      .catch(() => {});
+    if (r.added > 0) {
+      refresh();
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+    }
   }
   useEffect(() => {
     if (!workspaceId || didSync.current) return;
-    didSync.current = true; syncWeb(false);
+    didSync.current = true;
+    syncWeb(false);
     const t = setInterval(() => syncWeb(false), 120_000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,24 +225,51 @@ function DispatchPage() {
 
   const notifyFn = useServerFn(notifyDriverFn);
   const scheduleFn = useServerFn(sendDriverScheduleFn);
-  async function patch(id: string, values: { vehicle_id?: string | null; driver_id?: string | null; dispatch_status?: string }) {
+  async function patch(
+    id: string,
+    values: { vehicle_id?: string | null; driver_id?: string | null; dispatch_status?: string },
+  ) {
     const prev = (tours.data ?? []).find((t) => t.id === id);
     const { error } = await supabase.from("bookings").update(values).eq("id", id);
-    if (error) { toast.error(errMsg(error)); return; }
+    if (error) {
+      toast.error(errMsg(error));
+      return;
+    }
     refresh();
-    if (!canFleet || values.driver_id === undefined || values.driver_id === prev?.driver_id || prev?.status === "cancelled") return;
+    if (
+      !canFleet ||
+      values.driver_id === undefined ||
+      values.driver_id === prev?.driver_id ||
+      prev?.status === "cancelled"
+    )
+      return;
     // Tell the old driver it moved, and send the new driver the full tour details on WhatsApp.
-    if (prev?.driver_id) notifyFn({ data: { workspaceId, bookingId: id, kind: "reassigned", driverId: prev.driver_id } }).catch(() => {});
+    if (prev?.driver_id)
+      notifyFn({
+        data: { workspaceId, bookingId: id, kind: "reassigned", driverId: prev.driver_id },
+      }).catch(() => {});
     if (values.driver_id) {
-      const r = await notifyFn({ data: { workspaceId, bookingId: id, kind: "assigned", driverId: values.driver_id } }).catch((e) => ({ ok: false as const, error: (e as Error).message }));
+      const r = await notifyFn({
+        data: { workspaceId, bookingId: id, kind: "assigned", driverId: values.driver_id },
+      }).catch((e) => ({ ok: false as const, error: (e as Error).message }));
       if (r.ok) toast.success("Driver assigned and sent the tour details on WhatsApp");
       else toast.warning(`Driver assigned, but the WhatsApp message wasn't sent: ${r.error}`);
     }
   }
   async function sendSchedules(date: string, driverIds: string[]) {
-    if (!driverIds.length) { toast.error("No drivers are assigned on this day yet."); return; }
-    const r = await scheduleFn({ data: { workspaceId, date, driverIds } }).catch((e) => ({ sent: 0, failed: 1, firstError: (e as Error).message }));
-    if (r.sent) toast.success(`Schedule sent to ${r.sent} driver${r.sent > 1 ? "s" : ""}${r.failed ? ` (${r.failed} failed: ${r.firstError})` : ""}`);
+    if (!driverIds.length) {
+      toast.error("No drivers are assigned on this day yet.");
+      return;
+    }
+    const r = await scheduleFn({ data: { workspaceId, date, driverIds } }).catch((e) => ({
+      sent: 0,
+      failed: 1,
+      firstError: (e as Error).message,
+    }));
+    if (r.sent)
+      toast.success(
+        `Schedule sent to ${r.sent} driver${r.sent > 1 ? "s" : ""}${r.failed ? ` (${r.failed} failed: ${r.firstError})` : ""}`,
+      );
     else toast.error(r.firstError ?? "Nothing was sent.");
   }
 
@@ -144,16 +278,58 @@ function DispatchPage() {
 
   return (
     <PageContainer>
-      <PageHeader title="Tour Calendar" description="Tap a tour to edit or delete it. Assign tuk tuks and drivers." actions={<Button asChild size="sm"><Link to="/bookings" search={{ new: true }}><Plus /> New booking</Link></Button>} />
+      <PageHeader
+        title="Tour Calendar"
+        description="Tap a tour to edit or delete it. Assign tuk tuks and drivers."
+        actions={
+          <Button asChild size="sm">
+            <Link to="/bookings" search={{ new: true }}>
+              <Plus /> New booking
+            </Link>
+          </Button>
+        }
+      />
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Button size="icon" variant="outline" aria-label="Previous" onClick={() => setDay(addDays(day, view === "day" ? -1 : -7))}><ChevronLeft /></Button>
-        <Input type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)} className="w-auto" />
-        <Button size="icon" variant="outline" aria-label="Next" onClick={() => setDay(addDays(day, view === "day" ? 1 : 7))}><ChevronRight /></Button>
-        <Button size="sm" variant="ghost" onClick={() => setDay(iso(new Date()))}>Today</Button>
-        <Button size="sm" variant="outline" onClick={() => syncWeb(true)} disabled={syncing}><RefreshCw className={syncing ? "animate-spin" : ""} /> Sync website</Button>
+        <Button
+          size="icon"
+          variant="outline"
+          aria-label="Previous"
+          onClick={() => setDay(addDays(day, view === "day" ? -1 : -7))}
+        >
+          <ChevronLeft />
+        </Button>
+        <Input
+          type="date"
+          value={day}
+          onChange={(e) => e.target.value && setDay(e.target.value)}
+          className="w-auto"
+        />
+        <Button
+          size="icon"
+          variant="outline"
+          aria-label="Next"
+          onClick={() => setDay(addDays(day, view === "day" ? 1 : 7))}
+        >
+          <ChevronRight />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setDay(iso(new Date()))}>
+          Today
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => syncWeb(true)} disabled={syncing}>
+          <RefreshCw className={syncing ? "animate-spin" : ""} /> Sync website
+        </Button>
         <div className="ml-auto flex rounded-lg border p-0.5">
           {(["day", "week"] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)} className={cn("rounded-md px-3 py-1 text-sm capitalize", view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>{v}</button>
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={cn(
+                "rounded-md px-3 py-1 text-sm capitalize",
+                view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              {v}
+            </button>
           ))}
         </div>
       </div>
@@ -163,42 +339,98 @@ function DispatchPage() {
 
       {conflicts.size > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          <AlertTriangle className="size-4 shrink-0" /> {conflicts.size} tours share a tuk tuk or driver at the same time. Fix the highlighted ones.
+          <AlertTriangle className="size-4 shrink-0" /> {conflicts.size} tours share a tuk tuk or
+          driver at the same time. Fix the highlighted ones.
         </div>
       )}
 
-      {tours.isLoading ? <ListSkeleton /> : tours.error ? <ErrorState message={errMsg(tours.error)} onRetry={() => tours.refetch()} /> : (
+      {tours.isLoading ? (
+        <ListSkeleton />
+      ) : tours.error ? (
+        <ErrorState message={errMsg(tours.error)} onRetry={() => tours.refetch()} />
+      ) : (
         <div className="space-y-6">
           {days.map((d) => {
             const list = (tours.data ?? []).filter((t) => t.tour_date === d);
             const live = list.filter((t) => t.status !== "cancelled");
             const pax = live.reduce((s, t) => s + (t.guests ?? 0), 0);
             const open = live.filter((t) => !t.vehicle_id || !t.driver_id).length;
-            const vName = (id: string | null) => active.find((v) => v.id === id)?.name ?? (vehicles.data ?? []).find((v) => v.id === id)?.name;
-            const dName = (id: string | null) => { const m = members.find((x) => x.user_id === id); return m ? (m.full_name || m.email) : undefined; };
+            const vName = (id: string | null) =>
+              active.find((v) => v.id === id)?.name ??
+              (vehicles.data ?? []).find((v) => v.id === id)?.name;
+            const dName = (id: string | null) => {
+              const m = members.find((x) => x.user_id === id);
+              return m ? m.full_name || m.email : undefined;
+            };
             const sheet = () => {
-              const head = new Date(d + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-              const lines = live.map((t) => [
-                `🕐 ${t.start_time?.slice(0, 5) ?? "TBC"}${t.start_time ? `–${endTime(t.start_time, t.duration_minutes)}` : ""} · ${t.tour_name}`,
-                `👤 ${t.contacts?.full_name ?? "Guest"}${t.contacts?.phone ? ` (${t.contacts.phone})` : ""} · ${t.guests ?? "?"} guests`,
-                t.pickup_location ? `📍 ${t.pickup_location}` : null,
-                `🛺 ${vName(t.vehicle_id) ?? "No tuk tuk"} · 🧑‍✈️ ${dName(t.driver_id) ?? "No driver"}`,
-                t.notes ? `📝 ${t.notes}` : null,
-              ].filter(Boolean).join("\n"));
-              navigator.clipboard.writeText(`${workspaceName} — ${head}\n${live.length} tours · ${pax} guests\n\n${lines.join("\n\n")}`)
-                .then(() => toast.success("Run sheet copied — paste it in WhatsApp"), () => toast.error("Could not copy"));
+              const head = new Date(d + "T12:00:00").toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              });
+              const lines = live.map((t) =>
+                [
+                  `🕐 ${t.start_time?.slice(0, 5) ?? "TBC"}${t.start_time ? `–${endTime(t.start_time, t.duration_minutes)}` : ""} · ${t.tour_name}`,
+                  `👤 ${t.contacts?.full_name ?? "Guest"}${t.contacts?.phone ? ` (${t.contacts.phone})` : ""} · ${t.guests ?? "?"} guests`,
+                  t.pickup_location ? `📍 ${t.pickup_location}` : null,
+                  `🛺 ${vName(t.vehicle_id) ?? "No tuk tuk"} · 🧑‍✈️ ${dName(t.driver_id) ?? "No driver"}`,
+                  t.notes ? `📝 ${t.notes}` : null,
+                ]
+                  .filter(Boolean)
+                  .join("\n"),
+              );
+              navigator.clipboard
+                .writeText(
+                  `${workspaceName} — ${head}\n${live.length} tours · ${pax} guests\n\n${lines.join("\n\n")}`,
+                )
+                .then(
+                  () => toast.success("Run sheet copied — paste it in WhatsApp"),
+                  () => toast.error("Could not copy"),
+                );
             };
             return (
               <section key={d}>
                 <div className="mb-3 flex items-end justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-primary">{d === iso(new Date()) ? "Today" : new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "long" })}</div>
-                    <h2 className="truncate text-lg font-bold">{new Date(d + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}</h2>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-primary">
+                      {d === iso(new Date())
+                        ? "Today"
+                        : new Date(d + "T12:00:00").toLocaleDateString(undefined, {
+                            weekday: "long",
+                          })}
+                    </div>
+                    <h2 className="truncate text-lg font-bold">
+                      {new Date(d + "T12:00:00").toLocaleDateString(undefined, {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </h2>
                   </div>
                   {live.length > 0 && (
                     <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                      {canFleet && <Button size="sm" onClick={() => sendSchedules(d, [...new Set(live.filter((t) => t.status === "confirmed" || t.status === "tentative").map((t) => t.driver_id).filter((x): x is string => !!x))])}><Send /> Send driver schedules</Button>}
-                      <Button size="sm" variant="outline" onClick={sheet}><Copy /> Copy run sheet</Button>
+                      {canFleet && (
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            sendSchedules(d, [
+                              ...new Set(
+                                live
+                                  .filter(
+                                    (t) => t.status === "confirmed" || t.status === "tentative",
+                                  )
+                                  .map((t) => t.driver_id)
+                                  .filter((x): x is string => !!x),
+                              ),
+                            ])
+                          }
+                        >
+                          <Send /> Send driver schedules
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={sheet}>
+                        <Copy /> Copy run sheet
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -210,11 +442,35 @@ function DispatchPage() {
                   </div>
                 )}
                 {(() => {
-                  const bad = live.filter((t) => conflicts.has(t.id) || tourIssues(t).length > 0).length;
-                  return bad > 0 ? <div className="mb-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2.5 text-sm font-semibold text-destructive"><AlertTriangle className="size-4 shrink-0" /> {bad} tour{bad > 1 ? "s" : ""} need attention before departure</div> : null;
+                  const bad = live.filter(
+                    (t) => conflicts.has(t.id) || tourIssues(t).length > 0,
+                  ).length;
+                  return bad > 0 ? (
+                    <div className="mb-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2.5 text-sm font-semibold text-destructive">
+                      <AlertTriangle className="size-4 shrink-0" /> {bad} tour{bad > 1 ? "s" : ""}{" "}
+                      need attention before departure
+                    </div>
+                  ) : null;
                 })()}
                 {list.length === 0 ? (
-                  view === "day" ? <EmptyState icon={<Truck />} title="No tours this day" description="Bookings with a tour date appear here." action={<Button asChild size="sm"><Link to="/bookings" search={{ new: true }}>New booking</Link></Button>} /> : <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">No tours</p>
+                  view === "day" ? (
+                    <EmptyState
+                      icon={<Truck />}
+                      title="No tours this day"
+                      description="Bookings with a tour date appear here."
+                      action={
+                        <Button asChild size="sm">
+                          <Link to="/bookings" search={{ new: true }}>
+                            New booking
+                          </Link>
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                      No tours
+                    </p>
+                  )
                 ) : (
                   <div className="relative space-y-3 border-l-2 border-primary/20 pl-4">
                     {list.map((t) => {
@@ -223,57 +479,183 @@ function DispatchPage() {
                       const nx = nextDispatch(ds);
                       const phone = t.contacts?.phone?.replace(/[^\d+]/g, "");
                       const first = t.contacts?.full_name?.split(" ")[0] ?? "";
-                      const wa = phone ? `https://wa.me/${phone.replace(/^\+/, "")}?text=${encodeURIComponent(`Hello ${first}, this is ${workspaceName} about your ${t.tour_name} on ${new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" })}${t.start_time ? ` at ${t.start_time.slice(0, 5)}` : ""}.`)}` : null;
+                      const wa = phone
+                        ? `https://wa.me/${phone.replace(/^\+/, "")}?text=${encodeURIComponent(`Hello ${first}, this is ${workspaceName} about your ${t.tour_name} on ${new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" })}${t.start_time ? ` at ${t.start_time.slice(0, 5)}` : ""}.`)}`
+                        : null;
                       return (
-                        <Panel key={t.id} className={cn("relative overflow-hidden p-0", c && "border-destructive ring-1 ring-destructive/40", t.status === "cancelled" && "opacity-50")}>
-                          <span className={cn("absolute -left-[23px] top-5 size-3 rounded-full border-2 border-background", DOT[ds])} />
+                        <Panel
+                          key={t.id}
+                          className={cn(
+                            "relative overflow-hidden p-0",
+                            c && "border-destructive ring-1 ring-destructive/40",
+                            t.status === "cancelled" && "opacity-50",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "absolute -left-[23px] top-5 size-3 rounded-full border-2 border-background",
+                              DOT[ds],
+                            )}
+                          />
                           <div className="flex items-stretch">
                             <div className="flex w-20 shrink-0 flex-col items-center justify-center bg-primary-soft px-2 py-3 text-primary">
-                              <div className="text-xl font-bold tabular-nums leading-none">{t.start_time?.slice(0, 5) ?? "TBC"}</div>
-                              {t.start_time && <div className="mt-1 text-[11px] tabular-nums">to {endTime(t.start_time, t.duration_minutes)}</div>}
-                              <div className="mt-1 text-[11px] opacity-80">{t.duration_minutes ? `${t.duration_minutes} min` : "flexible"}</div>
+                              <div className="text-xl font-bold tabular-nums leading-none">
+                                {t.start_time?.slice(0, 5) ?? "TBC"}
+                              </div>
+                              {t.start_time && (
+                                <div className="mt-1 text-[11px] tabular-nums">
+                                  to {endTime(t.start_time, t.duration_minutes)}
+                                </div>
+                              )}
+                              <div className="mt-1 text-[11px] opacity-80">
+                                {t.duration_minutes ? `${t.duration_minutes} min` : "flexible"}
+                              </div>
                             </div>
                             <div className="min-w-0 flex-1 p-3">
                               <div className="flex items-start justify-between gap-2">
-                                <Link to="/bookings" search={{ b: t.id }} className="min-w-0 font-semibold leading-snug hover:underline">{t.tour_name}</Link>
-                                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", PILL[ds])}>{DISPATCH_LABEL[ds]}</span>
+                                <Link
+                                  to="/bookings"
+                                  search={{ b: t.id }}
+                                  className="min-w-0 font-semibold leading-snug hover:underline"
+                                >
+                                  {t.tour_name}
+                                </Link>
+                                <span
+                                  className={cn(
+                                    "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                    PILL[ds],
+                                  )}
+                                >
+                                  {DISPATCH_LABEL[ds]}
+                                </span>
                               </div>
                               <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
                                 <SampleBadge show={t.is_demo} />
-                                <span className="rounded bg-secondary px-1.5 py-0.5 font-mono">{t.reference}</span>
-                                {t.source_system === "website" && <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-1.5 py-0.5 font-semibold text-primary"><Globe className="size-3" /> Website {t.external_reference}</span>}
-                                <span className="rounded bg-secondary px-1.5 py-0.5 capitalize">{t.status}</span>
-                                {t.payment_status && <span className="rounded bg-secondary px-1.5 py-0.5 capitalize">{String(t.payment_status).replace(/_/g, " ")}</span>}
+                                <span className="rounded bg-secondary px-1.5 py-0.5 font-mono">
+                                  {t.reference}
+                                </span>
+                                {t.source_system === "website" && (
+                                  <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-1.5 py-0.5 font-semibold text-primary">
+                                    <Globe className="size-3" /> Website {t.external_reference}
+                                  </span>
+                                )}
+                                <span className="rounded bg-secondary px-1.5 py-0.5 capitalize">
+                                  {t.status}
+                                </span>
+                                {t.payment_status && (
+                                  <span className="rounded bg-secondary px-1.5 py-0.5 capitalize">
+                                    {String(t.payment_status).replace(/_/g, " ")}
+                                  </span>
+                                )}
                               </div>
                               <dl className="mt-2 space-y-1 text-sm">
-                                <Row icon={<User className="size-3.5" />}>{t.contacts?.full_name ?? "Guest"}{t.language ? ` · ${t.language}` : ""}</Row>
-                                <Row icon={<Users className="size-3.5" />}>{t.guests ?? "?"} guests</Row>
-                                {t.pickup_location && <Row icon={<MapPin className="size-3.5" />}><a className="hover:underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.pickup_location + ", Lisbon")}`}>{t.pickup_location}</a></Row>}
-                                {t.amount != null && <Row icon={<Euro className="size-3.5" />}>{t.amount} {t.currency}</Row>}
-                                {t.notes && <Row icon={<StickyNote className="size-3.5" />}><span className="line-clamp-2">{t.notes}</span></Row>}
+                                <Row icon={<User className="size-3.5" />}>
+                                  {t.contacts?.full_name ?? "Guest"}
+                                  {t.language ? ` · ${t.language}` : ""}
+                                </Row>
+                                <Row icon={<Users className="size-3.5" />}>
+                                  {t.guests ?? "?"} guests
+                                </Row>
+                                {t.pickup_location && (
+                                  <Row icon={<MapPin className="size-3.5" />}>
+                                    <a
+                                      className="hover:underline"
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.pickup_location + ", Lisbon")}`}
+                                    >
+                                      {t.pickup_location}
+                                    </a>
+                                  </Row>
+                                )}
+                                {t.amount != null && (
+                                  <Row icon={<Euro className="size-3.5" />}>
+                                    {t.amount} {t.currency}
+                                  </Row>
+                                )}
+                                {t.notes && (
+                                  <Row icon={<StickyNote className="size-3.5" />}>
+                                    <span className="line-clamp-2">{t.notes}</span>
+                                  </Row>
+                                )}
                               </dl>
-                              {c && <div className="mt-2 flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive"><AlertTriangle className="size-3.5 shrink-0" /> Overlap: same {c.join(" & ")} as another tour at this time</div>}
+                              {c && (
+                                <div className="mt-2 flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive">
+                                  <AlertTriangle className="size-3.5 shrink-0" /> Overlap: same{" "}
+                                  {c.join(" & ")} as another tour at this time
+                                </div>
+                              )}
                               {t.status !== "cancelled" && tourIssues(t).length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1.5">
-                                  {tourIssues(t).map((m) => <span key={m} className="inline-flex items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-[11px] font-semibold text-warning"><AlertTriangle className="size-3 shrink-0" /> {m}</span>)}
+                                  {tourIssues(t).map((m) => (
+                                    <span
+                                      key={m}
+                                      className="inline-flex items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-[11px] font-semibold text-warning"
+                                    >
+                                      <AlertTriangle className="size-3 shrink-0" /> {m}
+                                    </span>
+                                  ))}
                                 </div>
                               )}
                             </div>
                           </div>
                           <div className="grid gap-2 border-t bg-muted/30 p-3 sm:grid-cols-2">
-                            <NativeSelect aria-label="Tuk tuk" value={t.vehicle_id ?? ""} onChange={(e) => patch(t.id, { vehicle_id: e.target.value || null })}>
+                            <NativeSelect
+                              aria-label="Tuk tuk"
+                              value={t.vehicle_id ?? ""}
+                              onChange={(e) => patch(t.id, { vehicle_id: e.target.value || null })}
+                            >
                               <option value="">🛺 No tuk tuk</option>
-                              {active.map((v) => <option key={v.id} value={v.id}>🛺 {v.name}{v.plate ? ` (${v.plate})` : ""}</option>)}
+                              {active.map((v) => (
+                                <option key={v.id} value={v.id}>
+                                  🛺 {v.name}
+                                  {v.plate ? ` (${v.plate})` : ""}
+                                </option>
+                              ))}
                             </NativeSelect>
-                            <NativeSelect aria-label="Driver" value={t.driver_id ?? ""} onChange={(e) => patch(t.id, { driver_id: e.target.value || null })}>
+                            <NativeSelect
+                              aria-label="Driver"
+                              value={t.driver_id ?? ""}
+                              onChange={(e) => patch(t.id, { driver_id: e.target.value || null })}
+                            >
                               <option value="">🧑‍✈️ No driver</option>
-                              {members.filter((m) => m.active).map((m) => <option key={m.user_id} value={m.user_id}>🧑‍✈️ {m.full_name || m.email}</option>)}
+                              {members
+                                .filter((m) => m.active)
+                                .map((m) => (
+                                  <option key={m.user_id} value={m.user_id}>
+                                    🧑‍✈️ {m.full_name || m.email}
+                                  </option>
+                                ))}
                             </NativeSelect>
                             <div className="flex flex-wrap gap-2 sm:col-span-2">
-                              {phone && <Button asChild size="sm" variant="outline"><a href={`tel:${phone}`}><Phone /> Call</a></Button>}
-                              {wa && <Button asChild size="sm" variant="outline"><a href={wa} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp</a></Button>}
-                              <Button asChild size="sm" variant="ghost"><Link to="/bookings" search={{ b: t.id }}><Pencil /> Edit</Link></Button>
-                              {nx && <Button size="sm" className="ml-auto" onClick={() => patch(t.id, { dispatch_status: nx })}>Mark {DISPATCH_LABEL[nx].toLowerCase()}</Button>}
+                              {phone && (
+                                <Button asChild size="sm" variant="outline">
+                                  <a href={`tel:${phone}`}>
+                                    <Phone /> Call
+                                  </a>
+                                </Button>
+                              )}
+                              {wa && (
+                                <Button asChild size="sm" variant="outline">
+                                  <a href={wa} target="_blank" rel="noreferrer">
+                                    <MessageCircle /> WhatsApp
+                                  </a>
+                                </Button>
+                              )}
+                              <Button asChild size="sm" variant="ghost">
+                                <Link to="/bookings" search={{ b: t.id }}>
+                                  <Pencil /> Edit
+                                </Link>
+                              </Button>
+                              {nx && (
+                                <Button
+                                  size="sm"
+                                  className="ml-auto"
+                                  onClick={() => patch(t.id, { dispatch_status: nx })}
+                                >
+                                  Mark {DISPATCH_LABEL[nx].toLowerCase()}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </Panel>
@@ -293,77 +675,170 @@ function DispatchPage() {
           <ul className="divide-y">
             {undated.data!.map((u) => (
               <li key={u.id} className="py-2 text-sm">
-                <Link to="/bookings" search={{ b: u.id }} className="font-medium hover:underline">{u.tour_name}</Link>
-                <span className="text-muted-foreground"> · {u.reference}{u.contacts?.full_name ? ` · ${u.contacts.full_name}` : ""} · add a date to place it on the calendar</span>
+                <Link to="/bookings" search={{ b: u.id }} className="font-medium hover:underline">
+                  {u.tour_name}
+                </Link>
+                <span className="text-muted-foreground">
+                  {" "}
+                  · {u.reference}
+                  {u.contacts?.full_name ? ` · ${u.contacts.full_name}` : ""} · add a date to place
+                  it on the calendar
+                </span>
               </li>
             ))}
           </ul>
         </Panel>
       )}
 
-      <Fleet canEdit={canFleet} rows={vehicles.data ?? []} onChange={() => qc.invalidateQueries({ queryKey: ["vehicles", workspaceId] })} />
+      <Fleet
+        canEdit={canFleet}
+        rows={vehicles.data ?? []}
+        onChange={() => qc.invalidateQueries({ queryKey: ["vehicles", workspaceId] })}
+      />
     </PageContainer>
   );
 }
 
-function Fleet({ canEdit, rows, onChange }: { canEdit: boolean; rows: { id: string; name: string; plate: string | null; seats: number }[]; onChange: () => void }) {
+function Fleet({
+  canEdit,
+  rows,
+  onChange,
+}: {
+  canEdit: boolean;
+  rows: { id: string; name: string; plate: string | null; seats: number }[];
+  onChange: () => void;
+}) {
   const { workspaceId } = useWorkspace();
   const [name, setName] = useState("");
   const [plate, setPlate] = useState("");
   async function add() {
     if (!name.trim()) return;
-    const { error } = await supabase.from("vehicles").insert({ workspace_id: workspaceId, name: name.trim(), plate: plate.trim() || null });
+    const { error } = await supabase
+      .from("vehicles")
+      .insert({ workspace_id: workspaceId, name: name.trim(), plate: plate.trim() || null });
     if (error) return toast.error(errMsg(error));
-    setName(""); setPlate(""); onChange();
+    setName("");
+    setPlate("");
+    onChange();
   }
   async function remove(id: string) {
     const { error } = await supabase.from("vehicles").delete().eq("id", id);
-    if (error) toast.error(errMsg(error)); else onChange();
+    if (error) toast.error(errMsg(error));
+    else onChange();
   }
   return (
     <Panel className="mt-8 p-4">
       <h2 className="mb-3 font-semibold">Your tuk tuks</h2>
-      {rows.length === 0 && <p className="mb-3 text-sm text-muted-foreground">No tuk tuks added yet.</p>}
+      {rows.length === 0 && (
+        <p className="mb-3 text-sm text-muted-foreground">No tuk tuks added yet.</p>
+      )}
       <ul className="mb-3 divide-y">
         {rows.map((v) => (
           <li key={v.id} className="flex items-center gap-2 py-2 text-sm">
-            <Truck className="size-4 text-muted-foreground" /> <span className="font-medium">{v.name}</span>
+            <Truck className="size-4 text-muted-foreground" />{" "}
+            <span className="font-medium">{v.name}</span>
             {v.plate && <span className="text-muted-foreground">{v.plate}</span>}
-            {canEdit && <Button size="icon" variant="ghost" className="ml-auto" aria-label={`Remove ${v.name}`} onClick={() => remove(v.id)}><Trash2 /></Button>}
+            {canEdit && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="ml-auto"
+                aria-label={`Remove ${v.name}`}
+                onClick={() => remove(v.id)}
+              >
+                <Trash2 />
+              </Button>
+            )}
           </li>
         ))}
       </ul>
       {canEdit && (
         <div className="flex flex-wrap gap-2">
-          <Input placeholder="Name, e.g. Vehicle 1" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
-          <Input placeholder="Plate (optional)" value={plate} onChange={(e) => setPlate(e.target.value)} className="w-40" />
-          <Button onClick={add}><Plus /> Add</Button>
+          <Input
+            placeholder="Name, e.g. Vehicle 1"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1"
+          />
+          <Input
+            placeholder="Plate (optional)"
+            value={plate}
+            onChange={(e) => setPlate(e.target.value)}
+            className="w-40"
+          />
+          <Button onClick={add}>
+            <Plus /> Add
+          </Button>
         </div>
       )}
     </Panel>
   );
 }
 
-function AutoAssignPanel({ workspaceId, members }: { workspaceId: string; members: { user_id: string; full_name: string | null; email: string | null; active?: boolean }[] }) {
+function AutoAssignPanel({
+  workspaceId,
+  members,
+}: {
+  workspaceId: string;
+  members: { user_id: string; full_name: string | null; email: string | null; active?: boolean }[];
+}) {
   const qc = useQueryClient();
   const save = useServerFn(setAutoAssign);
-  const q = useQuery({ queryKey: ["auto-assign", workspaceId], queryFn: async () => (await supabase.from("workspaces").select("auto_assign_driver, default_driver_id").eq("id", workspaceId).maybeSingle()).data });
-  const on = !!q.data?.auto_assign_driver; const driver = q.data?.default_driver_id ?? null;
+  const q = useQuery({
+    queryKey: ["auto-assign", workspaceId],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("workspaces")
+          .select("auto_assign_driver, default_driver_id")
+          .eq("id", workspaceId)
+          .maybeSingle()
+      ).data,
+  });
+  const on = !!q.data?.auto_assign_driver;
+  const driver = q.data?.default_driver_id ?? null;
   async function update(nextOn: boolean, nextDriver: string | null) {
-    const r = await save({ data: { workspaceId, on: nextOn, driverId: nextDriver } }).catch((e) => { toast.error((e as Error).message); return null; });
-    if (r) { toast.success(nextOn ? "Auto-assign is on" : "Auto-assign is off"); qc.invalidateQueries({ queryKey: ["auto-assign", workspaceId] }); }
+    const r = await save({ data: { workspaceId, on: nextOn, driverId: nextDriver } }).catch((e) => {
+      toast.error((e as Error).message);
+      return null;
+    });
+    if (r) {
+      toast.success(nextOn ? "Auto-assign is on" : "Auto-assign is off");
+      qc.invalidateQueries({ queryKey: ["auto-assign", workspaceId] });
+    }
   }
   return (
     <Panel className="mb-4 flex flex-wrap items-center gap-3 p-3">
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold">Auto-assign default guide</div>
-        <div className="text-xs text-muted-foreground">When a tour is confirmed with no driver, this guide is assigned and sent the details on WhatsApp.</div>
+        <div className="text-xs text-muted-foreground">
+          When a tour is confirmed with no driver, this guide is assigned and sent the details on
+          WhatsApp.
+        </div>
       </div>
-      <NativeSelect aria-label="Default guide" value={driver ?? ""} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => update(on && !!e.target.value, e.target.value || null)} className="w-auto">
+      <NativeSelect
+        aria-label="Default guide"
+        value={driver ?? ""}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+          update(on && !!e.target.value, e.target.value || null)
+        }
+        className="w-auto"
+      >
         <option value="">Choose guide</option>
-        {members.filter((m) => m.active !== false).map((m) => <option key={m.user_id} value={m.user_id}>{m.full_name || m.email}</option>)}
+        {members
+          .filter((m) => m.active !== false)
+          .map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.full_name || m.email}
+            </option>
+          ))}
       </NativeSelect>
-      <Switch aria-label="Auto-assign default guide" checked={on} disabled={!driver} onCheckedChange={(v) => update(v, driver)} />
+      <Switch
+        aria-label="Auto-assign default guide"
+        checked={on}
+        disabled={!driver}
+        onCheckedChange={(v) => update(v, driver)}
+      />
     </Panel>
   );
 }
@@ -371,38 +846,95 @@ function AutoAssignPanel({ workspaceId, members }: { workspaceId: string; member
 function GuestMessagesPanel({ workspaceId }: { workspaceId: string }) {
   const qc = useQueryClient();
   const save = useServerFn(setGuestAutomations);
-  const q = useQuery({ queryKey: ["guest-auto", workspaceId], queryFn: async () => (await supabase.from("workspaces").select("guest_reminder_auto, review_request_auto, google_review_url, tripadvisor_review_url").eq("id", workspaceId).maybeSingle()).data });
+  const q = useQuery({
+    queryKey: ["guest-auto", workspaceId],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("workspaces")
+          .select(
+            "guest_reminder_auto, review_request_auto, google_review_url, tripadvisor_review_url",
+          )
+          .eq("id", workspaceId)
+          .maybeSingle()
+      ).data,
+  });
   const [g, setG] = useState<string | null>(null);
   const [t, setT] = useState<string | null>(null);
   const google = g ?? q.data?.google_review_url ?? "";
   const trip = t ?? q.data?.tripadvisor_review_url ?? "";
   async function update(reminder: boolean, review: boolean) {
-    const r = await save({ data: { workspaceId, reminder, review, googleUrl: google, tripUrl: trip } }).catch((e) => { toast.error((e as Error).message); return null; });
-    if (r) { toast.success("Saved"); setG(null); setT(null); qc.invalidateQueries({ queryKey: ["guest-auto", workspaceId] }); }
+    const r = await save({
+      data: { workspaceId, reminder, review, googleUrl: google, tripUrl: trip },
+    }).catch((e) => {
+      toast.error((e as Error).message);
+      return null;
+    });
+    if (r) {
+      toast.success("Saved");
+      setG(null);
+      setT(null);
+      qc.invalidateQueries({ queryKey: ["guest-auto", workspaceId] });
+    }
   }
-  const rem = !!q.data?.guest_reminder_auto; const rev = !!q.data?.review_request_auto;
+  const rem = !!q.data?.guest_reminder_auto;
+  const rev = !!q.data?.review_request_auto;
   return (
     <Panel className="mb-4 space-y-3 p-3">
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold">Evening-before reminder</div>
-          <div className="text-xs text-muted-foreground">At 19:00, guests with a confirmed tour tomorrow get a WhatsApp with time, meeting point map pin, guide and ticket.</div>
+          <div className="text-xs text-muted-foreground">
+            At 19:00, guests with a confirmed tour tomorrow get a WhatsApp with time, meeting point
+            map pin, guide and ticket.
+          </div>
         </div>
-        <Switch aria-label="Evening-before reminder" checked={rem} onCheckedChange={(v) => update(v, rev)} />
+        <Switch
+          aria-label="Evening-before reminder"
+          checked={rem}
+          onCheckedChange={(v) => update(v, rev)}
+        />
       </div>
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold">Ask for a review</div>
-          <div className="text-xs text-muted-foreground">2 hours after the tour ends, guests get a thank-you WhatsApp with your review links. Each guest is asked only once.</div>
+          <div className="text-xs text-muted-foreground">
+            2 hours after the tour ends, guests get a thank-you WhatsApp with your review links.
+            Each guest is asked only once.
+          </div>
         </div>
-        <Switch aria-label="Ask for a review" checked={rev} onCheckedChange={(v) => update(rem, v)} />
+        <Switch
+          aria-label="Ask for a review"
+          checked={rev}
+          onCheckedChange={(v) => update(rem, v)}
+        />
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <Input value={google} onChange={(e) => setG(e.target.value)} placeholder="Google review link (https://…)" aria-label="Google review link" />
-        <Input value={trip} onChange={(e) => setT(e.target.value)} placeholder="TripAdvisor review link (https://…)" aria-label="TripAdvisor review link" />
-        <Button size="sm" variant="outline" disabled={g === null && t === null} onClick={() => update(rem, rev)}>Save links</Button>
+        <Input
+          value={google}
+          onChange={(e) => setG(e.target.value)}
+          placeholder="Google review link (https://…)"
+          aria-label="Google review link"
+        />
+        <Input
+          value={trip}
+          onChange={(e) => setT(e.target.value)}
+          placeholder="TripAdvisor review link (https://…)"
+          aria-label="TripAdvisor review link"
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={g === null && t === null}
+          onClick={() => update(rem, rev)}
+        >
+          Save links
+        </Button>
       </div>
-      <p className="text-[11px] text-muted-foreground">WhatsApp only lets free messages reach guests who wrote to you in the last 24 hours; others may not receive it.</p>
+      <p className="text-[11px] text-muted-foreground">
+        WhatsApp only lets free messages reach guests who wrote to you in the last 24 hours; others
+        may not receive it.
+      </p>
     </Panel>
   );
 }

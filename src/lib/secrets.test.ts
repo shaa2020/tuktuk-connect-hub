@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { encrypt, decrypt, hintOf, hmacSha256Hex, safeEqual } from "./secrets.server";
 
-beforeAll(() => { process.env.CREDENTIALS_ENCRYPTION_KEY = "test-key-for-unit-tests-only"; });
+beforeAll(() => {
+  process.env.CREDENTIALS_ENCRYPTION_KEY = "test-key-for-unit-tests-only";
+});
 
 describe("credential storage", () => {
   it("encrypted value does not contain the secret and decrypts back", async () => {

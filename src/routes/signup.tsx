@@ -12,7 +12,12 @@ import { passwordProblems, PUBLIC_SIGNUP_ENABLED } from "@/lib/signup";
 // Self-service registration. Email verification is required before a workspace can be created
 // (enforced again in the create_workspace RPC). Disabled until the owner turns it on.
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Create an account" }, { name: "description", content: "Register your business." }] }),
+  head: () => ({
+    meta: [
+      { title: "Create an account" },
+      { name: "description", content: "Register your business." },
+    ],
+  }),
   component: SignupPage,
 });
 
@@ -32,8 +37,12 @@ function SignupPage() {
       <Shell>
         <Lock className="size-10 text-muted-foreground" />
         <h1 className="mt-3 text-xl font-bold">Registration isn't open yet</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Access is currently by invitation only. Ask your business admin for an invite link.</p>
-        <Button asChild variant="outline" className="mt-6 w-full"><Link to="/auth">Back to sign in</Link></Button>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Access is currently by invitation only. Ask your business admin for an invite link.
+        </p>
+        <Button asChild variant="outline" className="mt-6 w-full">
+          <Link to="/auth">Back to sign in</Link>
+        </Button>
       </Shell>
     );
   }
@@ -51,7 +60,10 @@ function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email: em.data,
       password,
-      options: { data: { full_name: name.trim().slice(0, 120) }, emailRedirectTo: `${window.location.origin}/onboarding` },
+      options: {
+        data: { full_name: name.trim().slice(0, 120) },
+        emailRedirectTo: `${window.location.origin}/onboarding`,
+      },
     });
     setBusy(false);
     // Same message whether or not the address already exists (no account enumeration).
@@ -64,7 +76,9 @@ function SignupPage() {
       <Shell>
         <MailCheck className="size-10 text-teal" />
         <h1 className="mt-3 text-xl font-bold">Confirm your email</h1>
-        <p className="mt-2 text-sm text-muted-foreground">We sent a confirmation link to {email}. Open it on this device to set up your business.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We sent a confirmation link to {email}. Open it on this device to set up your business.
+        </p>
       </Shell>
     );
   }
@@ -76,25 +90,63 @@ function SignupPage() {
       <form onSubmit={submit} className="mt-6 space-y-4 text-left" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="su-name">Your name</Label>
-          <Input id="su-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={120} />
+          <Input
+            id="su-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
+            maxLength={120}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="su-email">Work email</Label>
-          <Input id="su-email" type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          <Input
+            id="su-email"
+            type="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="su-pw">Password</Label>
-          <Input id="su-pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" aria-describedby="su-pw-hint" />
-          <p id="su-pw-hint" className="text-xs text-muted-foreground">10+ characters with upper and lower case, a number and a symbol.</p>
+          <Input
+            id="su-pw"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            aria-describedby="su-pw-hint"
+          />
+          <p id="su-pw-hint" className="text-xs text-muted-foreground">
+            10+ characters with upper and lower case, a number and a symbol.
+          </p>
         </div>
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" className="mt-1" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+          />
           <span>I agree to the terms of service and privacy policy.</span>
         </label>
-        {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">{error}</p>}
-        <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy && <Loader2 className="animate-spin" />} Create account</Button>
+        {error && (
+          <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        <Button type="submit" size="lg" className="w-full" disabled={busy}>
+          {busy && <Loader2 className="animate-spin" />} Create account
+        </Button>
       </form>
-      <p className="mt-6 text-sm text-muted-foreground">Already have an account? <Link to="/auth" className="font-medium text-primary hover:underline">Sign in</Link></p>
+      <p className="mt-6 text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link to="/auth" className="font-medium text-primary hover:underline">
+          Sign in
+        </Link>
+      </p>
     </Shell>
   );
 }
@@ -103,7 +155,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="flex w-full max-w-sm flex-col items-center text-center">
-        <div className="mb-8 self-start"><BrandLockup /></div>
+        <div className="mb-8 self-start">
+          <BrandLockup />
+        </div>
         {children}
       </div>
     </div>

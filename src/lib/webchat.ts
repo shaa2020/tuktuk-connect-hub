@@ -15,7 +15,10 @@ export const VisitorMessage = z.object({
 
 export function newWidgetKey(): string {
   const abc = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  return "wk_" + Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => abc[b % abc.length]).join("");
+  return (
+    "wk_" +
+    Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => abc[b % abc.length]).join("")
+  );
 }
 
 /** CORS: if the business listed allowed website origins, only those may embed the widget. */
@@ -27,9 +30,20 @@ export function allowedOrigin(origin: string | null, allowed: string[] | undefin
 }
 
 export function normaliseOrigins(raw: string): string[] {
-  return raw.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean).map((s) => {
-    try { const u = new URL(s.includes("://") ? s : `https://${s}`); return u.origin; } catch { return ""; }
-  }).filter((s) => s.startsWith("https://") || s.startsWith("http://localhost")).slice(0, 20);
+  return raw
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      try {
+        const u = new URL(s.includes("://") ? s : `https://${s}`);
+        return u.origin;
+      } catch {
+        return "";
+      }
+    })
+    .filter((s) => s.startsWith("https://") || s.startsWith("http://localhost"))
+    .slice(0, 20);
 }
 
 export function embedSnippet(appOrigin: string, key: string) {

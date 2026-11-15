@@ -12,6 +12,14 @@ describe("AI key auto-setup", () => {
     expect(detectProvider("xyz")).toBeNull();
   });
   it("picks newest stable Gemini flash model", () => {
-    expect(pickModel("gemini", ["models/gemini-2.5-flash", "models/gemini-3.0-flash", "models/gemini-3.0-flash-lite", "models/gemini-3.1-flash-preview", "models/gemini-2.5-pro"])).toBe("gemini-3.0-flash");
+    expect(
+      pickModel("gemini", [
+        "models/gemini-2.5-flash",
+        "models/gemini-3.0-flash",
+        "models/gemini-3.0-flash-lite",
+        "models/gemini-3.1-flash-preview",
+        "models/gemini-2.5-pro",
+      ]),
+    ).toBe("gemini-3.0-flash");
   });
 });

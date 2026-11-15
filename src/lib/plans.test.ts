@@ -3,7 +3,9 @@ import { formatLimit, friendlyError, parsePlanLimitError, usageLevel, usageRatio
 
 describe("plan helpers", () => {
   it("parses database plan-limit errors into friendly text", () => {
-    const r = parsePlanLimitError("PLAN_LIMIT:members: your plan allows 2 (currently 2). Upgrade your plan to add more.");
+    const r = parsePlanLimitError(
+      "PLAN_LIMIT:members: your plan allows 2 (currently 2). Upgrade your plan to add more.",
+    );
     expect(r?.metric).toBe("members");
     expect(r?.text).toContain("Team members (2)");
   });

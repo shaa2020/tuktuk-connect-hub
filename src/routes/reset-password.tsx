@@ -55,24 +55,48 @@ function ResetPassword() {
   return (
     <div className="flex min-h-screen items-center justify-center px-5">
       <div className="w-full max-w-sm">
-        <div className="mb-8"><BrandLockup /></div>
+        <div className="mb-8">
+          <BrandLockup />
+        </div>
         <h1 className="text-2xl font-bold">Set a new password</h1>
         {!ready ? (
           <p className="mt-3 text-sm text-muted-foreground">
-            Open this page from the reset link in your email. If the link expired, request a new one from the sign-in page.
+            Open this page from the reset link in your email. If the link expired, request a new one
+            from the sign-in page.
           </p>
         ) : (
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="pw">New password</Label>
-              <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
+              <Input
+                id="pw"
+                type="password"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                autoComplete="new-password"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pw2">Confirm password</Label>
-              <Input id="pw2" type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" />
+              <Input
+                id="pw2"
+                type="password"
+                value={pw2}
+                onChange={(e) => setPw2(e.target.value)}
+                autoComplete="new-password"
+              />
             </div>
-            {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">{error}</p>}
-            <Button className="w-full" size="lg" disabled={busy}>Update password</Button>
+            {error && (
+              <p
+                role="alert"
+                className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive"
+              >
+                {error}
+              </p>
+            )}
+            <Button className="w-full" size="lg" disabled={busy}>
+              Update password
+            </Button>
           </form>
         )}
       </div>

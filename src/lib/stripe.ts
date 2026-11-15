@@ -4,7 +4,13 @@
 const enc = new TextEncoder();
 
 async function hmacHex(secret: string, payload: string) {
-  const k = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const k = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(payload)));
   return Array.from(sig, (b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -16,7 +22,13 @@ function timingSafe(a: string, b: string) {
 }
 
 /** Verifies a Stripe-Signature header (t=…,v1=…) per Stripe's scheme, with replay tolerance. */
-export async function verifyStripeSignature(payload: string, header: string | null, secret: string, toleranceSec = 300, nowSec = Math.floor(Date.now() / 1000)): Promise<boolean> {
+export async function verifyStripeSignature(
+  payload: string,
+  header: string | null,
+  secret: string,
+  toleranceSec = 300,
+  nowSec = Math.floor(Date.now() / 1000),
+): Promise<boolean> {
   if (!header || !secret) return false;
   const parts = header.split(",").map((p) => p.split("=") as [string, string]);
   const t = Number(parts.find(([k]) => k === "t")?.[1]);
@@ -26,9 +38,16 @@ export async function verifyStripeSignature(payload: string, header: string | nu
   return sigs.some((s) => timingSafe(s, expected));
 }
 
-export type PriceMap = { key: string; stripe_price_monthly: string | null; stripe_price_annual: string | null }[];
+export type PriceMap = {
+  key: string;
+  stripe_price_monthly: string | null;
+  stripe_price_annual: string | null;
+}[];
 
-export function planForPrice(priceId: string | undefined, plans: PriceMap): { plan: string; interval: "month" | "year" } | null {
+export function planForPrice(
+  priceId: string | undefined,
+  plans: PriceMap,
+): { plan: string; interval: "month" | "year" } | null {
   if (!priceId) return null;
   for (const p of plans) {
     if (p.stripe_price_monthly === priceId) return { plan: p.key, interval: "month" };
@@ -48,7 +67,11 @@ const iso = (s: unknown) => (typeof s === "number" ? new Date(s * 1000).toISOStr
 export function subscriptionEffect(sub: any, plans: PriceMap) {
   const item = sub?.items?.data?.[0];
   const mapped = planForPrice(item?.price?.id, plans);
-  const status = STATUS.has(sub?.status) ? sub.status : sub?.status === "unpaid" || sub?.status === "incomplete_expired" ? "canceled" : "incomplete";
+  const status = STATUS.has(sub?.status)
+    ? sub.status
+    : sub?.status === "unpaid" || sub?.status === "incomplete_expired"
+      ? "canceled"
+      : "incomplete";
   const paidAccess = ["active", "trialing", "past_due"].includes(status);
   return {
     workspaceId: (sub?.metadata?.workspace_id as string | undefined) ?? null,

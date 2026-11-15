@@ -10,7 +10,10 @@ import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/brand";
 import { PUBLIC_SIGNUP_ENABLED } from "@/lib/signup";
 
-const search = z.object({ redirect: z.string().optional(), mode: z.enum(["signin", "forgot"]).optional() });
+const search = z.object({
+  redirect: z.string().optional(),
+  mode: z.enum(["signin", "forgot"]).optional(),
+});
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
@@ -80,16 +83,23 @@ function AuthPage() {
       <div className="hidden flex-col justify-between bg-navy p-10 lg:flex">
         <BrandLockup light />
         <div>
-          <h2 className="font-display text-3xl font-bold text-navy-foreground">Every guest conversation, one calm workspace.</h2>
+          <h2 className="font-display text-3xl font-bold text-navy-foreground">
+            Every guest conversation, one calm workspace.
+          </h2>
           <p className="mt-3 max-w-md text-sm text-sidebar-foreground">
-            Reply faster, keep leads moving and never lose track of a booking, from your phone or your desk.
+            Reply faster, keep leads moving and never lose track of a booking, from your phone or
+            your desk.
           </p>
         </div>
-        <p className="text-xs text-sidebar-foreground">Secure team access · two-step sign-in required</p>
+        <p className="text-xs text-sidebar-foreground">
+          Secure team access · two-step sign-in required
+        </p>
       </div>
       <div className="flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden"><BrandLockup /></div>
+          <div className="mb-8 lg:hidden">
+            <BrandLockup />
+          </div>
           {sent ? (
             <div className="text-center">
               <MailCheck className="mx-auto size-10 text-teal" />
@@ -97,33 +107,68 @@ function AuthPage() {
               <p className="mt-2 text-sm text-muted-foreground">
                 If an account exists for {email}, a password reset link is on its way.
               </p>
-              <Button variant="outline" className="mt-6 w-full" onClick={() => { setSent(false); setMode("signin"); }}>
+              <Button
+                variant="outline"
+                className="mt-6 w-full"
+                onClick={() => {
+                  setSent(false);
+                  setMode("signin");
+                }}
+              >
                 Back to sign in
               </Button>
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold">{mode === "signin" ? "Sign in" : "Reset password"}</h1>
+              <h1 className="text-2xl font-bold">
+                {mode === "signin" ? "Sign in" : "Reset password"}
+              </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {mode === "forgot" ? "We'll email you a secure link." : "Welcome back to your team workspace."}
+                {mode === "forgot"
+                  ? "We'll email you a secure link."
+                  : "Welcome back to your team workspace."}
               </p>
               <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
                 <div className="space-y-1.5">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                  <Input
+                    id="email"
+                    type="email"
+                    inputMode="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
                 </div>
                 {mode === "signin" && (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">Password</Label>
-                      <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setMode("forgot")}>
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-primary hover:underline"
+                        onClick={() => setMode("forgot")}
+                      >
                         Forgot password?
                       </button>
                     </div>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
+                    />
                   </div>
                 )}
-                {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">{error}</p>}
+                {error && (
+                  <p
+                    role="alert"
+                    className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive"
+                  >
+                    {error}
+                  </p>
+                )}
                 <Button type="submit" className="w-full" size="lg" disabled={busy}>
                   {busy && <Loader2 className="animate-spin" />}
                   {mode === "signin" ? "Sign in" : "Send reset link"}
@@ -131,9 +176,19 @@ function AuthPage() {
               </form>
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 {mode === "forgot" ? (
-                  <button className="font-medium text-primary hover:underline" onClick={() => setMode("signin")}>Back to sign in</button>
+                  <button
+                    className="font-medium text-primary hover:underline"
+                    onClick={() => setMode("signin")}
+                  >
+                    Back to sign in
+                  </button>
                 ) : PUBLIC_SIGNUP_ENABLED ? (
-                  <>New here? <a href="/signup" className="font-medium text-primary hover:underline">Create a business account</a></>
+                  <>
+                    New here?{" "}
+                    <a href="/signup" className="font-medium text-primary hover:underline">
+                      Create a business account
+                    </a>
+                  </>
                 ) : (
                   "Access is by invitation only. Ask your admin for an invite link."
                 )}

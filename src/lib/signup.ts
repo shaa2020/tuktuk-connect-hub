@@ -26,17 +26,33 @@ export const LANGUAGES = [
   { value: "it", label: "Italiano" },
 ] as const;
 
-const FALLBACK_TIMEZONES = ["Europe/Lisbon", "Europe/London", "Europe/Madrid", "Europe/Paris", "Europe/Berlin", "Europe/Rome", "America/New_York", "America/Sao_Paulo", "UTC"];
+const FALLBACK_TIMEZONES = [
+  "Europe/Lisbon",
+  "Europe/London",
+  "Europe/Madrid",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Rome",
+  "America/New_York",
+  "America/Sao_Paulo",
+  "UTC",
+];
 export function timeZones(): string[] {
   try {
-    const list = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.("timeZone");
+    const list = (
+      Intl as unknown as { supportedValuesOf?: (k: string) => string[] }
+    ).supportedValuesOf?.("timeZone");
     return list?.length ? list : FALLBACK_TIMEZONES;
   } catch {
     return FALLBACK_TIMEZONES;
   }
 }
 export function browserTimeZone(): string {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Lisbon"; } catch { return "Europe/Lisbon"; }
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Lisbon";
+  } catch {
+    return "Europe/Lisbon";
+  }
 }
 
 /** Mirrors the Supabase password policy configured for this project (lower, upper, digit, symbol). */

@@ -7,8 +7,12 @@ export const runOperatorNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ workspaceId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: ok } = await context.supabase.rpc("has_ws_role", { _ws: data.workspaceId, _roles: ["admin", "manager"] });
-    if (!ok) return { ok: false as const, error: "Only admins and managers can run the AI Operator." };
+    const { data: ok } = await context.supabase.rpc("has_ws_role", {
+      _ws: data.workspaceId,
+      _roles: ["admin", "manager"],
+    });
+    if (!ok)
+      return { ok: false as const, error: "Only admins and managers can run the AI Operator." };
     const { runOperatorFor } = await import("./ai-operator.server");
     try {
       const r = await runOperatorFor(data.workspaceId, { force: true });

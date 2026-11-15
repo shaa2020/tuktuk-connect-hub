@@ -6,7 +6,13 @@ describe("guest messages", () => {
     expect(pickupPin("Hard Rock Cafe")?.url).toContain(encodeURIComponent("Av. da Liberdade 2"));
   });
   it("reminder includes tour time and map link", () => {
-    const m = reminderMessage({ guest_name: "Anna Smith", tour_name: "Old Town", tour_date: "2026-11-01", start_time: "10:30:00", pickup_location: "Fado Museum" });
+    const m = reminderMessage({
+      guest_name: "Anna Smith",
+      tour_name: "Old Town",
+      tour_date: "2026-11-01",
+      start_time: "10:30:00",
+      pickup_location: "Fado Museum",
+    });
     expect(m).toContain("Hello Anna");
     expect(m).toContain("Time: 10:30");
     expect(m).toContain("maps.google.com");

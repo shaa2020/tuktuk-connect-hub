@@ -11,11 +11,37 @@ export function isBotToken(t: string) {
 export function parseUpdate(u: any): TgInbound | null {
   const m = u?.message ?? u?.edited_message;
   if (!m || m.chat?.type !== "private" || m.from?.is_bot) return null;
-  const name = [m.from?.first_name, m.from?.last_name].filter(Boolean).join(" ") || m.from?.username || `Telegram ${m.chat.id}`;
-  const kind = m.photo ? "photo" : m.voice ? "voice message" : m.video ? "video" : m.document ? "file" : m.sticker ? "sticker" : m.location ? "location" : null;
-  const text = m.text ?? (kind ? `[${kind} received${m.caption ? `: ${m.caption}` : ""} — open Telegram to view]` : m.caption ?? "");
+  const name =
+    [m.from?.first_name, m.from?.last_name].filter(Boolean).join(" ") ||
+    m.from?.username ||
+    `Telegram ${m.chat.id}`;
+  const kind = m.photo
+    ? "photo"
+    : m.voice
+      ? "voice message"
+      : m.video
+        ? "video"
+        : m.document
+          ? "file"
+          : m.sticker
+            ? "sticker"
+            : m.location
+              ? "location"
+              : null;
+  const text =
+    m.text ??
+    (kind
+      ? `[${kind} received${m.caption ? `: ${m.caption}` : ""} — open Telegram to view]`
+      : (m.caption ?? ""));
   if (!text) return null;
-  return { chatId: String(m.chat.id), name: String(name).slice(0, 200), text: String(text).slice(0, 10000), messageId: `tg:${m.chat.id}:${m.message_id}${u.edited_message ? ":e" : ""}`, at: new Date((m.date ?? Date.now() / 1000) * 1000) };
+  return {
+    chatId: String(m.chat.id),
+    name: String(name).slice(0, 200),
+    text: String(text).slice(0, 10000),
+    messageId: `tg:${m.chat.id}:${m.message_id}${u.edited_message ? ":e" : ""}`,
+    at: new Date((m.date ?? Date.now() / 1000) * 1000),
+  };
 }
 
-export const telegramWebhookPath = (connectionId: string) => `/api/public/webhooks/telegram/${connectionId}`;
+export const telegramWebhookPath = (connectionId: string) =>
+  `/api/public/webhooks/telegram/${connectionId}`;

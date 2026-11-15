@@ -10,7 +10,11 @@ export function generateCodes(n = 10): string[] {
 }
 
 export function normalizeCode(code: string): string {
-  return code.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/O/g, "0").replace(/I/g, "1");
+  return code
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .replace(/O/g, "0")
+    .replace(/I/g, "1");
 }
 
 export function looksLikeCode(code: string): boolean {
@@ -18,6 +22,9 @@ export function looksLikeCode(code: string): boolean {
 }
 
 export async function hashCode(userId: string, code: string): Promise<string> {
-  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`tt-mfa-recovery:${userId}:${normalizeCode(code)}`));
+  const d = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`tt-mfa-recovery:${userId}:${normalizeCode(code)}`),
+  );
   return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, "0")).join("");
 }

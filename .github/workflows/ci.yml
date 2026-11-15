@@ -37,6 +37,5 @@ jobs:
         run: npm run build
       - name: Dependency audit (high+ only, report)
         run: npm audit --omit=dev --audit-level=high || echo "::warning::npm audit reported issues"
-      # Lint is not enforced yet: ~4,900 pre-existing Prettier errors (roadmap 1.10).
-      - name: Lint (informational)
-        run: npm run lint || echo "::warning::lint has pre-existing errors (roadmap 1.10)"
+      - name: Lint
+        run: npm run lint

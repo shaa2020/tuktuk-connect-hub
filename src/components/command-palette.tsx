@@ -2,13 +2,26 @@ import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Home } from "lucide-react";
 import {
-  CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 
 type Item = { to: string; label: string; icon: typeof Home; group: string };
 
-export function CommandPalette({ open, onOpenChange, items, groups }: {
-  open: boolean; onOpenChange: (v: boolean) => void; items: Item[]; groups: string[];
+export function CommandPalette({
+  open,
+  onOpenChange,
+  items,
+  groups,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  items: Item[];
+  groups: string[];
 }) {
   const navigate = useNavigate();
   useEffect(() => {
@@ -33,7 +46,14 @@ export function CommandPalette({ open, onOpenChange, items, groups }: {
           return (
             <CommandGroup key={g} heading={g}>
               {gi.map((i) => (
-                <CommandItem key={i.to} value={i.label} onSelect={() => { onOpenChange(false); navigate({ to: i.to }); }}>
+                <CommandItem
+                  key={i.to}
+                  value={i.label}
+                  onSelect={() => {
+                    onOpenChange(false);
+                    navigate({ to: i.to });
+                  }}
+                >
                   <i.icon className="mr-2 size-4" />
                   {i.label}
                 </CommandItem>

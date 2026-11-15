@@ -7,8 +7,19 @@ export type OperatorDecision = {
   urgent: boolean;
   alert: string;
   booking: {
-    ready: boolean; date: string; time: string; guests: number; tour: string; pickup: string; name: string;
-    children: string; dropoff: string; contact: string; language: string; special: string; duration: number;
+    ready: boolean;
+    date: string;
+    time: string;
+    guests: number;
+    tour: string;
+    pickup: string;
+    name: string;
+    children: string;
+    dropoff: string;
+    contact: string;
+    language: string;
+    special: string;
+    duration: number;
   } | null;
 };
 
@@ -23,7 +34,11 @@ export function normalizeTime(raw: string): string {
   let h = Number(m[1]);
   const min = Number(m[2] ?? 0);
   const ap = m[3]?.toLowerCase().replace(/\./g, "");
-  if (ap) { if (h < 1 || h > 12) return ""; if (ap === "pm" && h !== 12) h += 12; if (ap === "am" && h === 12) h = 0; }
+  if (ap) {
+    if (h < 1 || h > 12) return "";
+    if (ap === "pm" && h !== 12) h += 12;
+    if (ap === "am" && h === 12) h = 0;
+  }
   if (h > 23 || min > 59) return "";
   return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
@@ -35,23 +50,55 @@ export function withinTourHours(time: string): boolean {
 
 /** Parse the model's JSON answer defensively; anything malformed becomes a safe hand-off. */
 export function parseDecision(raw: string): OperatorDecision {
-  const safe: OperatorDecision = { action: "handoff", reply: "", tags: [], urgent: false, alert: PARSE_FAIL_ALERT, booking: null };
+  const safe: OperatorDecision = {
+    action: "handoff",
+    reply: "",
+    tags: [],
+    urgent: false,
+    alert: PARSE_FAIL_ALERT,
+    booking: null,
+  };
   const m = /\{[\s\S]*\}/.exec(raw);
   if (!m) return safe;
   let j: any;
-  try { j = JSON.parse(m[0]); } catch { return safe; }
+  try {
+    j = JSON.parse(m[0]);
+  } catch {
+    return safe;
+  }
   const action = ["reply", "handoff", "none"].includes(j?.action) ? j.action : "handoff";
   const reply = typeof j?.reply === "string" ? j.reply.trim().slice(0, 1500) : "";
-  const tags = Array.isArray(j?.tags) ? j.tags.filter((t: unknown) => typeof t === "string" && t.trim()).map((t: string) => t.trim().slice(0, 30)).slice(0, 4) : [];
+  const tags = Array.isArray(j?.tags)
+    ? j.tags
+        .filter((t: unknown) => typeof t === "string" && t.trim())
+        .map((t: string) => t.trim().slice(0, 30))
+        .slice(0, 4)
+    : [];
   const b = j?.booking;
   const guests = Number(b?.guests);
-  const s = (v: unknown, n: number) => String(v ?? "").trim().slice(0, n);
+  const s = (v: unknown, n: number) =>
+    String(v ?? "")
+      .trim()
+      .slice(0, n);
   const dur = Number(b?.duration);
-  const booking = b && DATE.test(String(b.date)) && Number.isInteger(guests) && guests >= 1 && guests <= 60
-    ? { ready: b.ready === true, date: String(b.date), time: normalizeTime(String(b.time ?? "")), guests, tour: s(b.tour, 120), pickup: s(b.pickup, 200), name: s(b.name, 120),
-        children: s(b.children, 120), dropoff: s(b.dropoff, 200), contact: s(b.contact, 120), language: s(b.language, 40), special: s(b.special, 300),
-        duration: Number.isInteger(dur) && dur >= 0 && dur <= 1440 ? dur : 0 }
-    : null;
+  const booking =
+    b && DATE.test(String(b.date)) && Number.isInteger(guests) && guests >= 1 && guests <= 60
+      ? {
+          ready: b.ready === true,
+          date: String(b.date),
+          time: normalizeTime(String(b.time ?? "")),
+          guests,
+          tour: s(b.tour, 120),
+          pickup: s(b.pickup, 200),
+          name: s(b.name, 120),
+          children: s(b.children, 120),
+          dropoff: s(b.dropoff, 200),
+          contact: s(b.contact, 120),
+          language: s(b.language, 40),
+          special: s(b.special, 300),
+          duration: Number.isInteger(dur) && dur >= 0 && dur <= 1440 ? dur : 0,
+        }
+      : null;
   return {
     action: action === "reply" && !reply ? "handoff" : action,
     reply,

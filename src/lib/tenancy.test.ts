@@ -49,10 +49,14 @@ describe("assertPlatformConnectors", () => {
 });
 
 describe("operator-owned integrations never act for another tenant", () => {
-  beforeEach(() => { lookup = { data: { platform_connectors: false, suspended_at: null }, error: null }; });
+  beforeEach(() => {
+    lookup = { data: { platform_connectors: false, suspended_at: null }, error: null };
+  });
   it("WhatsApp connector send is refused before any network call", async () => {
     const { sendWhatsAppConnector } = await import("./channels.server");
-    await expect(sendWhatsAppConnector(WS, "351900000000", "hi")).rejects.toThrow(/isn't available/);
+    await expect(sendWhatsAppConnector(WS, "351900000000", "hi")).rejects.toThrow(
+      /isn't available/,
+    );
     expect(fetchSpy).not.toHaveBeenCalled();
   });
   it("website API is refused before any network call", async () => {
