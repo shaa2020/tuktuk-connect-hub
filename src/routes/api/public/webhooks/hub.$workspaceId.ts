@@ -20,6 +20,8 @@ export const Route = createFileRoute("/api/public/webhooks/hub/$workspaceId")({
       POST: async ({ request, params }) => {
         const ws = params.workspaceId;
         if (!UUID.test(ws)) return new Response("Not found", { status: 404 });
+        const { rateLimit, clientIp, tooMany } = await import("@/lib/rate-limit.server");
+        if (!(await rateLimit(`hub:${ws}`, 600, 60)) || !(await rateLimit(`hub-ip:${clientIp(request)}`, 1200, 60))) return tooMany();
         const { getSecret, safeEqual } = await import("@/lib/secrets.server");
         const key = await getSecret(ws, "hub_key");
         const got = request.headers.get("x-tt24-key") ?? "";

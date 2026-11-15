@@ -6,6 +6,7 @@ import { MessageSquare, Clock, Target, CalendarCheck, AlertTriangle, CheckSquare
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { PageContainer } from "@/components/app-shell";
+import { SetupChecklist } from "@/components/setup-checklist";
 import { ErrorState, PageHeader, Panel } from "@/components/states";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NativeSelect, ToneBadge, fmtRelative } from "@/components/kit";
@@ -90,6 +91,7 @@ function Dashboard() {
   return (
     <PageContainer>
       <PageHeader title={`${greeting}, ${ws.fullName.split(" ")[0]}`} description={new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })} />
+      <SetupChecklist />
 
       {/* Today command center */}
       <div className="mb-5 grid min-w-0 gap-3 lg:grid-cols-3">

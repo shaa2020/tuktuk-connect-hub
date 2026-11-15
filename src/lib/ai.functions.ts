@@ -3,23 +3,31 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const BASE = `You help the team of TukTuk24 (Tuk Tuk 24 Lisbon) draft replies to guests. A team member reviews every draft before sending.
+// The TukTuk24 playbook is that business's own content, so it is only used for the operator's
+// workspace. Every other business gets a neutral prompt built from its own name + knowledge base.
+function baseFor(name: string, operator: boolean) {
+  if (operator) return `You help the team of TukTuk24 (Tuk Tuk 24 Lisbon) draft replies to guests. A team member reviews every draft before sending.
 ${TT24_PLAYBOOK}
 If a fact is missing from the business knowledge, write a placeholder like [confirm price] for the team to fill in.`;
+  return `You help the team of ${name || "this business"} draft replies to customers. A team member reviews every draft before sending.
+Be friendly, concise and accurate. Only state facts found in the business instructions or knowledge below.
+If a fact is missing, write a placeholder like [confirm price] for the team to fill in.`;
+}
 
 async function loadContext(supabase: any, workspaceId: string) {
-  const [s, kb] = await Promise.all([
+  const [s, kb, w] = await Promise.all([
     supabase.from("ai_settings").select("instructions, enabled, provider, model, base_url").eq("workspace_id", workspaceId).maybeSingle(),
     supabase.from("knowledge_documents").select("title, category, content").eq("workspace_id", workspaceId).order("updated_at", { ascending: false }).limit(40),
+    supabase.from("workspaces").select("name, platform_connectors").eq("id", workspaceId).maybeSingle(),
   ]);
   const kbText = (kb.data ?? [])
     .map((d: { title: string; category: string; content: string | null }) => `## ${d.title} (${d.category})\n${d.content ?? ""}`)
     .join("\n\n").slice(0, 30000);
-  return { settings: { provider: (s.data?.provider ?? "lovable") as any, model: s.data?.model ?? null, base_url: s.data?.base_url ?? null }, enabled: s.data?.enabled ?? false, instructions: s.data?.instructions ?? "", kbText };
+  return { settings: { provider: (s.data?.provider ?? "lovable") as any, model: s.data?.model ?? null, base_url: s.data?.base_url ?? null }, enabled: s.data?.enabled ?? false, instructions: s.data?.instructions ?? "", kbText, name: (w.data?.name as string) ?? "", operator: w.data?.platform_connectors === true };
 }
 
-function instructionsFor(ctx: { instructions: string; kbText: string }) {
-  return `${BASE}\n\nBusiness instructions from the owner:\n${ctx.instructions || "(none)"}\n\nBusiness knowledge:\n${ctx.kbText || "(no knowledge documents yet)"}`;
+function instructionsFor(ctx: { instructions: string; kbText: string; name: string; operator: boolean }) {
+  return `${baseFor(ctx.name, ctx.operator)}\n\nBusiness instructions from the owner:\n${ctx.instructions || "(none)"}\n\nBusiness knowledge:\n${ctx.kbText || "(no knowledge documents yet)"}`;
 }
 
 export const aiAssist = createServerFn({ method: "POST" })
@@ -60,7 +68,7 @@ export const aiAssist = createServerFn({ method: "POST" })
       input = `Translate the team's reply into ${target}. Keep the tone, names, prices and placeholders unchanged. Output only the translated reply.\n\nReply:\n${data.text}\n\nGuest's recent messages (for language detection only):\n${transcript.split("\n").filter((l) => l.startsWith("Guest:")).slice(-5).join("\n") || "(none)"}`;
     }
     try {
-      const instructions = data.task === "translate" ? "You are a professional translator for Tuk Tuk 24 Lisbon, a tour company. Translate accurately and naturally." : instructionsFor(ctx);
+      const instructions = data.task === "translate" ? `You are a professional translator for ${ctx.name || "a business"}. Translate accurately and naturally.` : instructionsFor(ctx);
       const text = await generate(conv.workspace_id, ctx.settings, { instructions, input });
       return { ok: true as const, text };
     } catch (e) {
@@ -76,8 +84,8 @@ export const aiAsk = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { AiError } = await import("./ai-gateway.server");
     const { generate } = await import("./ai-provider.server");
-    const { data: ws } = await context.supabase.from("workspaces").select("id").eq("id", data.workspaceId).maybeSingle();
-    if (!ws) return { ok: false as const, error: "Workspace not accessible." };
+    const { data: member } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
+    if (member !== true) return { ok: false as const, error: "Workspace not accessible." };
     const ctx = await loadContext(context.supabase, data.workspaceId);
     if (!ctx.enabled) return { ok: false as const, error: "AI assistance is turned off. An admin can enable it above." };
     try {

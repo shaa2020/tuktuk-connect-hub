@@ -4,9 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Home, Inbox, Users, Target, CalendarCheck, CheckSquare, Workflow, Sparkles, BarChart3,
   UsersRound, Truck, Plug, BookOpen, Bell, Settings, ScrollText, MoreHorizontal, LogOut, PanelLeftClose, PanelLeft,
-  CalendarClock, ShieldCheck, Search, Wallet,
+  CalendarClock, ShieldCheck, Search, Wallet, Gauge,
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
+import { WorkspaceList } from "@/components/workspace-switcher";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -40,6 +41,7 @@ export const NAV: NavItem[] = [
   { to: "/team", label: "Team", icon: UsersRound, group: "Admin" },
   { to: "/integrations", label: "Integrations", icon: Plug, group: "Admin" },
   { to: "/settings", label: "Settings", icon: Settings, group: "Admin" },
+  { to: "/billing", label: "Plan & usage", icon: Gauge, audit: true, group: "Admin" },
   { to: "/audit", label: "Audit Log", icon: ScrollText, audit: true, group: "Admin" },
   { to: "/platform", label: "Platform", icon: ShieldCheck, platform: true, group: "Admin" },
 ];
@@ -130,7 +132,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [ws.userId]);
 
   const inThread = loc.pathname === "/inbox" && !!(loc.search as { c?: string }).c;
-  const pageTitle = NAV.find((n) => isActive(n.to))?.label ?? "TeamInbox";
+  const pageTitle = NAV.find((n) => isActive(n.to))?.label ?? ws.workspaceName;
 
   return (
     <div className="flex min-h-dvh w-full">
@@ -220,6 +222,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="truncate text-xs text-muted-foreground">{ROLE_LABEL[ws.role]} · {ws.workspaceName}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuLabel className="pb-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Business</DropdownMenuLabel>
+              <WorkspaceList className="px-1 pb-1" />
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild><Link to="/settings"><Settings className="mr-2 size-4" />Settings</Link></DropdownMenuItem>
               <DropdownMenuItem asChild><Link to="/team"><UsersRound className="mr-2 size-4" />Team</Link></DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -284,6 +289,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
           </SheetHeader>
+          <div className="mt-4">
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Business</div>
+            <WorkspaceList onPicked={() => setMoreOpen(false)} className="rounded-2xl border p-1" />
+          </div>
           {GROUPS.map((g) => {
             const groupItems = items.filter((n) => n.group === g && !MOBILE_MAIN.includes(n.to));
             if (!groupItems.length) return null;

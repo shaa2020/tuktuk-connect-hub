@@ -6,7 +6,9 @@ export type WebsiteTour = {
   currency: string; pricing_type: string; tagline?: string; description?: string; highlights?: string[];
 };
 
-export async function websiteGet<T>(path: string): Promise<T> {
+// The website belongs to the platform operator: only its workspace may call it (tenancy guard).
+export async function websiteGet<T>(ws: string, path: string): Promise<T> {
+  await (await import("./tenancy.server")).assertPlatformConnectors(ws);
   const key = process.env.WEBSITE_API_KEY;
   if (!key) throw new Error("Website key is not configured.");
   const res = await fetch(`${WEBSITE_BASE}${path}`, { headers: { Authorization: `Bearer ${key}`, Accept: "application/json" } });
@@ -15,7 +17,8 @@ export async function websiteGet<T>(path: string): Promise<T> {
   return json.data as T;
 }
 
-export async function websitePost<T>(path: string, body: unknown): Promise<T> {
+export async function websitePost<T>(ws: string, path: string, body: unknown): Promise<T> {
+  await (await import("./tenancy.server")).assertPlatformConnectors(ws);
   const key = process.env.WEBSITE_API_KEY;
   if (!key) throw new Error("Website key is not configured.");
   const res = await fetch(`${WEBSITE_BASE}${path}`, {

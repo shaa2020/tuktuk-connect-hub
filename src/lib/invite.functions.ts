@@ -15,6 +15,10 @@ export const redeemInvitation = createServerFn({ method: "POST" })
     return { token: d.token };
   })
   .handler(async ({ data }) => {
+    const { rateLimit, clientIp } = await import("./rate-limit.server");
+    if (!(await rateLimit(`invite:${clientIp()}`, 10, 600, { failClosed: true }))) {
+      throw new Error("Too many attempts. Please wait a few minutes and try again.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: inv } = await supabaseAdmin

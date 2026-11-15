@@ -24,8 +24,10 @@ export async function testMeta(channel: MetaChannel, config: Record<string, stri
 /** Secret kind for one connection's token; older single-account tokens use the plain kind. */
 export const tokenKind = (channel: MetaChannel, connectionId?: string | null) => connectionId ? `${TOKEN_KIND[channel]}:${connectionId}` : TOKEN_KIND[channel];
 
-/** WhatsApp via the built-in Lovable connector (no Meta token stored by us). */
-export async function sendWhatsAppConnector(to: string, body: string) {
+/** WhatsApp via the built-in Lovable connector (no Meta token stored by us).
+ *  The connector is the platform operator's own number: only its workspace may use it. */
+export async function sendWhatsAppConnector(ws: string, to: string, body: string) {
+  await (await import("./tenancy.server")).assertPlatformConnectors(ws);
   const lk = process.env.LOVABLE_API_KEY, wk = process.env.WHATSAPP_API_KEY;
   if (!lk || !wk) throw new Error("WhatsApp connection is not configured on the server.");
   const res = await fetch("https://connector-gateway.lovable.dev/whatsapp/messages", {
@@ -43,7 +45,7 @@ export async function sendWhatsAppConnector(to: string, body: string) {
 }
 
 export async function sendMeta(ws: string, channel: MetaChannel, config: Record<string, string>, to: string, body: string, connectionId?: string | null) {
-  if (channel === "whatsapp" && config.mode === "connector") return sendWhatsAppConnector(to, body);
+  if (channel === "whatsapp" && config.mode === "connector") return sendWhatsAppConnector(ws, to, body);
   const token = (connectionId && (await getSecret(ws, tokenKind(channel, connectionId)))) || (await getSecret(ws, TOKEN_KIND[channel]));
   if (!token) throw new Error("Channel credentials are missing.");
   const url = channel === "whatsapp" ? `${GRAPH}/${config.phone_number_id}/messages` : `${GRAPH}/me/messages`;

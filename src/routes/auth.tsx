@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/brand";
+import { PUBLIC_SIGNUP_ENABLED } from "@/lib/signup";
 
 const search = z.object({ redirect: z.string().optional(), mode: z.enum(["signin", "forgot"]).optional() });
 
@@ -131,6 +132,8 @@ function AuthPage() {
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 {mode === "forgot" ? (
                   <button className="font-medium text-primary hover:underline" onClick={() => setMode("signin")}>Back to sign in</button>
+                ) : PUBLIC_SIGNUP_ENABLED ? (
+                  <>New here? <a href="/signup" className="font-medium text-primary hover:underline">Create a business account</a></>
                 ) : (
                   "Access is by invitation only. Ask your admin for an invite link."
                 )}

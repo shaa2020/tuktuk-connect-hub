@@ -18,7 +18,11 @@ async function gmail(path: string, init: RequestInit = {}) {
   return text ? JSON.parse(text) : {};
 }
 
-export async function gmailProfile() {
+const guard = async (ws: string) => (await import("./tenancy.server")).assertPlatformConnectors(ws);
+
+/** The linked Gmail belongs to the platform operator: only its workspace may read or send with it. */
+export async function gmailProfile(ws: string) {
+  await guard(ws);
   const p = await gmail("/users/me/profile");
   return p.emailAddress as string;
 }
@@ -48,6 +52,7 @@ export function parseFrom(v: string) {
 
 /** Pulls recent inbox emails into the unified inbox. Duplicates are skipped. */
 export async function syncEmail(ws: string, self: string) {
+  await guard(ws);
   const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
   const list = await gmail(`/users/me/messages?maxResults=25&q=${encodeURIComponent("in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums")}`);
   const ids: string[] = (list.messages ?? []).map((m: any) => m.id);
@@ -80,6 +85,7 @@ const mimeHdr = (v: string) => (/^[\x00-\x7F]*$/.test(v) ? v : `=?UTF-8?B?${b64(
 
 /** Replies in the same Gmail thread as the customer's latest email. */
 export async function sendEmail(ws: string, conversationId: string, to: string, body: string) {
+  await guard(ws);
   const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
   if (/[\r\n]/.test(to)) throw new Error("Invalid address.");
   const { data: last } = await sb.from("messages").select("external_id").eq("conversation_id", conversationId).eq("direction", "inbound").like("external_id", "gm:%").order("created_at", { ascending: false }).limit(1).maybeSingle();

@@ -198,6 +198,24 @@ export type Database = {
           },
         ]
       }
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -362,6 +380,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      billing_events: {
+        Row: {
+          error: string | null
+          event_id: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          received_at: string
+          type: string
+          workspace_id: string | null
+        }
+        Insert: {
+          error?: string | null
+          event_id: string
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          provider: string
+          received_at?: string
+          type: string
+          workspace_id?: string | null
+        }
+        Update: {
+          error?: string | null
+          event_id?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+          type?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
       }
       bookings: {
         Row: {
@@ -1681,6 +1735,51 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          active: boolean
+          annual_price_cents: number | null
+          created_at: string
+          currency: string
+          key: string
+          limits: Json
+          monthly_price_cents: number | null
+          name: string
+          public: boolean
+          sort: number
+          trial_days: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          annual_price_cents?: number | null
+          created_at?: string
+          currency?: string
+          key: string
+          limits?: Json
+          monthly_price_cents?: number | null
+          name: string
+          public?: boolean
+          sort?: number
+          trial_days?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          annual_price_cents?: number | null
+          created_at?: string
+          currency?: string
+          key?: string
+          limits?: Json
+          monthly_price_cents?: number | null
+          name?: string
+          public?: boolean
+          sort?: number
+          trial_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -1816,6 +1915,9 @@ export type Database = {
           error: string | null
           id: string
           media_urls: string[]
+          publish_attempts: number
+          publish_results: Json
+          publish_started_at: string | null
           published_at: string | null
           scheduled_at: string | null
           status: string
@@ -1831,6 +1933,9 @@ export type Database = {
           error?: string | null
           id?: string
           media_urls?: string[]
+          publish_attempts?: number
+          publish_results?: Json
+          publish_started_at?: string | null
           published_at?: string | null
           scheduled_at?: string | null
           status?: string
@@ -1846,6 +1951,9 @@ export type Database = {
           error?: string | null
           id?: string
           media_urls?: string[]
+          publish_attempts?: number
+          publish_results?: Json
+          publish_started_at?: string | null
           published_at?: string | null
           scheduled_at?: string | null
           status?: string
@@ -1998,6 +2106,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_counters: {
+        Row: {
+          count: number
+          metric: string
+          period_start: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          count?: number
+          metric: string
+          period_start: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          count?: number
+          metric?: string
+          period_start?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       vehicles: {
         Row: {
@@ -2220,20 +2352,76 @@ export type Database = {
           },
         ]
       }
+      workspace_subscriptions: {
+        Row: {
+          billing_interval: string
+          cancel_at: string | null
+          created_at: string
+          current_period_end: string | null
+          grace_until: string | null
+          plan_key: string
+          provider: string
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          billing_interval?: string
+          cancel_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          grace_until?: string | null
+          plan_key: string
+          provider: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          billing_interval?: string
+          cancel_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          grace_until?: string | null
+          plan_key?: string
+          provider?: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       workspaces: {
         Row: {
           agents_see_unassigned: boolean
           auto_assign_driver: boolean
+          brand_color: string | null
           created_at: string
           default_driver_id: string | null
           driver_auto: boolean
           google_review_url: string | null
           guest_reminder_auto: boolean
           id: string
+          industry: string | null
+          locale: string
           name: string
+          onboarding_completed_at: string | null
+          owner_id: string | null
           plan: string
           plan_limits: Json
+          platform_connectors: boolean
           review_request_auto: boolean
+          suspended_at: string | null
+          suspended_reason: string | null
           ticket_auto: string
           timezone: string
           tripadvisor_review_url: string | null
@@ -2242,16 +2430,24 @@ export type Database = {
         Insert: {
           agents_see_unassigned?: boolean
           auto_assign_driver?: boolean
+          brand_color?: string | null
           created_at?: string
           default_driver_id?: string | null
           driver_auto?: boolean
           google_review_url?: string | null
           guest_reminder_auto?: boolean
           id?: string
+          industry?: string | null
+          locale?: string
           name: string
+          onboarding_completed_at?: string | null
+          owner_id?: string | null
           plan?: string
           plan_limits?: Json
+          platform_connectors?: boolean
           review_request_auto?: boolean
+          suspended_at?: string | null
+          suspended_reason?: string | null
           ticket_auto?: string
           timezone?: string
           tripadvisor_review_url?: string | null
@@ -2260,16 +2456,24 @@ export type Database = {
         Update: {
           agents_see_unassigned?: boolean
           auto_assign_driver?: boolean
+          brand_color?: string | null
           created_at?: string
           default_driver_id?: string | null
           driver_auto?: boolean
           google_review_url?: string | null
           guest_reminder_auto?: boolean
           id?: string
+          industry?: string | null
+          locale?: string
           name?: string
+          onboarding_completed_at?: string | null
+          owner_id?: string | null
           plan?: string
           plan_limits?: Json
+          platform_connectors?: boolean
           review_request_auto?: boolean
+          suspended_at?: string | null
+          suspended_reason?: string | null
           ticket_auto?: string
           timezone?: string
           tripadvisor_review_url?: string | null
@@ -2284,6 +2488,7 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: string }
       anonymize_contact: { Args: { _id: string }; Returns: undefined }
+      assert_entitlement: { Args: { _increment?: number; _key: string; _ws: string }; Returns: undefined }
       can_view_conversation: {
         Args: { _assigned: string; _ws: string }
         Returns: boolean
@@ -2291,6 +2496,8 @@ export type Database = {
       can_view_conversation_id: { Args: { _conv: string }; Returns: boolean }
       check_in_ticket: { Args: { _token: string }; Returns: Json }
       clear_demo_data: { Args: { _ws: string }; Returns: undefined }
+      consume_usage: { Args: { _amount?: number; _metric: string; _ws: string }; Returns: Json }
+      create_workspace: { Args: { _industry?: string; _locale?: string; _name: string; _timezone?: string }; Returns: string }
       dashboard_stats: {
         Args: {
           _assignee?: string
@@ -2302,6 +2509,7 @@ export type Database = {
         }
         Returns: Json
       }
+      has_membership: { Args: { _ws: string }; Returns: boolean }
       has_ws_role: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][]; _ws: string }
         Returns: boolean
@@ -2314,7 +2522,15 @@ export type Database = {
         Args: { _keep: string; _merge: string }
         Returns: undefined
       }
+      platform_set_workspace_plan: { Args: { _plan: string; _ws: string }; Returns: undefined }
+      platform_set_workspace_suspension: { Args: { _reason?: string; _suspend: boolean; _ws: string }; Returns: undefined }
+      platform_workspace_overview: { Args: never; Returns: { id: string; name: string; plan: string; industry: string | null; created_at: string; suspended_at: string | null; suspended_reason: string | null; owner_email: string | null; members: number; connected_channels: number; conversations_this_month: number; ai_requests_this_month: number; subscription_status: string | null }[] }
       shares_workspace: { Args: { _other: string }; Returns: boolean }
+      trigger_background_sync_fanout: { Args: never; Returns: number }
+      trigger_background_sync: { Args: { _body: Json }; Returns: undefined }
+      workspace_limit: { Args: { _key: string; _ws: string }; Returns: number }
+      workspace_usage: { Args: { _key: string; _ws: string }; Returns: number }
+      workspace_usage_summary: { Args: { _ws: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "manager" | "agent"

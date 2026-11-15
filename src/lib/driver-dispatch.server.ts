@@ -16,9 +16,9 @@ async function driverOf(sb: any, ws: string, userId: string) {
   return { phone: data.whatsapp_phone as string | null, name: (data.profiles?.full_name || data.profiles?.email || "driver").split(" ")[0] as string };
 }
 
-async function send(phone: string, body: string) {
+async function send(ws: string, phone: string, body: string) {
   const { sendWhatsAppConnector } = await import("./channels.server");
-  await sendWhatsAppConnector(phone, body);
+  await sendWhatsAppConnector(ws, phone, body);
 }
 
 type R = { ok: true } | { ok: false; error: string };
@@ -33,7 +33,7 @@ export async function notifyDriver(ws: string, bookingId: string, kind: "assigne
   const d = await driverOf(sb, ws, uid);
   if (!d?.phone) return { ok: false, error: "This driver has no WhatsApp number. Add it on the Team page." };
   const body = kind === "assigned" ? assignmentMessage(d.name, toTour(b)) : removedMessage(d.name, b, kind);
-  try { await send(d.phone, body); return { ok: true }; } catch (e) { return { ok: false, error: (e as Error).message }; }
+  try { await send(ws, d.phone, body); return { ok: true }; } catch (e) { return { ok: false, error: (e as Error).message }; }
 }
 
 /** Send one driver their full schedule for a date. */
@@ -43,7 +43,7 @@ export async function sendDriverSchedule(ws: string, userId: string, date: strin
   if (!d?.phone) return { ok: false, error: "This driver has no WhatsApp number. Add it on the Team page." };
   const { data: rows } = await sb.from("bookings").select(SEL).eq("workspace_id", ws).eq("driver_id", userId).eq("tour_date", date).eq("is_demo", false).in("status", ["confirmed", "tentative"]);
   if (!rows?.length) return { ok: false, error: "This driver has no tours on that day." };
-  try { await send(d.phone, scheduleMessage(d.name, date, rows.map(toTour))); return { ok: true, tours: rows.length }; }
+  try { await send(ws, d.phone, scheduleMessage(d.name, date, rows.map(toTour))); return { ok: true, tours: rows.length }; }
   catch (e) { return { ok: false, error: (e as Error).message }; }
 }
 

@@ -13,6 +13,8 @@ export type Member = {
   whatsapp_phone: string | null;
 };
 
+export type WorkspaceSummary = { id: string; name: string; role: AppRole; suspended: boolean };
+
 export type WorkspaceCtx = {
   userId: string;
   email: string;
@@ -23,7 +25,26 @@ export type WorkspaceCtx = {
   role: AppRole;
   members: Member[];
   memberName: (id: string | null | undefined) => string;
+  /** Every business this person belongs to (for the switcher). */
+  workspaces: WorkspaceSummary[];
+  plan: string;
 };
+
+// The chosen business is remembered per browser. Access is still decided by the database:
+// a stale or foreign id here simply falls back to the first membership.
+const SELECTED_KEY = "tt.selectedWorkspace";
+export function getSelectedWorkspaceId(): string | null {
+  try { return localStorage.getItem(SELECTED_KEY); } catch { return null; }
+}
+export function setSelectedWorkspaceId(id: string) {
+  try { localStorage.setItem(SELECTED_KEY, id); } catch { /* private mode: falls back to first workspace */ }
+}
+
+/** Picks the remembered workspace if the user still belongs to it, otherwise the first one. */
+export function pickWorkspace<T extends { workspace_id: string }>(memberships: T[], preferred: string | null): T | null {
+  if (!memberships.length) return null;
+  return memberships.find((m) => m.workspace_id === preferred) ?? memberships[0] ?? null;
+}
 
 const Ctx = createContext<WorkspaceCtx | null>(null);
 
@@ -37,16 +58,21 @@ async function loadWorkspace() {
   const { data: u, error: ue } = await supabase.auth.getUser();
   if (ue || !u.user) throw new Error("Your session has expired. Please sign in again.");
   const user = u.user;
-  const { data: mem, error } = await supabase
+  const { data: mems, error } = await supabase
     .from("workspace_members")
-    .select("workspace_id, role, active, workspaces(name, agents_see_unassigned)")
+    .select("workspace_id, role, active, created_at, workspaces(name, agents_see_unassigned, plan, suspended_at, suspended_reason)")
     .eq("user_id", user.id)
     .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+    .order("created_at");
   if (error) throw error;
+  const all = (mems ?? []) as any[];
+  const mem = pickWorkspace(all, getSelectedWorkspaceId());
+  const workspaces: WorkspaceSummary[] = all.map((m) => ({
+    id: m.workspace_id, name: m.workspaces?.name ?? "Workspace", role: m.role, suspended: !!m.workspaces?.suspended_at,
+  }));
   const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
-  if (!mem) return { user, profile, mem: null, members: [] as Member[] };
+  if (!mem) return { user, profile, mem: null, members: [] as Member[], workspaces };
+  if (mem.workspaces?.suspended_at) return { user, profile, mem, members: [] as Member[], workspaces };
   const { data: rows, error: me } = await (supabase as any)
     .from("workspace_members")
     .select("id, user_id, role, active, whatsapp_phone, profiles(full_name, email)")
@@ -62,7 +88,7 @@ async function loadWorkspace() {
     full_name: r.profiles?.full_name ?? null,
     email: r.profiles?.email ?? null,
   }));
-  return { user, profile, mem, members };
+  return { user, profile, mem, members, workspaces };
 }
 
 export const workspaceQueryKey = ["workspace"];
@@ -70,11 +96,13 @@ export const workspaceQueryKey = ["workspace"];
 export function WorkspaceProvider({
   children,
   noAccess,
+  suspended,
   loading,
   error,
 }: {
   children: ReactNode;
   noAccess: ReactNode;
+  suspended: (info: { name: string; reason: string | null; workspaces: WorkspaceSummary[] }) => ReactNode;
   loading: ReactNode;
   error: (msg: string, retry: () => void) => ReactNode;
 }) {
@@ -83,7 +111,8 @@ export function WorkspaceProvider({
   if (q.error) return <>{error((q.error as Error).message, () => q.refetch())}</>;
   const d = q.data!;
   if (!d.mem) return <>{noAccess}</>;
-  const ws = d.mem.workspaces as { name: string; agents_see_unassigned: boolean } | null;
+  const ws = d.mem.workspaces as { name: string; agents_see_unassigned: boolean; plan: string; suspended_at: string | null; suspended_reason: string | null } | null;
+  if (ws?.suspended_at) return <>{suspended({ name: ws.name, reason: ws.suspended_reason, workspaces: d.workspaces })}</>;
   const value: WorkspaceCtx = {
     userId: d.user.id,
     email: d.user.email ?? "",
@@ -93,6 +122,8 @@ export function WorkspaceProvider({
     agentsSeeUnassigned: ws?.agents_see_unassigned ?? true,
     role: d.mem.role,
     members: d.members,
+    workspaces: d.workspaces,
+    plan: ws?.plan ?? "free",
     memberName: (id) => {
       if (!id) return "Unassigned";
       const m = d.members.find((x) => x.user_id === id);
@@ -100,4 +131,13 @@ export function WorkspaceProvider({
     },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+/**
+ * Switch the active business. A full reload guarantees no cached data, realtime channel or
+ * in-flight request from the previous business survives the switch.
+ */
+export function switchWorkspace(id: string, to = "/dashboard") {
+  setSelectedWorkspaceId(id);
+  window.location.assign(to);
 }

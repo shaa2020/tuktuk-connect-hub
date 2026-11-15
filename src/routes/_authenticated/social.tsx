@@ -31,7 +31,7 @@ type Post = {
   body: string;
   media_urls: string[];
   targets: { network: string }[];
-  status: "draft" | "scheduled" | "published" | "failed";
+  status: "draft" | "scheduled" | "publishing" | "published" | "partially_published" | "failed";
   scheduled_at: string | null;
   published_at: string | null;
   error: string | null;
@@ -41,7 +41,9 @@ type Post = {
 const STATUS_TONE: Record<Post["status"], string> = {
   draft: "bg-muted text-muted-foreground",
   scheduled: "bg-primary-soft text-primary",
+  publishing: "bg-primary-soft text-primary",
   published: "bg-success-soft text-success",
+  partially_published: "bg-warning-soft text-warning",
   failed: "bg-danger-soft text-destructive",
 };
 
@@ -100,13 +102,13 @@ function SocialPage() {
 
   const upcoming = (posts.data ?? []).filter((p) => p.status === "scheduled");
   const drafts = (posts.data ?? []).filter((p) => p.status === "draft");
-  const done = (posts.data ?? []).filter((p) => p.status === "published" || p.status === "failed");
+  const done = (posts.data ?? []).filter((p) => p.status === "published" || p.status === "partially_published" || p.status === "failed");
 
   return (
     <PageContainer className="max-w-4xl">
       <PageHeader
         title="Social Planner"
-        description="Draft and schedule posts for Instagram, Facebook and TikTok. Publishing switches on automatically once your Meta app is approved — everything you schedule here will go out at its time."
+        description="Scheduled posts are published automatically (checked every 5 minutes) to your connected Facebook Pages and Instagram accounts. Instagram needs an image or video URL. TikTok publishing isn't available yet. Results and errors appear on each post."
       />
       <Panel className="mb-4 space-y-3 p-4">
         <h2 className="text-sm font-semibold">New post</h2>
@@ -134,7 +136,7 @@ function SocialPage() {
 
       {posts.isLoading ? <Panel><ListSkeleton /></Panel> : posts.error ? <ErrorState message={(posts.error as Error).message} /> :
         !posts.data?.length ? (
-          <Panel><EmptyState icon={<CalendarClock />} title="No posts yet" description="Create your first post above — it will be ready to publish the moment your social accounts are approved." /></Panel>
+          <Panel><EmptyState icon={<CalendarClock />} title="No posts yet" description="Create your first post above to plan your content calendar." /></Panel>
         ) : (
           <div className="space-y-4">
             {[

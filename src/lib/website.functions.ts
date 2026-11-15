@@ -14,7 +14,7 @@ export const listWebsiteTours = createServerFn({ method: "POST" })
     if (member !== true) return { ok: false as const, error: "Not a member.", tours: [] as TourPackage[] };
     try {
       const { websiteGet } = await import("./website-api.server");
-      const tours = await websiteGet<any[]>("/tours");
+      const tours = await websiteGet<any[]>(data.workspaceId, "/tours");
       const out: TourPackage[] = tours.map((t) => ({
         id: String(t.id), name: String(t.title),
         durationMinutes: parseDurationMinutes(String(t.duration ?? "")),
@@ -36,8 +36,8 @@ export const websiteStatus = createServerFn({ method: "POST" })
     if (member !== true) return { ok: false as const, error: "Not a member." };
     try {
       const { websiteGet } = await import("./website-api.server");
-      const b = await websiteGet<any>("/ai/business");
-      const tours = await websiteGet<any[]>("/tours");
+      const b = await websiteGet<any>(data.workspaceId, "/ai/business");
+      const tours = await websiteGet<any[]>(data.workspaceId, "/tours");
       const { data: doc } = await context.supabase.from("knowledge_documents").select("updated_at").eq("workspace_id", data.workspaceId).eq("category", "website").order("updated_at", { ascending: false }).limit(1).maybeSingle();
       return { ok: true as const, company: String(b.company_name ?? "Website"), tourCount: tours.length, lastSync: doc?.updated_at ?? null };
     } catch (e) { return { ok: false as const, error: (e as Error).message }; }
@@ -52,7 +52,7 @@ export const syncWebsiteKnowledge = createServerFn({ method: "POST" })
     if (ok !== true) return { ok: false as const, error: "Only admins or managers can sync." };
     try {
       const { websiteGet } = await import("./website-api.server");
-      const [b, tours] = await Promise.all([websiteGet<any>("/ai/business"), websiteGet<any[]>("/tours")]);
+      const [b, tours] = await Promise.all([websiteGet<any>(data.workspaceId, "/ai/business"), websiteGet<any[]>(data.workspaceId, "/tours")]);
       const docs: { title: string; content: string }[] = [
         { title: "[Website] Business info & policies", content: [
           `Company: ${b.company_name}`, `Website: ${b.website}`, `Phone: ${b.phone}`, `WhatsApp: ${b.whatsapp}`, `Email: ${b.email}`, `Address: ${b.address}`,
@@ -103,7 +103,7 @@ export const createWebsiteBooking = createServerFn({ method: "POST" })
     try {
       const { websitePost } = await import("./website-api.server");
       const { workspaceId: _w, ...body } = data;
-      const r = await websitePost<{ reference: string }>("/booking-requests", { ...body, source: "team_platform" });
+      const r = await websitePost<{ reference: string }>(data.workspaceId, "/booking-requests", { ...body, source: "team_platform" });
       return { ok: true as const, reference: String(r.reference) };
     } catch (e) { return { ok: false as const, error: (e as Error).message }; }
   });
@@ -123,7 +123,7 @@ export const listWebsiteBookings = createServerFn({ method: "POST" })
     if (member !== true) return { ok: false as const, error: "Not a member.", bookings: [] as WebsiteBooking[] };
     try {
       const { websiteGet } = await import("./website-api.server");
-      const rows = await websiteGet<any[]>("/booking-requests?limit=100");
+      const rows = await websiteGet<any[]>(data.workspaceId, "/booking-requests?limit=100");
       const refs = rows.map((r) => String(r.id).slice(0, 8).toUpperCase());
       const { data: local } = await context.supabase.from("bookings").select("id, external_reference").eq("workspace_id", data.workspaceId).in("external_reference", refs.length ? refs : ["-"]);
       const map = new Map((local ?? []).map((l) => [l.external_reference, l.id]));
@@ -153,7 +153,7 @@ export const importWebsiteBooking = createServerFn({ method: "POST" })
     if (member !== true) return { ok: false as const, error: "Not a member." };
     try {
       const { websiteGet } = await import("./website-api.server");
-      const rows = await websiteGet<any[]>("/booking-requests?limit=100");
+      const rows = await websiteGet<any[]>(data.workspaceId, "/booking-requests?limit=100");
       const r = rows.find((x) => String(x.id) === data.websiteId);
       if (!r) return { ok: false as const, error: "Booking not found on the website." };
       const reference = String(r.id).slice(0, 8).toUpperCase();

@@ -4,9 +4,9 @@ import { nextDate, reminderMessage, reviewDue, reviewMessage, REMINDER_SEND_MINU
 import { TICKET_BASE_URL } from "./tickets";
 
 async function db() { return (await import("@/integrations/supabase/client.server")).supabaseAdmin as any; }
-async function send(phone: string, body: string) {
+async function send(ws: string, phone: string, body: string) {
   const { sendWhatsAppConnector } = await import("./channels.server");
-  await sendWhatsAppConnector(phone, body);
+  await sendWhatsAppConnector(ws, phone, body);
 }
 
 /** Runs every 5 minutes from the background job. Each booking is claimed before sending so it is never messaged twice. */
@@ -31,7 +31,7 @@ export async function autoGuestMessagesFor(ws: string) {
         driver = p?.full_name?.split(" ")[0] ?? null;
       }
       try {
-        await send(phone, reminderMessage({ guest_name: b.contacts?.full_name, tour_name: b.tour_name, tour_date: b.tour_date, start_time: b.start_time, pickup_location: b.pickup_location, driver_name: driver, ticket_url: b.ticket_token ? `${TICKET_BASE_URL}/ticket/${b.ticket_token}` : null }));
+        await send(ws, phone, reminderMessage({ guest_name: b.contacts?.full_name, tour_name: b.tour_name, tour_date: b.tour_date, start_time: b.start_time, pickup_location: b.pickup_location, driver_name: driver, ticket_url: b.ticket_token ? `${TICKET_BASE_URL}/ticket/${b.ticket_token}` : null }));
         out.reminders++;
       } catch (e) { out.errors.push(`reminder: ${(e as Error).message.slice(0, 150)}`); }
     }
@@ -48,7 +48,7 @@ export async function autoGuestMessagesFor(ws: string) {
       if (!reviewDue(b.tour_date, b.start_time, b.duration_minutes, now.date, now.minutes)) continue;
       const { data: claimed } = await sb.from("bookings").update({ review_sent_at: new Date().toISOString() }).eq("id", b.id).is("review_sent_at", null).select("id");
       if (!claimed?.length) continue;
-      try { await send(phone, reviewMessage(b.contacts?.full_name, b.tour_name, w.google_review_url, w.tripadvisor_review_url)); out.reviews++; }
+      try { await send(ws, phone, reviewMessage(b.contacts?.full_name, b.tour_name, w.google_review_url, w.tripadvisor_review_url)); out.reviews++; }
       catch (e) { out.errors.push(`review: ${(e as Error).message.slice(0, 150)}`); }
     }
   }

@@ -134,6 +134,34 @@
       "when": 1793027690269,
       "tag": "0018_paypal_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794779635032,
+      "tag": "0019_tenant_isolation_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794779635033,
+      "tag": "0020_saas_plans_entitlements",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794780408184,
+      "tag": "0021_rate_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794784668243,
+      "tag": "0022_job_fanout_social_publishing",
+      "breakpoints": true
     }
   ]
 }

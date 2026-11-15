@@ -62,7 +62,17 @@ export async function autoModel(provider: Provider, apiKey: string): Promise<str
 }
 
 export async function generate(ws: string, s: ProviderSettings, opts: { instructions: string; input: string; jsonSchema?: { name: string; schema: Record<string, unknown> } }) {
-  if (s.provider === "lovable" || !s.provider) return lovableGenerate(opts);
+  // Every AI call is metered per workspace. Platform-paid AI counts against the plan allowance
+  // (and stops at the limit); calls on the business's own key are recorded but not capped.
+  const platformPaid = s.provider === "lovable" || !s.provider;
+  const { consumeUsage, TenantGuardError } = await import("./tenancy.server");
+  try {
+    await consumeUsage(ws, platformPaid ? "monthly_ai_requests" : "monthly_ai_requests_byo");
+  } catch (e) {
+    if (e instanceof TenantGuardError) throw new AiError(e.message, 402);
+    throw e;
+  }
+  if (platformPaid) return lovableGenerate(opts);
   const apiKey = await getSecret(ws, "ai_api_key");
   if (!apiKey) throw new AiError("Your AI provider key is missing. An admin can add it on the AI Assistant page.", 400);
   if (!s.model) throw new AiError("Choose a model name for your AI provider.", 400);
@@ -80,6 +90,10 @@ export async function callProvider(s: ProviderSettings, apiKey: string, opts: { 
   } else {
     const base = s.provider === "custom" ? s.base_url : PROVIDER_BASE[s.provider];
     if (!base || !base.startsWith("https://")) throw new AiError("A secure (https) provider address is required.", 400);
+    // Tenant-supplied addresses are re-checked at call time (SSRF guard).
+    const { unsafeUrlReason } = await import("./url-safety");
+    const unsafe = s.provider === "custom" ? unsafeUrlReason(base) : null;
+    if (unsafe) throw new AiError(`Provider address rejected: ${unsafe}`, 400);
     const model = s.provider === "gemini" ? String(s.model ?? "").trim().replace(/^models\//, "") : s.model;
     res = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",

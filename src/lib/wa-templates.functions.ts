@@ -12,7 +12,7 @@ export const listWaTemplates = createServerFn({ method: "POST" })
     if (member !== true) return { ok: false as const, error: "Not a member.", templates: [] };
     try {
       const { listTemplates } = await import("./wa-templates.server");
-      return { ok: true as const, templates: await listTemplates() };
+      return { ok: true as const, templates: await listTemplates(data.workspaceId) };
     } catch (e) { return { ok: false as const, error: (e as Error).message, templates: [] }; }
   });
 
@@ -27,7 +27,7 @@ export const submitStarterTemplate = createServerFn({ method: "POST" })
     if (!t) return { ok: false as const, error: "Unknown template." };
     try {
       const { createTemplate } = await import("./wa-templates.server");
-      await createTemplate({ name: t.name, category: t.category, body: t.body, example: [...t.example] });
+      await createTemplate(data.workspaceId, { name: t.name, category: t.category, body: t.body, example: [...t.example] });
       return { ok: true as const };
     } catch (e) { return { ok: false as const, error: (e as Error).message }; }
   });
@@ -56,11 +56,11 @@ export const sendWaTemplate = createServerFn({ method: "POST" })
     if (!to) return { ok: false as const, error: "No customer number for this conversation." };
     let body = "";
     try {
-      const t = (await listTemplates()).find((x) => x.name === data.name && x.language === data.language);
+      const t = (await listTemplates(conv.workspace_id)).find((x) => x.name === data.name && x.language === data.language);
       if (!t || t.status !== "APPROVED") return { ok: false as const, error: "That template isn't approved by WhatsApp yet." };
       if (countVars(t.body) !== data.params.length) return { ok: false as const, error: "Please fill in every field of the template." };
       body = fillTemplate(t.body, data.params);
-      const extId = await sendTemplate(to, t.name, t.language, data.params);
+      const extId = await sendTemplate(conv.workspace_id, to, t.name, t.language, data.params);
       await supabaseAdmin.from("messages").insert({ workspace_id: conv.workspace_id, conversation_id: conv.id, direction: "outbound", body, status: "sent", external_id: extId ?? null, author_id: context.userId });
       await (await import("./whatsapp-inbox.server")).recover().catch(() => {});
       return { ok: true as const };
