@@ -12,7 +12,7 @@ function durationFromTitle(t: string): number | null {
 /** Copies website bookings not yet on the calendar. Skips ones the team deleted. Returns number added. */
 export async function syncWebsiteBookingsFor(sb: any, ws: string, userId: string | null) {
   const { websiteGet } = await import("./website-api.server");
-  const rows = await websiteGet<any[]>("/booking-requests?limit=100");
+  const rows = await websiteGet<any[]>(ws, "/booking-requests?limit=100");
   const refs = rows.map((r) => String(r.id).slice(0, 8).toUpperCase());
   const list = refs.length ? refs : ["-"];
   const [{ data: local }, { data: ignored }] = await Promise.all([

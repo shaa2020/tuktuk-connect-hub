@@ -21,18 +21,20 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
         }
         const { syncAllEmailFor, syncWebsiteBookingsFor, alertBrokenChannels } = await import("@/lib/background-sync.server");
         const { recover } = await import("@/lib/whatsapp-inbox.server");
-        const { data: wss } = await sb.from("workspaces").select("id");
+        // Suspended workspaces are skipped; operator-only integrations run only for the operator.
+        const { activeWorkspaces } = await import("@/lib/tenancy.server");
+        const wss = await activeWorkspaces();
         const out: Record<string, unknown> = {};
-        for (const w of wss ?? []) {
+        for (const w of wss) {
           const r: Record<string, unknown> = {};
           try { r.email = await syncAllEmailFor(w.id); } catch (e) { r.emailError = (e as Error).message.slice(0, 200); }
-          try { r.bookings = await syncWebsiteBookingsFor(sb, w.id, null); } catch (e) { r.bookingsError = (e as Error).message.slice(0, 200); }
+          if (w.platform_connectors) { try { r.bookings = await syncWebsiteBookingsFor(sb, w.id, null); } catch (e) { r.bookingsError = (e as Error).message.slice(0, 200); } }
           try { r.alerts = await alertBrokenChannels(w.id); } catch { /* next run */ }
           try { r.operator = await (await import("@/lib/ai-operator.server")).runOperatorFor(w.id); } catch (e) { r.operatorError = (e as Error).message.slice(0, 200); }
           try { r.tickets = await (await import("@/lib/tickets.server")).autoSendTicketsFor(w.id); } catch (e) { r.ticketsError = (e as Error).message.slice(0, 200); }
           try { r.autoAssigned = await (await import("@/lib/driver-dispatch.server")).flushAutoAssigned(w.id); } catch (e) { r.autoAssignError = (e as Error).message.slice(0, 200); }
-          try { r.drivers = await (await import("@/lib/driver-dispatch.server")).autoSendSchedulesFor(w.id); } catch (e) { r.driversError = (e as Error).message.slice(0, 200); }
-          try { r.guests = await (await import("@/lib/guest-messages.server")).autoGuestMessagesFor(w.id); } catch (e) { r.guestsError = (e as Error).message.slice(0, 200); }
+          if (w.platform_connectors) { try { r.drivers = await (await import("@/lib/driver-dispatch.server")).autoSendSchedulesFor(w.id); } catch (e) { r.driversError = (e as Error).message.slice(0, 200); } }
+          if (w.platform_connectors) { try { r.guests = await (await import("@/lib/guest-messages.server")).autoGuestMessagesFor(w.id); } catch (e) { r.guestsError = (e as Error).message.slice(0, 200); } }
           // PayPal roughly hourly (its reports lag up to 3h anyway).
           if (new Date().getUTCMinutes() < 5) { try { r.paypal = await (await import("@/lib/paypal.server")).syncPaypalFor(w.id, 3); } catch (e) { r.paypalError = (e as Error).message.slice(0, 200); } }
           out[w.id] = r;

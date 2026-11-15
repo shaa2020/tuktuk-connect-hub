@@ -45,11 +45,15 @@ const DECISION_SCHEMA = {
     },
   },
 };
-const RULES = `You are the AI Operator for TukTuk24 (Tuk Tuk 24 Lisbon). The team is away and you handle guest chats on their behalf.
-
-${TT24_PLAYBOOK}
-
-Operator mechanics:
+// The TukTuk24 playbook is only used for the operator's own workspace; other businesses get a
+// neutral role built from their own name, instructions and knowledge base.
+function rulesFor(name: string, operator: boolean) {
+  const role = operator
+    ? `You are the AI Operator for TukTuk24 (Tuk Tuk 24 Lisbon). The team is away and you handle guest chats on their behalf.\n\n${TT24_PLAYBOOK}`
+    : `You are the AI Operator for ${name || "this business"}. The team is away and you handle customer chats on their behalf. Only state facts found in the owner instructions or business knowledge; never invent prices, availability or policies.`;
+  return `${role}\n\n${MECHANICS}`;
+}
+const MECHANICS = `Operator mechanics:
 - ALWAYS write a reply to every new guest message, even when handing off.
 - Use action "handoff" (with a reply) for cancellations, modifications, refunds, payment disputes, complaints, requests for a human, emergencies, large groups/custom itineraries, a completed booking enquiry awaiting confirmation, or when unsure. The team gets alerted; the guest still gets your reply.
 - In "alert", write a short summary for the team (e.g. the collected booking details or what the guest needs).
@@ -134,7 +138,9 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
   const name = guest.full_name || "Guest";
   const { data: msgs } = await sb.from("messages").select("direction, body, author_id").eq("conversation_id", c.id).order("created_at", { ascending: false }).limit(30);
   const transcript = (msgs ?? []).reverse().map((m: any) => `${m.direction === "inbound" ? "Guest" : "Team"}: ${String(m.body).slice(0, 1500)}`).join("\n");
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Lisbon" });
+  const { data: wsRow } = await sb.from("workspaces").select("name, timezone, platform_connectors").eq("id", ws).maybeSingle();
+  const tz = (wsRow?.timezone as string) || "Europe/Lisbon";
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: tz });
 
   if (!replyAllowed(replies, s.max_replies)) {
     if (s.allow_alert) await alertTeam(sb, ws, c.id, `AI Operator handed over: ${name}`, "Reply limit reached for this chat — a team member should take over.");
@@ -145,7 +151,7 @@ async function handleConversation(sb: Admin, ws: string, s: any, ai: any, kb: st
   let raw: string;
   try {
     raw = await generate(ws, { provider: ai.provider ?? "lovable", model: ai.model, base_url: ai.base_url }, {
-      instructions: `${RULES}\n\nToday in Lisbon: ${today}.\n\nOwner instructions:\n${ai.instructions || "(none)"}\n${s.notes ? `\nAway-mode notes from the owner:\n${s.notes}` : ""}\n\nBusiness knowledge:\n${kb || "(none)"}`,
+      instructions: `${rulesFor(wsRow?.name ?? "", wsRow?.platform_connectors === true)}\n\nToday (${tz}): ${today}.\n\nOwner instructions:\n${ai.instructions || "(none)"}\n${s.notes ? `\nAway-mode notes from the owner:\n${s.notes}` : ""}\n\nBusiness knowledge:\n${kb || "(none)"}`,
       input: `Guest name: ${name}. Channel: ${c.channel}.\nConversation (oldest first):\n${transcript}`,
       jsonSchema: DECISION_SCHEMA,
     });

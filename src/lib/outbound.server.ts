@@ -42,6 +42,9 @@ async function sendViaApp(ws: string, convId: string, connId: string, cfg: Recor
   if (!pass) throw new Error("This Gmail account needs its app password again.");
   const { data: last } = await supabaseAdmin.from("messages").select("body").eq("conversation_id", convId).eq("direction", "inbound").order("created_at", { ascending: false }).limit(1).maybeSingle();
   const s = /^Subject: (.+)/.exec(last?.body ?? "")?.[1]?.trim();
-  const subject = s ? (/^re:/i.test(s) ? s : `Re: ${s}`) : "Tuk Tuk 24 Lisbon";
-  return `im-out:${await sendSmtp(cfg.address ?? "", pass, to, subject, body, "Tuk Tuk 24 Lisbon")}`;
+  // Sender name and default subject come from the business's own workspace name.
+  const { data: w } = await supabaseAdmin.from("workspaces").select("name").eq("id", ws).maybeSingle();
+  const brand = (w?.name as string | undefined)?.trim() || cfg.address || "Customer service";
+  const subject = s ? (/^re:/i.test(s) ? s : `Re: ${s}`) : brand;
+  return `im-out:${await sendSmtp(cfg.address ?? "", pass, to, subject, body, brand)}`;
 }

@@ -186,7 +186,7 @@ export const connectEmailChannel = createServerFn({ method: "POST" })
     }
     const { gmailProfile, syncEmail } = await import("./email-channel.server");
     try {
-      const address = await gmailProfile();
+      const address = await gmailProfile(data.workspaceId);
       await saveEmailRow(supabaseAdmin, data.workspaceId, { status: "connected", display_name: address, config: { address }, account_id: address, last_error: null, last_checked_at: new Date().toISOString() });
       const imported = await syncEmail(data.workspaceId, address);
       return { ok: true as const, address, imported };

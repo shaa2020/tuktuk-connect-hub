@@ -13,6 +13,8 @@ async function connectorTarget(phoneNumberId?: string) {
   let q = sb.from("channel_connections").select("id, workspace_id").eq("channel", "whatsapp").eq("status", "connected").eq("config->>mode", "connector");
   if (phoneNumberId) q = q.eq("account_id", String(phoneNumberId));
   const { data } = await q.limit(1).maybeSingle();
+  // The connector number belongs to the platform operator; never route it into another tenant.
+  if (data && !(await (await import("./tenancy.server")).hasPlatformConnectors(data.workspace_id))) return null;
   return data;
 }
 
