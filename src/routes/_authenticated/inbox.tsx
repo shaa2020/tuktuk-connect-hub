@@ -521,7 +521,7 @@ function InboxPage() {
     <div
       className={cn(
         "flex md:glass md:m-3 md:h-[calc(100dvh-5.75rem)] md:overflow-hidden md:rounded-2xl",
-        c ? "h-[calc(100dvh-3.5rem)]" : "h-[calc(100dvh-3.5rem-4rem)]",
+        c ? "h-dvh" : "h-[calc(100dvh-3.5rem-4rem)]",
       )}
     >
       {/* List pane */}
@@ -1020,7 +1020,7 @@ function FileView({ f, outbound }: { f: FileRef; outbound: boolean }) {
           src={url.data}
           alt={name}
           loading="lazy"
-          className="max-h-64 max-w-full rounded-lg object-contain"
+          className="max-h-48 max-w-full rounded-lg object-contain md:max-h-64"
         />
       </a>
     );
@@ -1031,7 +1031,7 @@ function FileView({ f, outbound }: { f: FileRef; outbound: boolean }) {
       <video
         controls
         src={url.data}
-        className="mt-1.5 max-h-64 max-w-full rounded-lg"
+        className="mt-1.5 max-h-48 max-w-full rounded-lg md:max-h-64"
         aria-label={name}
       />
     );
@@ -1464,9 +1464,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         </header>
 
         <PresenceLine others={presence.others} />
-        <div className="grid grid-cols-3 gap-2 border-b bg-card px-3 py-2">
+        <div className="scrollbar-none flex items-center gap-1.5 overflow-x-auto border-b bg-card px-3 py-1.5 md:grid md:grid-cols-3 md:gap-2 md:py-2">
           <NativeSelect
-            className="h-9 text-xs"
+            className="h-8 w-auto shrink-0 pr-7 text-xs md:h-9 md:w-full"
             value={v.status}
             onChange={(e) =>
               update({ status: e.target.value as ConversationStatus }, "Status updated")
@@ -1480,7 +1480,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             ))}
           </NativeSelect>
           <NativeSelect
-            className="h-9 text-xs"
+            className="h-8 w-auto shrink-0 pr-7 text-xs md:h-9 md:w-full"
             value={v.priority}
             onChange={(e) => update({ priority: e.target.value as Priority }, "Priority updated")}
             aria-label="Priority"
@@ -1492,7 +1492,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             ))}
           </NativeSelect>
           <NativeSelect
-            className="h-9 text-xs"
+            className="h-8 w-auto max-w-[11rem] shrink-0 pr-7 text-xs md:h-9 md:w-full md:max-w-none"
             value={v.assigned_to ?? ""}
             onChange={(e) => update({ assigned_to: e.target.value || null }, "Assignment updated")}
             aria-label="Assignee"
@@ -1514,7 +1514,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         </div>
 
         {(labels.length > 0 || v.leads || v.bookings || v.escalated) && (
-          <div className="flex flex-wrap items-center gap-1.5 border-b bg-card px-3 py-2 text-xs">
+          <div className="scrollbar-none flex items-center gap-1.5 overflow-x-auto border-b bg-card px-3 py-1.5 text-xs md:flex-wrap md:py-2 [&>*]:shrink-0">
             {v.escalated && (
               <ToneBadge tone="danger">
                 <Flag className="size-3" />
@@ -1545,7 +1545,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           </div>
         )}
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-3 py-4 md:px-6">
+        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3 md:space-y-3 md:px-6 md:py-4">
           {timeline.data?.hasMore && (
             <div className="text-center">
               <Button variant="ghost" size="sm" onClick={() => setMsgLimit((l) => l + MSG_PAGE)}>
@@ -2130,6 +2130,8 @@ function Composer({
   } | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
   const [trLang, setTrLang] = useState("");
+  // On phones the AI / template tools fold away so the conversation keeps the screen.
+  const [toolsOpen, setToolsOpen] = useState(false);
   async function runAi(task: "draft" | "summarize" | "translate", opts?: { incoming?: boolean }) {
     setAiBusy(task);
     try {
@@ -2333,9 +2335,19 @@ function Composer({
             Internal note
           </button>
         </div>
+        <Button
+          size="sm"
+          variant={toolsOpen ? "secondary" : "ghost"}
+          className="ml-auto h-8 px-2.5 text-xs md:hidden"
+          onClick={() => setToolsOpen((o) => !o)}
+          aria-expanded={toolsOpen}
+          aria-controls="composer-tools"
+        >
+          <Sparkles /> Tools
+        </Button>
         {mode === "log" && (
           <NativeSelect
-            className="ml-auto h-8 w-auto text-xs"
+            className="h-8 w-auto text-xs md:ml-auto"
             value={direction}
             onChange={(e) => setDirection(e.target.value as typeof direction)}
             aria-label="Who said it"
@@ -2382,7 +2394,13 @@ function Composer({
           )}
         </div>
       )}
-      <div className="mb-2 flex flex-wrap gap-1.5">
+      <div
+        id="composer-tools"
+        className={cn(
+          "scrollbar-none -mx-3 mb-2 gap-1.5 overflow-x-auto px-3 md:mx-0 md:flex md:flex-wrap md:px-0 [&>*]:shrink-0",
+          toolsOpen ? "flex" : "hidden",
+        )}
+      >
         <Button size="sm" variant="outline" onClick={() => runAi("draft")} disabled={!!aiBusy}>
           {aiBusy === "draft" ? <Loader2 className="animate-spin" /> : <Sparkles />}Draft reply
         </Button>
@@ -2583,7 +2601,12 @@ function Composer({
           </button>
         </div>
       )}
-      <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
+      <div
+        className={cn(
+          "mt-1 items-center justify-between text-[10px] text-muted-foreground",
+          file || failed ? "flex" : "hidden md:flex",
+        )}
+      >
         <span>
           {file
             ? "Your text is sent as the caption"

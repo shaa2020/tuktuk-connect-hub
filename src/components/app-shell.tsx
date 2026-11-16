@@ -408,7 +408,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenu>
         </header>
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-glass-edge bg-card px-4 shadow-[var(--elev-1)] backdrop-blur-xl backdrop-saturate-150 md:hidden">
+        <header
+          className={cn(
+            "sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-glass-edge bg-card px-4 shadow-[var(--elev-1)] backdrop-blur-xl backdrop-saturate-150 md:hidden",
+            // Inside a conversation the thread header (with its back button) replaces this bar.
+            inThread && "hidden",
+          )}
+        >
           <div className="min-w-0">
             <div className="truncate font-display text-[16px] font-bold tracking-tight">
               {pageTitle}
