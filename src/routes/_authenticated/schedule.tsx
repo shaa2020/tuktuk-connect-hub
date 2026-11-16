@@ -343,7 +343,7 @@ function AddShift({
     onDone();
   }
   return (
-    <Panel className="mb-4 grid gap-2 p-3 sm:grid-cols-[1fr_auto_auto_auto_1fr_auto] sm:items-end">
+    <Panel className="mb-4 grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_1fr_auto] lg:items-end">
       <NativeSelect value={user} onChange={(e) => setUser(e.target.value)} aria-label="Team member">
         {people.map((p) => (
           <option key={p.user_id} value={p.user_id}>
@@ -468,7 +468,7 @@ function TimeOff({
       <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
         <CalendarRange className="size-4" /> Time off
       </h2>
-      <div className="grid gap-2 sm:grid-cols-[auto_auto_1fr_auto]">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[auto_auto_1fr_auto]">
         <Input
           type="date"
           value={startsOn}

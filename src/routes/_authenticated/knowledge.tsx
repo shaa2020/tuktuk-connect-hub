@@ -327,7 +327,7 @@ function CannedReplies({ workspaceId, canEdit }: { workspaceId: string; canEdit:
                   className="block w-full px-4 py-3 text-left hover:bg-muted/60"
                 >
                   <span className="text-sm font-semibold">{r.title}</span>
-                  <p className="mt-0.5 line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">
+                  <p className="mt-0.5 line-clamp-2 whitespace-pre-line text-xs text-muted-foreground [overflow-wrap:anywhere]">
                     {r.body}
                   </p>
                 </button>

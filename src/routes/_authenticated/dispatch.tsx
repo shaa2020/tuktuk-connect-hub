@@ -390,7 +390,7 @@ function DispatchPage() {
             };
             return (
               <section key={d}>
-                <div className="mb-3 flex items-end justify-between gap-2">
+                <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
                   <div className="min-w-0">
                     <div className="text-xs font-semibold uppercase tracking-wide text-primary">
                       {d === iso(new Date())
@@ -408,7 +408,7 @@ function DispatchPage() {
                     </h2>
                   </div>
                   {live.length > 0 && (
-                    <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                    <div className="flex min-w-0 flex-wrap justify-end gap-2">
                       {canFleet && (
                         <Button
                           size="sm"

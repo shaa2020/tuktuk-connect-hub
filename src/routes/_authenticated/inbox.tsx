@@ -1464,9 +1464,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         </header>
 
         <PresenceLine others={presence.others} />
-        <div className="scrollbar-none flex items-center gap-1.5 overflow-x-auto border-b bg-card px-3 py-1.5 md:grid md:grid-cols-3 md:gap-2 md:py-2">
+        <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.3fr)] gap-1.5 border-b bg-card px-3 py-1.5 md:grid-cols-3 md:gap-2 md:py-2">
           <NativeSelect
-            className="h-8 w-auto shrink-0 pr-7 text-xs md:h-9 md:w-full"
+            className="h-8 min-w-0 truncate pr-7 text-xs md:h-9"
             value={v.status}
             onChange={(e) =>
               update({ status: e.target.value as ConversationStatus }, "Status updated")
@@ -1480,7 +1480,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             ))}
           </NativeSelect>
           <NativeSelect
-            className="h-8 w-auto shrink-0 pr-7 text-xs md:h-9 md:w-full"
+            className="h-8 min-w-0 truncate pr-7 text-xs md:h-9"
             value={v.priority}
             onChange={(e) => update({ priority: e.target.value as Priority }, "Priority updated")}
             aria-label="Priority"
@@ -1492,7 +1492,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             ))}
           </NativeSelect>
           <NativeSelect
-            className="h-8 w-auto max-w-[11rem] shrink-0 pr-7 text-xs md:h-9 md:w-full md:max-w-none"
+            className="h-8 min-w-0 truncate pr-7 text-xs md:h-9"
             value={v.assigned_to ?? ""}
             onChange={(e) => update({ assigned_to: e.target.value || null }, "Assignment updated")}
             aria-label="Assignee"
@@ -1545,7 +1545,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           </div>
         )}
 
-        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3 md:space-y-3 md:px-6 md:py-4">
+        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overflow-x-hidden px-3 py-3 md:space-y-3 md:px-6 md:py-4">
           {timeline.data?.hasMore && (
             <div className="text-center">
               <Button variant="ghost" size="sm" onClick={() => setMsgLimit((l) => l + MSG_PAGE)}>
@@ -1573,7 +1573,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                     <Lock className="size-3" />
                     Internal note · {ws.memberName(it.author)} · {fmtDateTime(it.at)}
                   </div>
-                  <p className="whitespace-pre-wrap text-sm">{it.body}</p>
+                  <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">{it.body}</p>
                 </div>
               ) : (
                 <div
@@ -1585,7 +1585,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                 >
                   <div
                     className={cn(
-                      "max-w-[85%] rounded-2xl px-3.5 py-2 md:max-w-[70%]",
+                      "min-w-0 max-w-[85%] rounded-2xl px-3.5 py-2 md:max-w-[70%]",
                       it.direction === "outbound"
                         ? "rounded-br-md bg-primary text-primary-foreground shadow-card"
                         : "rounded-bl-md border border-border-subtle bg-card shadow-card",
@@ -1598,7 +1598,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                       /^(📷|🎬|🎤|📎)|^\[(image|video|audio|voice|document|sticker|photo|file|attachment)[^\]]*\]$/.test(
                         it.body,
                       ) ? null : (
-                      <p className="whitespace-pre-wrap text-sm">{it.body}</p>
+                      <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">
+                        {it.body}
+                      </p>
                     )}
                     {it.files.map((f) => (
                       <FileView key={f.id} f={f} outbound={it.direction === "outbound"} />
@@ -1934,7 +1936,9 @@ function EmailBody({ body, outbound }: { body: string; outbound: boolean }) {
           {cleanSubject(p.subject)}
         </div>
       )}
-      <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{p.main}</p>
+      <p className="whitespace-pre-wrap text-[15px] leading-relaxed [overflow-wrap:anywhere]">
+        {p.main}
+      </p>
       {p.quoted && (
         <>
           <button
@@ -1953,7 +1957,7 @@ function EmailBody({ body, outbound }: { body: string; outbound: boolean }) {
           {open && (
             <div
               className={cn(
-                "whitespace-pre-wrap break-words border-l-2 pl-2.5 text-xs leading-relaxed",
+                "whitespace-pre-wrap border-l-2 pl-2.5 text-xs leading-relaxed [overflow-wrap:anywhere]",
                 outbound
                   ? "border-primary-foreground/40 text-primary-foreground/80"
                   : "border-border text-muted-foreground",
@@ -2029,7 +2033,7 @@ function AiDraftCard({
       <div className="mb-1 text-[11px] font-semibold uppercase text-primary">
         AI reply waiting for your approval
       </div>
-      <p className="whitespace-pre-wrap text-sm">{d.body}</p>
+      <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">{d.body}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {connected && (
           <Button
@@ -2378,7 +2382,9 @@ function Composer({
               <X className="size-3.5" />
             </button>
           </div>
-          <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-sm">{ai.text}</p>
+          <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">
+            {ai.text}
+          </p>
           {ai.kind !== "summarize" && !(ai.kind === "translate" && ai.incoming) && (
             <Button
               size="sm"
@@ -2570,7 +2576,7 @@ function Composer({
                   : "What did the customer say?"
           }
           rows={1}
-          className="max-h-40 min-h-9 flex-1 resize-none border-0 bg-transparent p-1.5 shadow-none focus-visible:ring-0"
+          className="max-h-40 min-h-9 min-w-0 flex-1 resize-none overflow-x-hidden border-0 bg-transparent p-1.5 shadow-none focus-visible:ring-0"
           aria-label="Message"
         />
         <Button

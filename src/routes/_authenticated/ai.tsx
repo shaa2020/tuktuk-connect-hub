@@ -182,7 +182,7 @@ function AiPage() {
               <div className="mb-1 text-[11px] font-semibold uppercase text-primary">
                 AI suggestion — review before using
               </div>
-              <p className="whitespace-pre-wrap text-sm">{answer}</p>
+              <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">{answer}</p>
             </div>
           )}
         </Panel>

@@ -154,7 +154,7 @@ export function TemplateSender({
                 />
               ))}
               {tpl && (
-                <div className="rounded-lg bg-success-soft p-3 text-sm whitespace-pre-wrap">
+                <div className="rounded-lg bg-success-soft p-3 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
                   {tpl.header && <p className="mb-1 font-semibold">{tpl.header}</p>}
                   {fillTemplate(tpl.body, values)}
                   {tpl.footer && <p className="mt-1 text-xs text-muted-foreground">{tpl.footer}</p>}
