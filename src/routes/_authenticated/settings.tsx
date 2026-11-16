@@ -86,7 +86,7 @@ function SettingsPage() {
       />
       <nav
         aria-label="Settings sections"
-        className="scrollbar-none sticky top-14 z-20 -mx-4 mb-4 flex gap-2 overflow-x-auto bg-background/90 px-4 py-2 backdrop-blur md:top-14 md:mx-0 md:px-0"
+        className="scrollbar-none sticky top-14 z-20 -mx-4 mb-4 flex gap-2 overflow-x-auto bg-transparent px-4 py-2 backdrop-blur md:top-[4.75rem] md:mx-0 md:px-0"
       >
         {[
           ["profile", "Profile"],

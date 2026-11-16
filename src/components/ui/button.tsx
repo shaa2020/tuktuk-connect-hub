@@ -5,19 +5,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium cursor-pointer transition-[color,background-color,border-color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        default: "btn-3d bg-primary text-primary-foreground",
+        destructive:
+          "btn-3d bg-destructive text-destructive-foreground [--btn-glow:var(--color-destructive)]",
         outline:
-          "border border-input bg-card shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border border-input bg-field shadow-[var(--elev-1)] backdrop-blur-md hover:border-primary/30 hover:bg-card hover:text-accent-foreground active:translate-y-px",
+        secondary:
+          "bg-secondary text-secondary-foreground backdrop-blur-md hover:bg-accent active:translate-y-px",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        navy: "bg-navy text-navy-foreground hover:bg-navy/90",
-        teal: "bg-teal text-teal-foreground hover:bg-teal/90",
+        navy: "btn-3d bg-navy text-navy-foreground [--btn-glow:var(--color-navy)]",
+        teal: "btn-3d bg-teal text-teal-foreground [--btn-glow:var(--color-teal)]",
       },
       size: {
         default: "h-10 px-4 py-2",

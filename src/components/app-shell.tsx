@@ -230,7 +230,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] md:flex",
+          "sticky top-3 m-3 mr-0 hidden h-[calc(100dvh-1.5rem)] shrink-0 flex-col glass-dark overflow-hidden rounded-2xl text-sidebar-foreground transition-[width] md:flex",
           collapsed ? "w-[68px]" : "w-60",
         )}
       >
@@ -261,14 +261,21 @@ export function AppShell({ children }: { children: ReactNode }) {
                       className={cn(
                         "relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                         active
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-elev before:absolute before:-left-2.5 before:h-5 before:w-1 before:rounded-r-full before:bg-sidebar-primary"
-                          : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                          ? "bg-gradient-to-r from-sidebar-primary/90 to-sidebar-primary/60 text-sidebar-primary-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.3),0_6px_16px_-6px_var(--color-sidebar-primary)]"
+                          : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       )}
                     >
                       <n.icon className="size-4 shrink-0" />
                       {!collapsed && <span className="truncate">{n.label}</span>}
                       {!collapsed ? (
-                        <CountBadge n={c} />
+                        <CountBadge
+                          n={c}
+                          className={
+                            active
+                              ? "bg-sidebar-primary-foreground/25 text-sidebar-primary-foreground"
+                              : undefined
+                          }
+                        />
                       ) : (
                         c > 0 && (
                           <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary" />
@@ -323,7 +330,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <OfflineBanner />
         {/* Desktop top bar */}
-        <header className="sticky top-0 z-30 hidden h-14 items-center gap-4 border-b border-border-subtle bg-card/85 px-6 backdrop-blur-md md:flex">
+        <header className="sticky top-3 z-30 mx-3 mt-3 hidden h-14 items-center gap-4 rounded-2xl border border-glass-edge bg-card px-5 shadow-[var(--elev-1)] backdrop-blur-xl backdrop-saturate-150 md:flex">
           <h2 className="min-w-0 truncate font-display text-[15px] font-bold tracking-tight">
             {pageTitle}
           </h2>
@@ -337,7 +344,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
           <button
             onClick={() => setSearchOpen(true)}
-            className="ml-auto flex h-9 w-72 items-center gap-2 rounded-lg border bg-surface-2 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="ml-auto flex h-9 w-72 items-center gap-2 rounded-xl border border-input bg-field px-3 text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Search className="size-4" />
             <span className="flex-1 text-left">Search…</span>
@@ -401,7 +408,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenu>
         </header>
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-card/90 px-4 backdrop-blur-md md:hidden">
+        <header className="sticky top-0 z-30 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-glass-edge bg-card px-4 shadow-[var(--elev-1)] backdrop-blur-xl backdrop-saturate-150 md:hidden">
           <div className="min-w-0">
             <div className="truncate font-display text-[16px] font-bold tracking-tight">
               {pageTitle}
@@ -457,7 +464,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile bottom nav */}
       <nav
         className={cn(
-          "pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 shadow-pop backdrop-blur-md md:hidden",
+          "pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-glass-edge bg-popover shadow-pop backdrop-blur-2xl backdrop-saturate-150 md:hidden",
           inThread && "hidden",
         )}
         aria-label="Main"
@@ -479,7 +486,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span
                   className={cn(
                     "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
-                    active && "bg-primary-soft",
+                    active && "bg-primary-soft shadow-[inset_0_1px_0_oklch(1_0_0/0.5)]",
                   )}
                 >
                   <n.icon className="size-5" />

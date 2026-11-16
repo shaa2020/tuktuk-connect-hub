@@ -173,8 +173,8 @@ function MfaScreen({
   description: string;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center px-5 py-10">
+      <div className="glass w-full max-w-sm rounded-3xl p-6 sm:p-8">
         <ShieldCheck className="mx-auto size-10 text-primary" />
         <h1 className="mt-3 text-center text-xl font-bold">{title}</h1>
         <p className="mt-2 text-center text-sm text-muted-foreground">{description}</p>
