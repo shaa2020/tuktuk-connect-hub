@@ -27,6 +27,7 @@ Later migrations (0002–0018) are listed in `drizzle/migrations/meta/_journal.j
 
 Testing: `npm run test:db` (requires a local PostgreSQL 16 install; no production access).
 All new migrations are idempotent and non-destructive (no DROP of tables/columns, no data deletion).
+
 - `0022_job_fanout_social_publishing.sql` — per-workspace background fan-out, social publishing columns + status guard.
 - `0023_telegram_webchat_channels.sql` — adds channel types telegram, webchat.
 - `0024_stripe_prices.sql` — Stripe price ids per plan; unique provider subscription id.

@@ -1,36 +1,24 @@
-# Tuktuk Connect Hub
+# Product Brief (v1)
+
+> The original requirements document used to scope the first version of the platform for
+> Tuk Tuk 24 Lisbon. Kept for reference; the current plan is in [roadmap.md](roadmap.md) and
+> the implemented scope in [feature-inventory.md](feature-inventory.md).
 
 PROJECT: TUK TUK 24 LISBON — UNIFIED CUSTOMER COMMUNICATION PLATFORM
 
-
-
 Act as a senior full-stack engineer, SaaS product architect, UI/UX designer, database engineer, security specialist, and AI integration engineer.
-
-
 
 Build a production-oriented, premium unified customer communication platform for my business, Tuk Tuk 24 Lisbon, which operates tuk-tuk tours in Lisbon, Portugal.
 
-
-
 The application must bring customer conversations from supported communication channels into one organized workspace. My team should be able to read and reply to messages, manage leads, view booking information, assign conversations, collaborate internally, and use AI to improve customer service.
-
-
 
 I will primarily use this application on my Android phone, but it must work exceptionally well on iPhones, tablets, laptops, and desktop computers.
 
-
-
 Do not build just a static prototype. Build a real, secure, database-connected application with working functionality.
-
-
 
 1. CORE DEVELOPMENT RULES
 
-
-
 Follow these rules throughout development:
-
-
 
 1. Build the application in small, verifiable phases.
 
@@ -68,19 +56,11 @@ Follow these rules throughout development:
 
 18. Do not stop after creating the visual layout. Connect the interface to the backend and test the important user journeys.
 
-
-
-2. TECHNOLOGY STACK
-
-
+19. TECHNOLOGY STACK
 
 Use the following architecture where supported by the development environment.
 
-
-
 Frontend
-
-
 
 - React.
 
@@ -100,15 +80,9 @@ Frontend
 
 - Appropriate loading and error handling.
 
-
-
 Backend
 
-
-
 Use Supabase for:
-
-
 
 - Authentication.
 
@@ -124,11 +98,7 @@ Use Supabase for:
 
 - Scheduled jobs or an external job runner when necessary.
 
-
-
 Use Supabase Edge Functions or another secure backend service for:
-
-
 
 - Social platform API requests.
 
@@ -144,63 +114,33 @@ Use Supabase Edge Functions or another secure backend service for:
 
 - Privileged operations.
 
-
-
 Do not make privileged API requests directly from the browser.
-
-
 
 AI
 
-
-
 Use an approved Gemini API integration or another configurable AI provider.
-
-
 
 AI requests must go through a secure backend function. Store API keys as server-side secrets.
 
-
-
 Development approach
-
-
 
 Inspect the current project before modifying it. Reuse existing working code where possible. Establish a clear project structure, environment configuration, database migrations, and setup documentation.
 
-
-
 If a required feature cannot be completed with the available environment, explain the limitation and implement the most appropriate secure foundation without pretending it is finished.
-
-
 
 3. PREMIUM DESIGN SYSTEM
 
-
-
 Create a premium SaaS interface that feels professional, modern, fast, elegant, and exceptionally easy to use.
-
-
 
 The design should feel appropriate for a serious international tourism business.
 
-
-
 Brand identity
-
-
 
 Business name: Tuk Tuk 24 Lisbon.
 
-
-
 Use a refined visual identity inspired by Lisbon's warm architecture and contemporary SaaS products.
 
-
-
 Color palette
-
-
 
 - Primary dark navy: #14213D
 
@@ -226,15 +166,9 @@ Color palette
 
 - Information: #0284C7
 
-
-
 Use colors consistently. Ensure sufficient contrast and accessible text sizes.
 
-
-
 Visual style
-
-
 
 - Clean, spacious layouts.
 
@@ -264,35 +198,19 @@ Visual style
 
 - No oversized desktop-only layouts on mobile.
 
-
-
 Interaction quality
-
-
 
 Every visible button, menu, filter, tab, form, and interactive control must have a defined purpose.
 
-
-
 Avoid decorative controls that do nothing.
-
-
 
 Use confirmation dialogs for destructive actions. Provide clear feedback after successful operations and helpful explanations when something fails.
 
-
-
 4. AUTHENTICATION AND BUSINESS WORKSPACES
-
-
 
 Implement secure authentication using Supabase Auth.
 
-
-
 Support:
-
-
 
 - Email and password sign-in.
 
@@ -312,51 +230,27 @@ Support:
 
 - Appropriate account recovery flows.
 
-
-
 Do not allow an unauthenticated user to access private conversations, customer information, bookings, or business settings.
-
-
 
 Business workspace
 
-
-
 Structure the system around a business workspace so the application can support multiple authorized team members.
-
-
 
 Each private business record must belong to the appropriate workspace.
 
-
-
 Enforce workspace boundaries in the database, not just in the frontend.
-
-
 
 A user must not be able to change a workspace ID in a request to access another business's records.
 
-
-
 5. TEAM ROLES AND PERMISSIONS
-
-
 
 Create these roles:
 
-
-
 Superadmin
-
-
 
 Responsible for platform-wide administration when the application genuinely operates as a multi-business platform.
 
-
-
 Permissions:
-
-
 
 - Manage platform-level configuration.
 
@@ -370,23 +264,13 @@ Permissions:
 
 - Configure platform-wide feature availability.
 
-
-
 Do not expose customer content across unrelated businesses without explicit authorization and a legitimate operational need.
-
-
 
 Business Admin
 
-
-
 Responsible for Tuk Tuk 24 Lisbon.
 
-
-
 Permissions:
-
-
 
 - Manage workspace settings.
 
@@ -408,15 +292,9 @@ Permissions:
 
 - Configure notification preferences.
 
-
-
 Manager
 
-
-
 Permissions:
-
-
 
 - View team conversations.
 
@@ -436,19 +314,11 @@ Permissions:
 
 - Escalate conversations.
 
-
-
 Managers must not be able to change sensitive platform settings unless explicitly authorized.
-
-
 
 Agent
 
-
-
 Permissions:
-
-
 
 - View assigned conversations and other queues explicitly allowed by the administrator.
 
@@ -464,35 +334,19 @@ Permissions:
 
 - View relevant customer and booking information.
 
-
-
 Agents must not manage billing, secrets, platform configuration, or other users' permissions unless separately granted.
-
-
 
 Permission enforcement
 
-
-
 Implement role checks in backend operations and database policies.
-
-
 
 Hiding a button is not a security boundary.
 
-
-
 Test attempts to access unauthorized records and perform unauthorized operations.
-
-
 
 6. APPLICATION NAVIGATION
 
-
-
 Create the following main sections:
-
-
 
 1. Home Dashboard.
 
@@ -524,15 +378,9 @@ Create the following main sections:
 
 15. Audit Log, restricted to authorized roles.
 
-
-
 On desktop, use a collapsible sidebar.
 
-
-
 On mobile, use a compact bottom navigation for the most important sections:
-
-
 
 - Home.
 
@@ -544,31 +392,17 @@ On mobile, use a compact bottom navigation for the most important sections:
 
 - More.
 
-
-
 Put secondary sections under More.
-
-
 
 Display unread counts and relevant notification indicators without overcrowding the interface.
 
-
-
 Navigation must remain consistent across the application.
-
-
 
 7. HOME DASHBOARD
 
-
-
 Build a real dashboard using actual database data.
 
-
-
 Include:
-
-
 
 - Total conversations.
 
@@ -602,43 +436,23 @@ Include:
 
 - Recent errors or failed message deliveries.
 
-
-
 Allow users to filter supported reports by date range, channel, team member, and status.
-
-
 
 Only display metrics that can be calculated correctly from available data.
 
-
-
 If a metric lacks sufficient data, show an honest unavailable or insufficient-data state.
-
-
 
 Use appropriate charts and compact cards. Make the dashboard responsive.
 
-
-
 8. UNIFIED INBOX
-
-
 
 This is the application's most important feature.
 
-
-
 Create a central inbox for conversations from connected and authorized channels.
-
-
 
 Conversation list
 
-
-
 Include:
-
-
 
 - Customer name.
 
@@ -662,15 +476,9 @@ Include:
 
 - Booking or lead indicator where applicable.
 
-
-
 Inbox filters
 
-
-
 Provide:
-
-
 
 - All conversations.
 
@@ -700,15 +508,9 @@ Provide:
 
 - Filter by date.
 
-
-
 Search
 
-
-
 Search available authorized records by:
-
-
 
 - Customer name.
 
@@ -722,19 +524,11 @@ Search available authorized records by:
 
 - Lead information.
 
-
-
 Respect access permissions in search results.
-
-
 
 Conversation actions
 
-
-
 Support:
-
-
 
 - Assign to a team member.
 
@@ -766,15 +560,9 @@ Support:
 
 - View authorized conversation history.
 
-
-
 Conversation statuses
 
-
-
 Use a consistent workflow:
-
-
 
 - Open.
 
@@ -788,19 +576,11 @@ Use a consistent workflow:
 
 - Archived.
 
-
-
 Use appropriate permissions and audit logging for important changes.
-
-
 
 Message composer
 
-
-
 Support:
-
-
 
 - Text messages.
 
@@ -822,23 +602,13 @@ Support:
 
 - Retry after a genuine delivery failure.
 
-
-
 Do not show an attachment option for a channel unless that type of attachment is supported.
-
-
 
 Show the actual channel restrictions when necessary.
 
-
-
 Message states
 
-
-
 Represent states accurately:
-
-
 
 - Draft.
 
@@ -856,35 +626,19 @@ Represent states accurately:
 
 - Delivery unknown.
 
-
-
 Never infer a delivery receipt from a successful HTTP request alone.
-
-
 
 Internal notes
 
-
-
 Internal notes must be visually distinct from customer-facing messages.
-
-
 
 Internal notes must never be sent to the customer through a social platform.
 
-
-
 Apply backend permissions to prevent unauthorized users from reading or adding notes when the business's policy restricts them.
-
-
 
 Real-time updates
 
-
-
 Use Supabase Realtime or an appropriate secure event mechanism for:
-
-
 
 - New conversations.
 
@@ -898,23 +652,13 @@ Use Supabase Realtime or an appropriate secure event mechanism for:
 
 - Relevant notification updates.
 
-
-
 Avoid duplicating messages when both realtime events and webhook updates arrive.
-
-
 
 9. CONTACT MANAGEMENT
 
-
-
 Build a proper customer database.
 
-
-
 Each contact can include:
-
-
 
 - Full name.
 
@@ -948,11 +692,7 @@ Each contact can include:
 
 - Assigned team member, when applicable.
 
-
-
 Support:
-
-
 
 - Create contacts.
 
@@ -972,43 +712,23 @@ Support:
 
 - Record applicable consent and communication preferences.
 
-
-
 Identity matching
-
-
 
 Do not automatically merge two people just because they share a display name.
 
-
-
 Use reliable identifiers such as verified email, phone number, or platform-specific identifiers where appropriate.
-
-
 
 When a match is uncertain, request human confirmation.
 
-
-
 Keep platform identities linked to the correct contact.
-
-
 
 Do not assume that a person using the same name on two social networks is necessarily the same person.
 
-
-
 10. LEAD MANAGEMENT
-
-
 
 Create a lightweight CRM pipeline for tourism inquiries.
 
-
-
 Suggested stages:
-
-
 
 - New.
 
@@ -1026,11 +746,7 @@ Suggested stages:
 
 - Lost.
 
-
-
 Allow authorized users to:
-
-
 
 - Create leads manually.
 
@@ -1064,27 +780,15 @@ Allow authorized users to:
 
 - Record the reason a lead was lost.
 
-
-
 Do not invent missing customer details.
-
-
 
 Clearly distinguish information provided by the customer from AI-generated suggestions.
 
-
-
 11. BOOKING INFORMATION
-
-
 
 Create a booking overview and customer booking panel.
 
-
-
 Support fields appropriate to the business:
-
-
 
 - Booking reference.
 
@@ -1120,23 +824,13 @@ Support fields appropriate to the business:
 
 - External booking reference.
 
-
-
 Allow authorized users to create and update bookings manually.
-
-
 
 If an external booking system is connected, synchronize data through its authorized API or webhook.
 
-
-
 Do not pretend a booking is confirmed because someone mentioned a date in a conversation.
 
-
-
 Clearly distinguish:
-
-
 
 - Inquiry.
 
@@ -1150,27 +844,15 @@ Clearly distinguish:
 
 - Completed booking.
 
-
-
 Do not store payment-card details.
-
-
 
 Do not mark a payment as successful unless a trusted payment provider or authorized booking system confirms it.
 
-
-
 12. TASKS AND FOLLOW-UPS
-
-
 
 Build a task management feature.
 
-
-
 Each task can include:
-
-
 
 - Title.
 
@@ -1196,11 +878,7 @@ Each task can include:
 
 - Completion timestamp.
 
-
-
 Support:
-
-
 
 - Create task.
 
@@ -1218,31 +896,17 @@ Support:
 
 - View team tasks.
 
-
-
 Display overdue tasks clearly.
-
-
 
 If reminders are enabled, deliver them through a real supported notification mechanism.
 
-
-
 Do not rely on a browser tab remaining open for critical reminders.
-
-
 
 13. DATABASE DESIGN
 
-
-
 Create normalized database tables with appropriate indexes, constraints, timestamps, and foreign keys.
 
-
-
 At minimum, design the following entities:
-
-
 
 - workspaces
 
@@ -1314,15 +978,9 @@ At minimum, design the following entities:
 
 - background_jobs
 
-
-
 Adjust the schema when implementation details require it.
 
-
-
 Database requirements
-
-
 
 - Use UUIDs or another suitable stable identifier.
 
@@ -1354,19 +1012,11 @@ Database requirements
 
 - Never load an unlimited conversation history into one request.
 
-
-
 14. ROW LEVEL SECURITY AND PRIVACY
-
-
 
 Enable and test Row Level Security for all tables containing private business data.
 
-
-
 Policies must enforce:
-
-
 
 - Workspace membership.
 
@@ -1378,31 +1028,17 @@ Policies must enforce:
 
 - Appropriate administrative privileges.
 
-
-
 Users must not be able to bypass these rules by directly querying the database.
-
-
 
 Keep privileged operations in secure server-side functions.
 
-
-
 Never expose a Supabase service-role key in the frontend.
-
-
 
 Do not place private access tokens in browser storage.
 
-
-
 Protect sensitive information in logs.
 
-
-
 Use audit logs for important actions, including:
-
-
 
 - Authentication and access changes where available.
 
@@ -1420,19 +1056,11 @@ Use audit logs for important actions, including:
 
 - Administrative configuration changes.
 
-
-
 Apply data minimization and suitable retention policies.
-
-
 
 15. PHASE 1 IMPLEMENTATION ORDER
 
-
-
 Start by implementing the following:
-
-
 
 1. Inspect the project and establish the application structure.
 
@@ -1468,23 +1096,13 @@ Start by implementing the following:
 
 17. Test access control and core workflows.
 
-
-
 At this stage, use clearly identified sample records only if needed to demonstrate the interface. Do not present sample records as real customer conversations.
-
-
 
 Do not begin by creating every integration screen while leaving the database and core application nonfunctional.
 
-
-
 16. PHASE 1 ACCEPTANCE CRITERIA
 
-
-
 Phase 1 is complete only when:
-
-
 
 - A user can sign in securely.
 
@@ -1516,29 +1134,4 @@ Phase 1 is complete only when:
 
 - No fake external integration is represented as connected.
 
-
-
 After implementing Phase 1, report what is working, what has been tested, what remains incomplete, and which credentials or configuration are needed for the next phase.
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://tuktuk-connect-hub.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/133f9183-9d83-4d21-85ed-38bd33238705).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```

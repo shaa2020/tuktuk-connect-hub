@@ -2,7 +2,7 @@
 
 /**
  * Public registration is OFF until the owner enables it (Supabase Auth "allow signups" + this
- * flag). Until then /signup explains that access is by invitation. See docs/BLOCKERS.md B-AUTH-1.
+ * flag). Until then /signup explains that access is by invitation. See docs/project/blockers.md B-AUTH-1.
  */
 export const PUBLIC_SIGNUP_ENABLED = import.meta.env.VITE_PUBLIC_SIGNUP === "true";
 
