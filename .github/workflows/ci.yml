@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # bun.lock resolves through Lovable's private mirror, so CI installs from the public registry.
+      # bun.lock resolves through a private registry mirror, so CI installs from the public registry.
       - name: Install dependencies
         run: |
           npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps

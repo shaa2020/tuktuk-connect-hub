@@ -1,0 +1,50 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security problems must not be reported here** — see SECURITY.md.
+        Never paste customer data, passwords or API keys.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Tap …
+        3. See …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Inbox / channels
+        - Bookings / booking page
+        - Contacts / leads
+        - AI assistant / AI Operator
+        - Schedule / team
+        - Billing / plans
+        - Settings / integrations
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: e.g. Android 15, Chrome 131 / installed app
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or extra context

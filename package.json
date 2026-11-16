@@ -1,6 +1,9 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "tuktuk-connect-hub",
+  "version": "1.0.0",
+  "description": "TeamInbox — unified customer inbox, bookings and operations platform for service businesses.",
   "private": true,
+  "license": "UNLICENSED",
   "sideEffects": false,
   "type": "module",
   "scripts": {

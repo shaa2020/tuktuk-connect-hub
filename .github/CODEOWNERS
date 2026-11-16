@@ -1,0 +1,6 @@
+# Default reviewers for every change.
+*                       @shaa2020
+
+# Database schema, policies and their tests need an explicit review.
+/drizzle/               @shaa2020
+/db-tests/              @shaa2020
