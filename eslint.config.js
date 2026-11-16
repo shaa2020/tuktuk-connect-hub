@@ -6,7 +6,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  {
+    ignores: ["dist", ".output", ".vinxi", "src/integrations/supabase/**", "src/routeTree.gen.ts"],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -20,6 +22,9 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // Supabase query results are often loosely typed (generated types lag the schema and
+      // tsconfig relaxes strictness for them), so `any` is allowed but flagged for clean-up.
+      "@typescript-eslint/no-explicit-any": "warn",
       "no-restricted-imports": [
         "error",
         {

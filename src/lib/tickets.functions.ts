@@ -4,26 +4,55 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const sendTickets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ workspaceId: z.string().uuid(), bookingIds: z.array(z.string().uuid()).min(1).max(100) }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        bookingIds: z.array(z.string().uuid()).min(1).max(100),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { data: ok } = await context.supabase.rpc("has_ws_role", { _ws: data.workspaceId, _roles: ["admin", "manager", "agent"] });
+    const { data: ok } = await context.supabase.rpc("has_ws_role", {
+      _ws: data.workspaceId,
+      _roles: ["admin", "manager", "agent"],
+    });
     if (!ok) throw new Error("Not allowed.");
     // RLS-scoped read: only bookings the caller can see in this workspace.
-    const { data: rows } = await context.supabase.from("bookings").select("id").eq("workspace_id", data.workspaceId).in("id", data.bookingIds);
+    const { data: rows } = await context.supabase
+      .from("bookings")
+      .select("id")
+      .eq("workspace_id", data.workspaceId)
+      .in("id", data.bookingIds);
     const { sendTicket } = await import("./tickets.server");
-    let sent = 0; const errors: string[] = [];
-    for (const r of rows ?? []) { const x = await sendTicket(r.id, context.userId); if (x.ok) sent++; else errors.push(x.error); }
+    let sent = 0;
+    const errors: string[] = [];
+    for (const r of rows ?? []) {
+      const x = await sendTicket(r.id, context.userId);
+      if (x.ok) sent++;
+      else errors.push(x.error);
+    }
     return { sent, failed: errors.length, firstError: errors[0] ?? null };
   });
 
 export const setTicketAuto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ workspaceId: z.string().uuid(), mode: z.enum(["off", "all", "paid", "unpaid"]) }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({ workspaceId: z.string().uuid(), mode: z.enum(["off", "all", "paid", "unpaid"]) })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { data: ok } = await context.supabase.rpc("has_ws_role", { _ws: data.workspaceId, _roles: ["admin", "manager"] });
+    const { data: ok } = await context.supabase.rpc("has_ws_role", {
+      _ws: data.workspaceId,
+      _roles: ["admin", "manager"],
+    });
     if (!ok) throw new Error("Only admins and managers can change this.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("workspaces").update({ ticket_auto: data.mode } as any).eq("id", data.workspaceId);
+    const { error } = await supabaseAdmin
+      .from("workspaces")
+      .update({ ticket_auto: data.mode } as any)
+      .eq("id", data.workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -36,7 +65,25 @@ export const getPublicTicket = createServerFn({ method: "GET" })
     const { rateLimit, clientIp } = await import("./rate-limit.server");
     if (!(await rateLimit(`ticket:${clientIp()}`, 60, 60, { failClosed: true }))) return null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: b } = await (supabaseAdmin.from("bookings") as any).select("reference, tour_name, tour_date, start_time, guests, pickup_location, status, payment_status, amount, currency, contacts(full_name)").eq("ticket_token", data.token).maybeSingle();
+    const { data: b } = await (supabaseAdmin.from("bookings") as any)
+      .select(
+        "reference, tour_name, tour_date, start_time, guests, pickup_location, status, payment_status, amount, currency, contacts(full_name), workspaces(name)",
+      )
+      .eq("ticket_token", data.token)
+      .maybeSingle();
     if (!b || (b.status !== "confirmed" && b.status !== "completed")) return null;
-    return { completed: b.status === "completed", reference: b.reference, tour_name: b.tour_name, tour_date: b.tour_date, start_time: b.start_time, guests: b.guests, pickup_location: b.pickup_location, payment_status: b.payment_status, amount: b.amount, currency: b.currency, guest: (b as any).contacts?.full_name ?? null };
+    return {
+      completed: b.status === "completed",
+      reference: b.reference,
+      tour_name: b.tour_name,
+      tour_date: b.tour_date,
+      start_time: b.start_time,
+      guests: b.guests,
+      pickup_location: b.pickup_location,
+      payment_status: b.payment_status,
+      amount: b.amount,
+      currency: b.currency,
+      guest: (b as any).contacts?.full_name ?? null,
+      business: ((b as any).workspaces?.name as string | undefined) ?? null,
+    };
   });

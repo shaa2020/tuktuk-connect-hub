@@ -13,7 +13,12 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 }
 
 export function pushSupported(): boolean {
-  return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
 }
 
 /**
@@ -21,17 +26,23 @@ export function pushSupported(): boolean {
  * Safe to call repeatedly — the browser de-duplicates the subscription and the
  * row is upserted by endpoint. Asks for notification permission on first call.
  */
-export async function subscribePush(ask = false): Promise<"subscribed" | "denied" | "unsupported" | "needs-tap"> {
+export async function subscribePush(
+  ask = false,
+): Promise<"subscribed" | "denied" | "unsupported" | "needs-tap"> {
   if (!pushSupported()) return "unsupported";
   try {
     if (Notification.permission !== "granted" && !ask) return "needs-tap";
     const reg = await navigator.serviceWorker.register("/sw.js");
     await navigator.serviceWorker.ready;
-    const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    const perm =
+      Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
     if (perm !== "granted") return "denied";
     let existing = await reg.pushManager.getSubscription();
     // Drop subscriptions made with the old (wrongly formatted) key.
-    if (existing && localStorage.getItem("tt24-push-key") !== VAPID_PUBLIC_KEY) { await existing.unsubscribe(); existing = null; }
+    if (existing && localStorage.getItem("tt24-push-key") !== VAPID_PUBLIC_KEY) {
+      await existing.unsubscribe();
+      existing = null;
+    }
     const sub =
       existing ??
       (await reg.pushManager.subscribe({
@@ -39,12 +50,16 @@ export async function subscribePush(ask = false): Promise<"subscribed" | "denied
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
       }));
     const json = sub.toJSON();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user || !json.keys) return "denied";
-    const { error } = await supabase.from("push_subscriptions").upsert(
-      { user_id: user.id, endpoint: sub.endpoint, keys: json.keys },
-      { onConflict: "endpoint" },
-    );
+    const { error } = await supabase
+      .from("push_subscriptions")
+      .upsert(
+        { user_id: user.id, endpoint: sub.endpoint, keys: json.keys },
+        { onConflict: "endpoint" },
+      );
     if (!error) localStorage.setItem("tt24-push-key", VAPID_PUBLIC_KEY);
     return error ? "denied" : "subscribed";
   } catch {

@@ -1,3 +1,4 @@
+import { AutomationWorkflows } from "@/components/automation-workflows";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,11 +18,23 @@ import { AiOperatorPanel } from "@/components/ai-operator-panel";
 import { AiOperatorMonitor } from "@/components/ai-operator-monitor";
 
 export const Route = createFileRoute("/_authenticated/automations")({
-  head: () => ({ meta: [{ title: "Automations — Tuk Tuk 24 Lisbon" }, { name: "description", content: "Automatic assignment rules." }] }),
+  head: () => ({
+    meta: [
+      { title: "Automations — TeamInbox" },
+      { name: "description", content: "Automatic assignment rules." },
+    ],
+  }),
   component: AutomationsPage,
 });
 
-type Rule = { id: string; name: string; enabled: boolean; trigger: { event: string; channel: string } | null; actions: { assign_to: string } | null; created_at: string };
+type Rule = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  trigger: { event: string; channel: string } | null;
+  actions: { assign_to: string } | null;
+  created_at: string;
+};
 
 function AutomationsPage() {
   const ws = useWorkspace();
@@ -32,25 +45,43 @@ function AutomationsPage() {
   const rules = useQuery({
     queryKey: ["rules", ws.workspaceId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("automation_rules").select("*").eq("workspace_id", ws.workspaceId).order("created_at");
+      const { data, error } = await supabase
+        .from("automation_rules")
+        .select("*")
+        .eq("workspace_id", ws.workspaceId)
+        .order("created_at");
       if (error) throw error;
       return data as unknown as Rule[];
     },
   });
   const runs = useQuery({
     queryKey: ["runs", ws.workspaceId],
-    queryFn: async () => (await supabase.from("automation_runs").select("id, rule_id, status, detail, created_at").eq("workspace_id", ws.workspaceId).order("created_at", { ascending: false }).limit(20)).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("automation_runs")
+          .select("id, rule_id, status, detail, created_at")
+          .eq("workspace_id", ws.workspaceId)
+          .order("created_at", { ascending: false })
+          .limit(20)
+      ).data ?? [],
   });
 
   async function add() {
     if (!name.trim()) return toast.error("Give the rule a name");
     if (!assign) return toast.error("Choose who to assign to");
     const { error } = await supabase.from("automation_rules").insert({
-      workspace_id: ws.workspaceId, name: name.trim().slice(0, 100), enabled: true,
-      trigger: { event: "conversation_created", channel }, actions: { assign_to: assign },
+      workspace_id: ws.workspaceId,
+      name: name.trim().slice(0, 100),
+      enabled: true,
+      trigger: { event: "conversation_created", channel },
+      actions: { assign_to: assign },
     });
     if (error) return toast.error(error.message);
-    setName(""); setAssign(""); toast.success("Rule created"); rules.refetch();
+    setName("");
+    setAssign("");
+    toast.success("Rule created");
+    rules.refetch();
   }
   async function toggle(r: Rule, v: boolean) {
     const { error } = await supabase.from("automation_rules").update({ enabled: v }).eq("id", r.id);
@@ -66,45 +97,112 @@ function AutomationsPage() {
 
   return (
     <PageContainer className="max-w-3xl">
-      <PageHeader title="Automations" description="Let the AI Operator run things while you're away, and set simple auto-assign rules." />
+      <PageHeader
+        title="Automations"
+        description="Let the AI Operator run things while you're away, and set simple auto-assign rules."
+      />
       <AiOperatorPanel />
-      <div className="my-6"><AiOperatorMonitor /></div>
+      <div className="my-6">
+        <AiOperatorMonitor />
+      </div>
+      <div className="mb-8">
+        <AutomationWorkflows />
+      </div>
       <h2 className="mb-2 text-sm font-semibold text-muted-foreground">Auto-assign rules</h2>
       {admin && (
         <Panel className="mb-4 space-y-3 p-4">
           <h2 className="text-sm font-semibold">New auto-assign rule</h2>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Name"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="WhatsApp to Rita" /></Field>
-            <Field label="When a new conversation arrives on"><NativeSelect value={channel} onChange={(e) => setChannel(e.target.value)}>
-              <option value="any">Any channel</option>
-              {(Object.keys(CHANNEL_LABEL) as ChannelType[]).map((c) => <option key={c} value={c}>{CHANNEL_LABEL[c]}</option>)}
-            </NativeSelect></Field>
-            <Field label="Assign it to"><MemberSelect value={assign} onChange={setAssign} emptyLabel="Choose…" /></Field>
+            <Field label="Name">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="WhatsApp to Rita"
+              />
+            </Field>
+            <Field label="When a new conversation arrives on">
+              <NativeSelect value={channel} onChange={(e) => setChannel(e.target.value)}>
+                <option value="any">Any channel</option>
+                {(Object.keys(CHANNEL_LABEL) as ChannelType[]).map((c) => (
+                  <option key={c} value={c}>
+                    {CHANNEL_LABEL[c]}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Field label="Assign it to">
+              <MemberSelect value={assign} onChange={setAssign} emptyLabel="Choose…" />
+            </Field>
           </div>
-          <Button onClick={add}><Plus /> Add rule</Button>
+          <Button onClick={add}>
+            <Plus /> Add rule
+          </Button>
         </Panel>
       )}
       <Panel>
-        {rules.isLoading ? <ListSkeleton /> : rules.error ? <div className="p-4"><ErrorState message={(rules.error as Error).message} /></div> :
-          !rules.data?.length ? <EmptyState icon={<Workflow />} title="No rules yet" description={admin ? "Create a rule above." : "A Business Admin can create rules."} /> : (
-            <ul className="divide-y">{rules.data.map((r) => (
+        {rules.isLoading ? (
+          <ListSkeleton />
+        ) : rules.error ? (
+          <div className="p-4">
+            <ErrorState message={(rules.error as Error).message} />
+          </div>
+        ) : !rules.data?.length ? (
+          <EmptyState
+            icon={<Workflow />}
+            title="No rules yet"
+            description={admin ? "Create a rule above." : "A Business Admin can create rules."}
+          />
+        ) : (
+          <ul className="divide-y">
+            {rules.data.map((r) => (
               <li key={r.id} className="flex items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold">{r.name}</div>
-                  <div className="text-xs text-muted-foreground">New {r.trigger?.channel === "any" ? "conversation on any channel" : `${CHANNEL_LABEL[r.trigger?.channel as ChannelType] ?? r.trigger?.channel} conversation`} → assign to {ws.memberName(r.actions?.assign_to)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    New{" "}
+                    {r.trigger?.channel === "any"
+                      ? "conversation on any channel"
+                      : `${CHANNEL_LABEL[r.trigger?.channel as ChannelType] ?? r.trigger?.channel} conversation`}{" "}
+                    → assign to {ws.memberName(r.actions?.assign_to)}
+                  </div>
                 </div>
-                <Switch checked={r.enabled} disabled={!admin} onCheckedChange={(v) => toggle(r, v)} aria-label="Enabled" />
-                {admin && <Confirm trigger={<Button variant="ghost" size="icon" aria-label="Delete rule"><Trash2 /></Button>} title="Delete rule?" description="This rule will stop running." confirmLabel="Delete" onConfirm={() => del(r.id)} />}
+                <Switch
+                  checked={r.enabled}
+                  disabled={!admin}
+                  onCheckedChange={(v) => toggle(r, v)}
+                  aria-label="Enabled"
+                />
+                {admin && (
+                  <Confirm
+                    trigger={
+                      <Button variant="ghost" size="icon" aria-label="Delete rule">
+                        <Trash2 />
+                      </Button>
+                    }
+                    title="Delete rule?"
+                    description="This rule will stop running."
+                    confirmLabel="Delete"
+                    onConfirm={() => del(r.id)}
+                  />
+                )}
               </li>
-            ))}</ul>
-          )}
+            ))}
+          </ul>
+        )}
       </Panel>
       {!!runs.data?.length && (
         <Panel className="mt-4">
           <h2 className="border-b px-4 py-3 text-sm font-semibold">Recent runs</h2>
-          <ul className="divide-y text-sm">{runs.data.map((r) => (
-            <li key={r.id} className="flex justify-between gap-2 px-4 py-2"><span>{ruleName(r.rule_id)} · {r.status} · {r.detail}</span><span className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</span></li>
-          ))}</ul>
+          <ul className="divide-y text-sm">
+            {runs.data.map((r) => (
+              <li key={r.id} className="flex justify-between gap-2 px-4 py-2">
+                <span>
+                  {ruleName(r.rule_id)} · {r.status} · {r.detail}
+                </span>
+                <span className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</span>
+              </li>
+            ))}
+          </ul>
         </Panel>
       )}
     </PageContainer>

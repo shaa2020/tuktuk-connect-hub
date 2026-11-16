@@ -26,7 +26,7 @@ export function BrandLockup({ light }: { light?: boolean }) {
       <span
         className={cn(
           "font-display text-[1.35rem] font-extrabold leading-none tracking-tight",
-          light ? "text-white" : "text-foreground"
+          light ? "text-white" : "text-foreground",
         )}
       >
         Team<span className="text-primary">Inbox</span>

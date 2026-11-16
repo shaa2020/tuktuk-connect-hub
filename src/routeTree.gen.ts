@@ -30,6 +30,7 @@ import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
+import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
@@ -38,11 +39,14 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as TicketTokenRouteImport } from './routes/ticket.$token'
 import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts.index'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
+import { Route as ApiPublicChatKeyRouteImport } from './routes/api/public/chat/$key'
 import { Route as ApiPublicHooksBackgroundSyncRouteImport } from './routes/api/public/hooks/background-sync'
+import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicOauthMetaCallbackRouteImport } from './routes/api/public/oauth/meta/callback'
 import { Route as ApiPublicWebhooksHubWorkspaceIdRouteImport } from './routes/api/public/webhooks/hub.$workspaceId'
 import { Route as ApiPublicWebhooksMetaWorkspaceIdRouteImport } from './routes/api/public/webhooks/meta.$workspaceId'
+import { Route as ApiPublicWebhooksTelegramConnectionIdRouteImport } from './routes/api/public/webhooks/telegram.$connectionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -151,6 +155,11 @@ const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
   path: '/platform',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -192,12 +201,22 @@ const AuthenticatedContactsIdRoute = AuthenticatedContactsIdRouteImport.update({
   path: '/contacts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicChatKeyRoute = ApiPublicChatKeyRouteImport.update({
+  id: '/api/public/chat/$key',
+  path: '/api/public/chat/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksBackgroundSyncRoute =
   ApiPublicHooksBackgroundSyncRouteImport.update({
     id: '/api/public/hooks/background-sync',
     path: '/api/public/hooks/background-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
+  id: '/api/public/webhooks/stripe',
+  path: '/api/public/webhooks/stripe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -222,6 +241,12 @@ const ApiPublicWebhooksMetaWorkspaceIdRoute =
     path: '/api/public/webhooks/meta/$workspaceId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksTelegramConnectionIdRoute =
+  ApiPublicWebhooksTelegramConnectionIdRouteImport.update({
+    id: '/api/public/webhooks/telegram/$connectionId',
+    path: '/api/public/webhooks/telegram/$connectionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -244,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/platform': typeof AuthenticatedPlatformRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -252,11 +278,14 @@ export interface FileRoutesByFullPath {
   '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  '/api/public/webhooks/telegram/$connectionId': typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -279,6 +308,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/platform': typeof AuthenticatedPlatformRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -287,11 +317,14 @@ export interface FileRoutesByTo {
   '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
+  '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  '/api/public/webhooks/telegram/$connectionId': typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -316,6 +349,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRoute
+  '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
@@ -324,11 +358,14 @@ export interface FileRoutesById {
   '/ticket/$token': typeof TicketTokenRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/api/public/chat/$key': typeof ApiPublicChatKeyRoute
   '/api/public/hooks/background-sync': typeof ApiPublicHooksBackgroundSyncRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/oauth/meta/callback': typeof ApiPublicOauthMetaCallbackRoute
   '/api/public/webhooks/hub/$workspaceId': typeof ApiPublicWebhooksHubWorkspaceIdRoute
   '/api/public/webhooks/meta/$workspaceId': typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  '/api/public/webhooks/telegram/$connectionId': typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -353,6 +390,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notifications'
     | '/platform'
+    | '/schedule'
     | '/settings'
     | '/social'
     | '/tasks'
@@ -361,11 +399,14 @@ export interface FileRouteTypes {
     | '/ticket/$token'
     | '/contacts/$id'
     | '/contacts/'
+    | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
+    | '/api/public/webhooks/stripe'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
     | '/api/public/webhooks/meta/$workspaceId'
+    | '/api/public/webhooks/telegram/$connectionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -388,6 +429,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notifications'
     | '/platform'
+    | '/schedule'
     | '/settings'
     | '/social'
     | '/tasks'
@@ -396,11 +438,14 @@ export interface FileRouteTypes {
     | '/ticket/$token'
     | '/contacts/$id'
     | '/contacts'
+    | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
+    | '/api/public/webhooks/stripe'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
     | '/api/public/webhooks/meta/$workspaceId'
+    | '/api/public/webhooks/telegram/$connectionId'
   id:
     | '__root__'
     | '/'
@@ -424,6 +469,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/notifications'
     | '/_authenticated/platform'
+    | '/_authenticated/schedule'
     | '/_authenticated/settings'
     | '/_authenticated/social'
     | '/_authenticated/tasks'
@@ -432,11 +478,14 @@ export interface FileRouteTypes {
     | '/ticket/$token'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contacts/'
+    | '/api/public/chat/$key'
     | '/api/public/hooks/background-sync'
+    | '/api/public/webhooks/stripe'
     | '/api/public/whatsapp/webhook'
     | '/api/public/oauth/meta/callback'
     | '/api/public/webhooks/hub/$workspaceId'
     | '/api/public/webhooks/meta/$workspaceId'
+    | '/api/public/webhooks/telegram/$connectionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -448,11 +497,14 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
   TicketTokenRoute: typeof TicketTokenRoute
+  ApiPublicChatKeyRoute: typeof ApiPublicChatKeyRoute
   ApiPublicHooksBackgroundSyncRoute: typeof ApiPublicHooksBackgroundSyncRoute
+  ApiPublicWebhooksStripeRoute: typeof ApiPublicWebhooksStripeRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicOauthMetaCallbackRoute: typeof ApiPublicOauthMetaCallbackRoute
   ApiPublicWebhooksHubWorkspaceIdRoute: typeof ApiPublicWebhooksHubWorkspaceIdRoute
   ApiPublicWebhooksMetaWorkspaceIdRoute: typeof ApiPublicWebhooksMetaWorkspaceIdRoute
+  ApiPublicWebhooksTelegramConnectionIdRoute: typeof ApiPublicWebhooksTelegramConnectionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -604,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlatformRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/schedule': {
+      id: '/_authenticated/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof AuthenticatedScheduleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -660,11 +719,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContactsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/chat/$key': {
+      id: '/api/public/chat/$key'
+      path: '/api/public/chat/$key'
+      fullPath: '/api/public/chat/$key'
+      preLoaderRoute: typeof ApiPublicChatKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/background-sync': {
       id: '/api/public/hooks/background-sync'
       path: '/api/public/hooks/background-sync'
       fullPath: '/api/public/hooks/background-sync'
       preLoaderRoute: typeof ApiPublicHooksBackgroundSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/stripe': {
+      id: '/api/public/webhooks/stripe'
+      path: '/api/public/webhooks/stripe'
+      fullPath: '/api/public/webhooks/stripe'
+      preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/whatsapp/webhook': {
@@ -695,6 +768,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksMetaWorkspaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/telegram/$connectionId': {
+      id: '/api/public/webhooks/telegram/$connectionId'
+      path: '/api/public/webhooks/telegram/$connectionId'
+      fullPath: '/api/public/webhooks/telegram/$connectionId'
+      preLoaderRoute: typeof ApiPublicWebhooksTelegramConnectionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -714,6 +794,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
+  AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
@@ -738,6 +819,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
+  AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
@@ -758,11 +840,15 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   InviteTokenRoute: InviteTokenRoute,
   TicketTokenRoute: TicketTokenRoute,
+  ApiPublicChatKeyRoute: ApiPublicChatKeyRoute,
   ApiPublicHooksBackgroundSyncRoute: ApiPublicHooksBackgroundSyncRoute,
+  ApiPublicWebhooksStripeRoute: ApiPublicWebhooksStripeRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicOauthMetaCallbackRoute: ApiPublicOauthMetaCallbackRoute,
   ApiPublicWebhooksHubWorkspaceIdRoute: ApiPublicWebhooksHubWorkspaceIdRoute,
   ApiPublicWebhooksMetaWorkspaceIdRoute: ApiPublicWebhooksMetaWorkspaceIdRoute,
+  ApiPublicWebhooksTelegramConnectionIdRoute:
+    ApiPublicWebhooksTelegramConnectionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

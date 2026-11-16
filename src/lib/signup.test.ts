@@ -3,7 +3,12 @@ import { passwordProblems, timeZones, validateBusinessName } from "./signup";
 
 describe("signup helpers", () => {
   it("lists every missing password rule", () => {
-    expect(passwordProblems("short")).toEqual(["at least 10 characters", "an uppercase letter", "a number", "a symbol"]);
+    expect(passwordProblems("short")).toEqual([
+      "at least 10 characters",
+      "an uppercase letter",
+      "a number",
+      "a symbol",
+    ]);
     expect(passwordProblems("Str0ng!Passw0rd")).toEqual([]);
     expect(passwordProblems("A1!" + "a".repeat(80))).toContain("at most 72 characters");
   });

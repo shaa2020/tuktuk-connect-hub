@@ -5,10 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Tuk Tuk 24 Lisbon — Staff Only" },
+      { title: "TeamInbox — Staff Only" },
       { name: "description", content: "Private internal workspace. Authorised staff only." },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Tuk Tuk 24 Lisbon — Staff Only" },
+      { property: "og:title", content: "TeamInbox — Staff Only" },
       { property: "og:description", content: "Private internal workspace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

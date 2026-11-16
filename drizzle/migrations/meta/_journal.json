@@ -162,6 +162,62 @@
       "when": 1794784668243,
       "tag": "0022_job_fanout_social_publishing",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794785018679,
+      "tag": "0023_telegram_webchat_channels",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794785404259,
+      "tag": "0024_stripe_prices",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794785627967,
+      "tag": "0025_staff_scheduling",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794785838261,
+      "tag": "0026_crm_import_duplicates_custom_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794786030938,
+      "tag": "0027_automation_workflows",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794786250659,
+      "tag": "0028_gdpr_ownership_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794786402656,
+      "tag": "0029_ai_classification_approvals",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794786605027,
+      "tag": "0030_platform_health_support_mfa_recovery",
+      "breakpoints": true
     }
   ]
 }

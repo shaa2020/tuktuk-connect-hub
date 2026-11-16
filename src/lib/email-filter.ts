@@ -9,16 +9,79 @@ export type EmailMeta = {
   labels: string[];
 };
 
-const AUTOMATED_SENDER = /^(no[-_.]?reply|do[-_.]?not[-_.]?reply|noreply|notifications?|notify|alerts?|mailer(-daemon)?|newsletter|news|marketing|promo(tions)?|offers?|deals|info-?mail|updates?|digest|bounce|postmaster|automated|system|billing|receipts?|invoice|account|security|support-?noreply)@/i;
-const AUTOMATED_DOMAIN = /@([a-z0-9-]+\.)*(mailchimp|sendgrid|mailgun|amazonses|hubspot|klaviyo|sendinblue|brevo|mcsv|facebookmail|linkedin|google|accounts\.google|youtube|twitter|x|tiktok|pinterest|quora|medium|substack)\.(com|net|io)$/i;
-const NOISE_LABELS = ["CATEGORY_PROMOTIONS", "CATEGORY_SOCIAL", "CATEGORY_UPDATES", "CATEGORY_FORUMS", "SPAM"];
+const AUTOMATED_SENDER =
+  /^(no[-_.]?reply|do[-_.]?not[-_.]?reply|noreply|notifications?|notify|alerts?|mailer(-daemon)?|newsletter|news|marketing|promo(tions)?|offers?|deals|info-?mail|updates?|digest|bounce|postmaster|automated|system|billing|receipts?|invoice|account|security|support-?noreply)@/i;
+const AUTOMATED_DOMAIN =
+  /@([a-z0-9-]+\.)*(mailchimp|sendgrid|mailgun|amazonses|hubspot|klaviyo|sendinblue|brevo|mcsv|facebookmail|linkedin|google|accounts\.google|youtube|twitter|x|tiktok|pinterest|quora|medium|substack)\.(com|net|io)$/i;
+const NOISE_LABELS = [
+  "CATEGORY_PROMOTIONS",
+  "CATEGORY_SOCIAL",
+  "CATEGORY_UPDATES",
+  "CATEGORY_FORUMS",
+  "SPAM",
+];
 
 const BUSINESS_WORDS = [
-  "tour", "tuk", "tuktuk", "lisbon", "lisboa", "book", "booking", "reserv", "itinerar", "price", "prices", "cost", "quote",
-  "how much", "available", "availability", "guest", "people", "persons", "pax", "adults", "kids", "children", "pickup", "pick up",
-  "pick-up", "hotel", "meeting point", "private", "sunset", "alfama", "belém", "belem", "sintra", "miradouro", "cancel", "reschedul",
-  "refund", "date", "tomorrow", "today", "hours", "hour", "driver", "group", "trip", "visit", "wedding", "proposal", "cruise",
-  "passeio", "reserva", "preço", "visita", "réservation", "excursion", "reserva", "führung", "buchung", "prenotazione",
+  "tour",
+  "tuk",
+  "tuktuk",
+  "lisbon",
+  "lisboa",
+  "book",
+  "booking",
+  "reserv",
+  "itinerar",
+  "price",
+  "prices",
+  "cost",
+  "quote",
+  "how much",
+  "available",
+  "availability",
+  "guest",
+  "people",
+  "persons",
+  "pax",
+  "adults",
+  "kids",
+  "children",
+  "pickup",
+  "pick up",
+  "pick-up",
+  "hotel",
+  "meeting point",
+  "private",
+  "sunset",
+  "alfama",
+  "belém",
+  "belem",
+  "sintra",
+  "miradouro",
+  "cancel",
+  "reschedul",
+  "refund",
+  "date",
+  "tomorrow",
+  "today",
+  "hours",
+  "hour",
+  "driver",
+  "group",
+  "trip",
+  "visit",
+  "wedding",
+  "proposal",
+  "cruise",
+  "passeio",
+  "reserva",
+  "preço",
+  "visita",
+  "réservation",
+  "excursion",
+  "reserva",
+  "führung",
+  "buchung",
+  "prenotazione",
 ];
 
 export function isAutomated(m: EmailMeta): boolean {
@@ -27,7 +90,13 @@ export function isAutomated(m: EmailMeta): boolean {
   if (h["list-unsubscribe"] || h["list-id"]) return true;
   if (/bulk|list|junk/i.test(h["precedence"] ?? "")) return true;
   if (h["auto-submitted"] && !/^no$/i.test(h["auto-submitted"])) return true;
-  if (h["x-auto-response-suppress"] || h["feedback-id"] || h["x-campaign"] || h["x-mailchimp-campaign"]) return true;
+  if (
+    h["x-auto-response-suppress"] ||
+    h["feedback-id"] ||
+    h["x-campaign"] ||
+    h["x-mailchimp-campaign"]
+  )
+    return true;
   if (AUTOMATED_SENDER.test(m.from) || AUTOMATED_DOMAIN.test(m.from)) return true;
   return false;
 }

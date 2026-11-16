@@ -15,16 +15,16 @@ and must be re-checked live (B-OPS-1).
 | Gmail — IMAP/SMTP app password | ✅ | Each business (app password encrypted) | Manual (2-step + app password) | — | Works for any tenant; polling while inbox open + every 5 min |
 | Gmail OAuth (per tenant) | ❌ | — | OAuth | **Google OAuth verification + CASA security assessment** for restricted Gmail scopes | Required for a polished SaaS |
 | Microsoft Outlook / 365 | ❌ | — | OAuth (Microsoft Entra app) | Publisher verification; admin consent for some tenants | Graph API + change notifications |
-| Telegram | ❌ | — | Bot token from @BotFather per business | None | Easiest next channel |
-| Website live chat | ❌ | — | Embed snippet | None | Own widget |
+| Telegram | ✅ | Each business (bot token, encrypted; webhook secret per connection) | Paste @BotFather token — webhook registered automatically | None | Private chats only; media shown as a labelled placeholder |
+| Website live chat | ✅ | Each business (public widget key) | Switch on → copy one `<script>` line into the website | None | Polling every 5 s; optional allowed-websites list; rate-limited |
 | Automation Hub (n8n/Make) | ✅ | Each business (hub key) | Manual | — | Generic bridge for other channels |
 | Website API tuktuk24lisbon.com | ✅ | Operator (`WEBSITE_API_KEY`) | Env | — | **Operator only**; tours, business info, booking requests |
 | PayPal Reporting (business finance) | ✅ | Each business (Live Client ID/Secret, encrypted) | Manual | PayPal "Transaction Search" permission | Read-only sync + matching |
 | AI — Lovable gateway (platform-paid) | ✅ | Platform operator | Env | — | Metered per workspace, plan-capped |
 | AI — BYO OpenAI / Anthropic / Gemini / OpenRouter / custom | ✅ | Each business (encrypted key) | Paste key (auto-detect) | — | Metered, not capped |
 | Web Push | ✅ | Platform (VAPID keys) | Env | — | |
-| Social publishing (Meta, TikTok, LinkedIn, YouTube) | ❌ | — | OAuth | **Meta App Review; TikTok Content Posting API audit; LinkedIn Marketing/Community Management API access; Google OAuth verification (YouTube)** | Planner stores drafts only |
-| Stripe Billing (SaaS subscriptions) | ❌ | Platform operator | Env secret + webhook secret | Stripe account activation (KYC) | Phase 3 recommendation |
+| Social publishing — Facebook Pages, Instagram | ✅ | Each business (Page / IG tokens from the Meta connection) | Schedule in the Social Planner | **Meta App Review** (`pages_manage_posts`, `instagram_content_publish`) | Worker every 5 min; per-target results; TikTok/LinkedIn/YouTube ❌ (partner approvals) |
+| Stripe Billing (SaaS subscriptions) | ✅ | Platform operator (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) | Set secrets + price ids on plans | Stripe account activation (KYC) | Checkout, portal, signed idempotent webhook; hidden until configured |
 | Transactional email (invites, receipts) | ❌ | Platform operator | DNS (SPF/DKIM/DMARC) + provider API key | Domain verification | Blocks invite emails |
 
 ## Central integration registry (current vs needed)
@@ -45,6 +45,9 @@ full registry: `granted_scopes`, `token_expires_at`, `last_success_at` columns a
 * **Microsoft**: Entra ID app registration (multi-tenant) → Mail.ReadWrite/Mail.Send delegated →
   publisher verification.
 * **TikTok**: developer app → Content Posting API → audit before public posting.
-* **Telegram**: each business creates a bot with @BotFather and pastes the token.
-* **Stripe**: activate account (company details, bank) → products/prices → webhook endpoint →
-  give us the secret key + webhook signing secret via the hosting secret store.
+* **Telegram**: each business opens @BotFather → /newbot → pastes the token on Connected accounts. Done.
+* **Stripe**: activate account → create a Product per plan with monthly/annual Prices → copy each `price_…` id into
+  `plans.stripe_price_monthly/annual` → add webhook endpoint `https://<app>/api/public/webhooks/stripe` with events
+  checkout.session.completed, customer.subscription.created/updated/deleted, invoice.paid, invoice.payment_failed →
+  store `STRIPE_SECRET_KEY` and the endpoint's signing secret as `STRIPE_WEBHOOK_SECRET` in the hosting secret store.
+  Enable the Customer Portal and (for EU VAT) Stripe Tax.

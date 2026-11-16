@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UseRecoveryCode } from "@/components/mfa-recovery";
 
 type Factor = { id: string; friendly_name?: string; status: string };
 
@@ -36,17 +37,26 @@ function CodeForm({ factorId, onDone }: { factorId: string; onDone: () => void }
     e.preventDefault();
     setError(null);
     const clean = code.replace(/\s/g, "");
-    if (!/^\d{6}$/.test(clean)) return setError("Enter the 6-digit code from your authenticator app.");
+    if (!/^\d{6}$/.test(clean))
+      return setError("Enter the 6-digit code from your authenticator app.");
     setBusy(true);
     try {
       const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId });
       if (chErr) throw chErr;
-      const { error: vErr } = await supabase.auth.mfa.verify({ factorId, challengeId: ch.id, code: clean });
+      const { error: vErr } = await supabase.auth.mfa.verify({
+        factorId,
+        challengeId: ch.id,
+        code: clean,
+      });
       if (vErr) throw vErr;
       toast.success("Two-step verification complete");
       onDone();
     } catch (err) {
-      setError((err as Error).message?.includes("invalid") ? "That code didn't work. Check the time on your phone and try again." : (err as Error).message);
+      setError(
+        (err as Error).message?.includes("invalid")
+          ? "That code didn't work. Check the time on your phone and try again."
+          : (err as Error).message,
+      );
     } finally {
       setBusy(false);
     }
@@ -67,7 +77,11 @@ function CodeForm({ factorId, onDone }: { factorId: string; onDone: () => void }
           className="text-center text-lg tracking-[0.4em]"
         />
       </div>
-      {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       <Button type="submit" className="w-full" size="lg" disabled={busy}>
         {busy && <Loader2 className="animate-spin" />} Verify
       </Button>
@@ -86,7 +100,9 @@ export function MfaEnrollment({ onDone }: { onDone?: () => void }) {
     try {
       // Remove abandoned (unverified) setups first so a refresh mid-setup never blocks enrollment.
       const { data: list } = await supabase.auth.mfa.listFactors();
-      const stale = (list?.all ?? []).filter((f) => f.factor_type === "totp" && f.status !== "verified");
+      const stale = (list?.all ?? []).filter(
+        (f) => f.factor_type === "totp" && f.status !== "verified",
+      );
       for (const f of stale) await supabase.auth.mfa.unenroll({ factorId: f.id });
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
@@ -111,7 +127,8 @@ export function MfaEnrollment({ onDone }: { onDone?: () => void }) {
     return (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          You'll need an authenticator app on your phone, such as Google Authenticator, Microsoft Authenticator or 1Password.
+          You'll need an authenticator app on your phone, such as Google Authenticator, Microsoft
+          Authenticator or 1Password.
         </p>
         <Button onClick={begin} disabled={busy}>
           {busy && <Loader2 className="animate-spin" />} Set up two-step sign-in
@@ -123,7 +140,10 @@ export function MfaEnrollment({ onDone }: { onDone?: () => void }) {
   return (
     <div className="space-y-4">
       <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
-        <li>Open your authenticator app and tap <strong className="text-foreground">+</strong> to add an account.</li>
+        <li>
+          Open your authenticator app and tap <strong className="text-foreground">+</strong> to add
+          an account.
+        </li>
         <li>Scan this QR code with the app.</li>
         <li>Enter the 6-digit code it shows below.</li>
       </ol>
@@ -131,15 +151,27 @@ export function MfaEnrollment({ onDone }: { onDone?: () => void }) {
         <img src={factor.qr} alt="QR code for your authenticator app" className="size-44" />
       </div>
       <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer font-medium">Can't scan? Enter the code manually</summary>
-        <p className="mt-1.5 select-all break-all rounded-lg bg-muted px-3 py-2 font-mono text-sm text-foreground">{factor.secret}</p>
+        <summary className="cursor-pointer font-medium">
+          Can't scan? Enter the code manually
+        </summary>
+        <p className="mt-1.5 select-all break-all rounded-lg bg-muted px-3 py-2 font-mono text-sm text-foreground">
+          {factor.secret}
+        </p>
       </details>
       <CodeForm factorId={factor.id} onDone={done} />
     </div>
   );
 }
 
-function MfaScreen({ children, title, description }: { children: ReactNode; title: string; description: string }) {
+function MfaScreen({
+  children,
+  title,
+  description,
+}: {
+  children: ReactNode;
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
       <div className="w-full max-w-sm">
@@ -165,11 +197,21 @@ export function MfaGate({ children }: { children: ReactNode }) {
   if (state.isError) {
     // Fail closed: never show the app when two-step status can't be confirmed.
     return (
-      <MfaScreen title="Couldn't check your security status" description="Check your internet connection and try again.">
-        <Button className="w-full" size="lg" onClick={() => state.refetch()} disabled={state.isFetching}>
+      <MfaScreen
+        title="Couldn't check your security status"
+        description="Check your internet connection and try again."
+      >
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={() => state.refetch()}
+          disabled={state.isFetching}
+        >
           {state.isFetching && <Loader2 className="animate-spin" />} Try again
         </Button>
-        <Button variant="ghost" className="mt-2 w-full" onClick={() => supabase.auth.signOut()}>Sign out</Button>
+        <Button variant="ghost" className="mt-2 w-full" onClick={() => supabase.auth.signOut()}>
+          Sign out
+        </Button>
       </MfaScreen>
     );
   }
@@ -178,15 +220,22 @@ export function MfaGate({ children }: { children: ReactNode }) {
 
   if (needsVerify && verified[0]) {
     return (
-      <MfaScreen title="Enter your security code" description="Open your authenticator app and enter the 6-digit code for Tuk Tuk 24 Lisbon.">
+      <MfaScreen
+        title="Enter your security code"
+        description="Open your authenticator app and enter the 6-digit code for TeamInbox."
+      >
         <CodeForm factorId={verified[0].id} onDone={() => state.refetch()} />
+        <UseRecoveryCode />
       </MfaScreen>
     );
   }
 
   if (verified.length === 0) {
     return (
-      <MfaScreen title="Set up two-step sign-in" description="To keep guest data safe, every team account needs two-step sign-in. It takes about a minute.">
+      <MfaScreen
+        title="Set up two-step sign-in"
+        description="To keep guest data safe, every team account needs two-step sign-in. It takes about a minute."
+      >
         <MfaEnrollment onDone={() => state.refetch()} />
       </MfaScreen>
     );
@@ -203,7 +252,8 @@ export function MfaSettingsPanel() {
 
   // Two-step sign-in is mandatory: a phone can only be removed while another verified one remains.
   async function remove(factorId: string) {
-    if (verified.length < 2) return toast.error("Add your new phone first, then remove the old one.");
+    if (verified.length < 2)
+      return toast.error("Add your new phone first, then remove the old one.");
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) return toast.error(error.message);
     toast.success("Old phone removed");
@@ -215,7 +265,9 @@ export function MfaSettingsPanel() {
   if (verified.length === 0) {
     return (
       <div className="space-y-3">
-        <p className="flex items-center gap-2 text-sm font-medium text-warning"><Smartphone className="size-4" /> Not set up yet</p>
+        <p className="flex items-center gap-2 text-sm font-medium text-warning">
+          <Smartphone className="size-4" /> Not set up yet
+        </p>
         <MfaEnrollment />
       </div>
     );
@@ -223,16 +275,30 @@ export function MfaSettingsPanel() {
 
   return (
     <div className="space-y-3">
-      <p className="flex items-center gap-2 text-sm font-medium text-teal"><ShieldCheck className="size-4" /> Two-step sign-in is on</p>
+      <p className="flex items-center gap-2 text-sm font-medium text-teal">
+        <ShieldCheck className="size-4" /> Two-step sign-in is on
+      </p>
       <p className="text-sm text-muted-foreground">
-        Two-step sign-in is required for every team account. To switch phones, add the new phone first, then remove the old one. Lost your phone? Ask a Business Admin to reset it from the Team page.
+        Two-step sign-in is required for every team account. To switch phones, add the new phone
+        first, then remove the old one. Lost your phone? Ask a Business Admin to reset it from the
+        Team page.
       </p>
       <ul className="space-y-2">
         {verified.map((f) => (
-          <li key={f.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
+          <li
+            key={f.id}
+            className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+          >
             <span className="min-w-0 truncate">{f.friendly_name ?? "Authenticator app"}</span>
             {verified.length > 1 && (
-              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}>Remove</Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                onClick={() => remove(f.id)}
+              >
+                Remove
+              </Button>
             )}
           </li>
         ))}
@@ -240,7 +306,9 @@ export function MfaSettingsPanel() {
       {adding ? (
         <MfaEnrollment onDone={() => setAdding(false)} />
       ) : (
-        <Button variant="outline" onClick={() => setAdding(true)}>Add a new phone</Button>
+        <Button variant="outline" onClick={() => setAdding(true)}>
+          Add a new phone
+        </Button>
       )}
     </div>
   );

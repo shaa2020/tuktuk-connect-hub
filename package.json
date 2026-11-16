@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:db": "bash scripts/db-test/run.sh"
+    "test:db": "bash scripts/db-test/run.sh",
+    "test:upgrade": "UPGRADE_CHECK=1 bash scripts/db-test/run.sh"
   },
   "overrides": {
     "rolldown": "1.2.1"

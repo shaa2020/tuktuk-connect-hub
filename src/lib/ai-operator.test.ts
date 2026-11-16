@@ -14,7 +14,9 @@ describe("AI Operator decisions", () => {
     expect(decisionFromRaw('{"action":"reply","reply":"cut off...').action).toBe("handoff");
   });
   it("valid JSON decisions are untouched by the fallback", () => {
-    const d = decisionFromRaw('{"action":"reply","reply":"Hello!","tags":[],"urgent":false,"alert":"","booking":null}');
+    const d = decisionFromRaw(
+      '{"action":"reply","reply":"Hello!","tags":[],"urgent":false,"alert":"","booking":null}',
+    );
     expect(d.action).toBe("reply");
     expect(d.reply).toBe("Hello!");
   });
@@ -22,9 +24,21 @@ describe("AI Operator decisions", () => {
     expect(parseDecision('{"action":"reply","reply":""}').action).toBe("handoff");
   });
   it("only creates a booking when the guest confirmed a real date and group size", () => {
-    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":false,"date":"2026-10-20","guests":4}}').booking?.ready).toBe(false);
-    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"tomorrow","guests":4}}').booking).toBeNull();
-    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","time":"15:00","guests":4}}').booking?.guests).toBe(4);
+    expect(
+      parseDecision(
+        '{"action":"reply","reply":"ok","booking":{"ready":false,"date":"2026-10-20","guests":4}}',
+      ).booking?.ready,
+    ).toBe(false);
+    expect(
+      parseDecision(
+        '{"action":"reply","reply":"ok","booking":{"ready":true,"date":"tomorrow","guests":4}}',
+      ).booking,
+    ).toBeNull();
+    expect(
+      parseDecision(
+        '{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","time":"15:00","guests":4}}',
+      ).booking?.guests,
+    ).toBe(4);
   });
   it("stops replying after the per-conversation limit", () => {
     expect(replyAllowed(5, 6)).toBe(true);
@@ -38,8 +52,20 @@ describe("AI Operator decisions", () => {
 
 describe("booking duration", () => {
   it("keeps a valid duration in minutes and rejects bad ones", () => {
-    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","time":"15:00","guests":2,"duration":120}}').booking?.duration).toBe(120);
-    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","guests":2,"duration":"two hours"}}').booking?.duration).toBe(0);
-    expect(parseDecision('{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","guests":2}}').booking?.duration).toBe(0);
+    expect(
+      parseDecision(
+        '{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","time":"15:00","guests":2,"duration":120}}',
+      ).booking?.duration,
+    ).toBe(120);
+    expect(
+      parseDecision(
+        '{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","guests":2,"duration":"two hours"}}',
+      ).booking?.duration,
+    ).toBe(0);
+    expect(
+      parseDecision(
+        '{"action":"reply","reply":"ok","booking":{"ready":true,"date":"2026-10-20","guests":2}}',
+      ).booking?.duration,
+    ).toBe(0);
   });
 });

@@ -1,7 +1,11 @@
 // TeamInbox push service worker
 self.addEventListener("push", (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
   event.waitUntil(
     self.registration.showNotification(data.title || "TeamInbox", {
       body: data.body || "",
@@ -12,7 +16,7 @@ self.addEventListener("push", (event) => {
       requireInteraction: false,
       tag: data.tag || "tt24",
       data: { url: data.url || "/notifications" },
-    })
+    }),
   );
 });
 
@@ -28,6 +32,6 @@ self.addEventListener("notificationclick", (event) => {
         }
       }
       return clients.openWindow(url);
-    })
+    }),
   );
 });

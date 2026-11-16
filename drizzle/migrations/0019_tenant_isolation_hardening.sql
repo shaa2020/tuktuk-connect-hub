@@ -27,8 +27,10 @@ alter table public.workspaces add column if not exists platform_connectors boole
 
 -- Every workspace that exists before SaaS self-signup is the operator's own (Tuk Tuk 24 Lisbon),
 -- so keep its current integrations working exactly as before.
-update public.workspaces set platform_connectors = true where platform_connectors = false
-  and created_at < '2026-11-16 00:00:00+00';
+-- Runs only the first time (while no workspace is flagged yet): at that moment self-signup does not
+-- exist, so every existing workspace is the operator's. Re-running never flags later tenants.
+update public.workspaces set platform_connectors = true
+  where not exists (select 1 from public.workspaces w2 where w2.platform_connectors);
 update public.workspaces w set owner_id = (
   select m.user_id from public.workspace_members m
   where m.workspace_id = w.id and m.role = 'admin' and m.active order by m.created_at limit 1)

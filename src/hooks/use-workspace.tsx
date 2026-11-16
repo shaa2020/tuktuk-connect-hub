@@ -28,20 +28,51 @@ export type WorkspaceCtx = {
   /** Every business this person belongs to (for the switcher). */
   workspaces: WorkspaceSummary[];
   plan: string;
+  industry: string | null;
+  /** True only for the platform operator's own workspace (operator-owned integrations). */
+  platformConnectors: boolean;
+  /** Optional feature modules switched on for this business. */
+  modules: Modules;
 };
+
+export type Modules = { tours: boolean };
+/** Tour tools (tour calendar, dispatch, tickets) are for tour/travel businesses and legacy workspaces. */
+export function modulesFor(
+  industry: string | null | undefined,
+  platformConnectors: boolean,
+): Modules {
+  return {
+    tours:
+      platformConnectors ||
+      !industry ||
+      industry === "tour_operator" ||
+      industry === "travel_agency",
+  };
+}
 
 // The chosen business is remembered per browser. Access is still decided by the database:
 // a stale or foreign id here simply falls back to the first membership.
 const SELECTED_KEY = "tt.selectedWorkspace";
 export function getSelectedWorkspaceId(): string | null {
-  try { return localStorage.getItem(SELECTED_KEY); } catch { return null; }
+  try {
+    return localStorage.getItem(SELECTED_KEY);
+  } catch {
+    return null;
+  }
 }
 export function setSelectedWorkspaceId(id: string) {
-  try { localStorage.setItem(SELECTED_KEY, id); } catch { /* private mode: falls back to first workspace */ }
+  try {
+    localStorage.setItem(SELECTED_KEY, id);
+  } catch {
+    /* private mode: falls back to first workspace */
+  }
 }
 
 /** Picks the remembered workspace if the user still belongs to it, otherwise the first one. */
-export function pickWorkspace<T extends { workspace_id: string }>(memberships: T[], preferred: string | null): T | null {
+export function pickWorkspace<T extends { workspace_id: string }>(
+  memberships: T[],
+  preferred: string | null,
+): T | null {
   if (!memberships.length) return null;
   return memberships.find((m) => m.workspace_id === preferred) ?? memberships[0] ?? null;
 }
@@ -60,7 +91,9 @@ async function loadWorkspace() {
   const user = u.user;
   const { data: mems, error } = await supabase
     .from("workspace_members")
-    .select("workspace_id, role, active, created_at, workspaces(name, agents_see_unassigned, plan, suspended_at, suspended_reason)")
+    .select(
+      "workspace_id, role, active, created_at, workspaces(name, agents_see_unassigned, plan, suspended_at, suspended_reason, industry, platform_connectors)",
+    )
     .eq("user_id", user.id)
     .eq("active", true)
     .order("created_at");
@@ -68,11 +101,19 @@ async function loadWorkspace() {
   const all = (mems ?? []) as any[];
   const mem = pickWorkspace(all, getSelectedWorkspaceId());
   const workspaces: WorkspaceSummary[] = all.map((m) => ({
-    id: m.workspace_id, name: m.workspaces?.name ?? "Workspace", role: m.role, suspended: !!m.workspaces?.suspended_at,
+    id: m.workspace_id,
+    name: m.workspaces?.name ?? "Workspace",
+    role: m.role,
+    suspended: !!m.workspaces?.suspended_at,
   }));
-  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
   if (!mem) return { user, profile, mem: null, members: [] as Member[], workspaces };
-  if (mem.workspaces?.suspended_at) return { user, profile, mem, members: [] as Member[], workspaces };
+  if (mem.workspaces?.suspended_at)
+    return { user, profile, mem, members: [] as Member[], workspaces };
   const { data: rows, error: me } = await (supabase as any)
     .from("workspace_members")
     .select("id, user_id, role, active, whatsapp_phone, profiles(full_name, email)")
@@ -102,7 +143,11 @@ export function WorkspaceProvider({
 }: {
   children: ReactNode;
   noAccess: ReactNode;
-  suspended: (info: { name: string; reason: string | null; workspaces: WorkspaceSummary[] }) => ReactNode;
+  suspended: (info: {
+    name: string;
+    reason: string | null;
+    workspaces: WorkspaceSummary[];
+  }) => ReactNode;
   loading: ReactNode;
   error: (msg: string, retry: () => void) => ReactNode;
 }) {
@@ -111,8 +156,19 @@ export function WorkspaceProvider({
   if (q.error) return <>{error((q.error as Error).message, () => q.refetch())}</>;
   const d = q.data!;
   if (!d.mem) return <>{noAccess}</>;
-  const ws = d.mem.workspaces as { name: string; agents_see_unassigned: boolean; plan: string; suspended_at: string | null; suspended_reason: string | null } | null;
-  if (ws?.suspended_at) return <>{suspended({ name: ws.name, reason: ws.suspended_reason, workspaces: d.workspaces })}</>;
+  const ws = d.mem.workspaces as {
+    name: string;
+    agents_see_unassigned: boolean;
+    plan: string;
+    suspended_at: string | null;
+    suspended_reason: string | null;
+    industry: string | null;
+    platform_connectors: boolean;
+  } | null;
+  if (ws?.suspended_at)
+    return (
+      <>{suspended({ name: ws.name, reason: ws.suspended_reason, workspaces: d.workspaces })}</>
+    );
   const value: WorkspaceCtx = {
     userId: d.user.id,
     email: d.user.email ?? "",
@@ -124,6 +180,9 @@ export function WorkspaceProvider({
     members: d.members,
     workspaces: d.workspaces,
     plan: ws?.plan ?? "free",
+    industry: ws?.industry ?? null,
+    platformConnectors: ws?.platform_connectors === true,
+    modules: modulesFor(ws?.industry, ws?.platform_connectors === true),
     memberName: (id) => {
       if (!id) return "Unassigned";
       const m = d.members.find((x) => x.user_id === id);

@@ -1,147 +1,145 @@
 # Feature Inventory
 
-_Verified against source code, migrations and automated tests on 2026-11-15. Historical roadmap
-entries were **not** taken at face value._
-
-**Status legend**
+_Verified against source code, migrations and automated tests on 2026-11-15 (end of the SaaS
+build session). Historical roadmap entries were **not** taken at face value._
 
 | Code | Meaning |
 |---|---|
 | ✅ **Verified** | Code exists and an automated test in this repo exercises it (unit or database test). |
-| 🟡 **Implemented, not verified** | Code exists and builds, but no automated test or live check in this environment (most live integrations: no credentials here). |
+| 🟡 **Implemented, not verified** | Code exists and builds, but no automated test or live check here (mostly UI and live third-party calls — no credentials in this environment). |
 | 🟠 **Partial** | Some of the requirement exists; gaps listed. |
 | ❌ **Missing** | Not in the code. |
 | ⛔ **Blocked** | Needs an external account, credential, approval or owner decision. |
 
-> "Verified" never means "verified live in production" — this environment has no production
-> access and no third-party credentials. Live verification is tracked in `docs/BLOCKERS.md`.
+> "Verified" never means "verified live in production". This environment has no production
+> access and no third-party credentials. Live checks are tracked in `docs/BLOCKERS.md` (B-OPS-1).
 
 ## 1. Multi-tenant SaaS foundations
 
 | Feature | Status | Evidence / gaps |
 |---|---|---|
-| Workspace data isolation (RLS) | ✅ | `db-tests/tenant-isolation.test.ts` (29 tests: reads, writes, links, roles) |
-| Cross-workspace reference guard | ✅ | same file; 3 tests fail on pre-0019 schema |
-| Tenants cannot change own plan/limits/flags | ✅ | same file (failed before 0019 — real defect fixed) |
+| Workspace data isolation (RLS) | ✅ | `db-tests/tenant-isolation.test.ts` (12 tables, reads/writes/links/roles) |
+| Cross-workspace reference guard | ✅ | same; fails on pre-0019 schema |
+| Tenants cannot change own plan/limits/flags | ✅ | same; was a real defect |
 | Roles admin / manager / agent | ✅ | RLS + `domain.test.ts` |
-| Workspace owner | 🟡 | `workspaces.owner_id` set by `create_workspace`; no owner-transfer UI yet |
-| Custom roles | ❌ | Roles are a fixed enum |
-| Invitations | 🟡 | `invite.functions.ts`, Team page; invite emails ⛔ need email domain |
-| Self-service registration | 🟠⛔ | `/signup` built behind `VITE_PUBLIC_SIGNUP`; Supabase "allow signups" is OFF (owner decision) |
-| Email verification | 🟡 | Supabase Auth; `create_workspace` refuses unverified emails ✅ (db test) |
-| Workspace creation | ✅ | `create_workspace` RPC — 5 db tests; `/onboarding` UI 🟡 |
-| Multiple workspaces per user + switching | 🟡 | `use-workspace.tsx` + switcher; not browser-tested with live data |
+| Workspace owner + ownership transfer | ✅ | `db-tests/gdpr.test.ts` |
+| Custom roles | ❌ | Fixed role enum (deliberate; see roadmap) |
+| Invitations | 🟡 | Team page + `redeemInvitation` (rate-limited); invite emails ⛔ B-EMAIL-1 |
+| Self-service registration | 🟠⛔ | `/signup` built, behind `VITE_PUBLIC_SIGNUP`; Supabase signups OFF (B-AUTH-1) |
+| Email verification before creating a business | ✅ | `create_workspace` refuses unverified emails |
+| Workspace creation + onboarding | ✅ (DB) / 🟡 (UI) | `saas-foundations.test.ts`; `/onboarding`, setup checklist (checklist logic unit-tested) |
+| Multiple workspaces per user + switching | ✅ (selection logic) / 🟡 (UI) | `modules.test.ts` (`pickWorkspace`) |
 | Password recovery | 🟡 | `/auth?mode=forgot`, `/reset-password` |
-| Mandatory MFA (TOTP) + admin reset | 🟡 | `mfa-gate.tsx`, `resetMemberMfa` (audited). Self-service recovery codes ❌ |
-| Plans & entitlements | ✅ | `db-tests/saas-foundations.test.ts`; prices ⛔ owner decision |
-| Usage metering (AI) | ✅ | `consume_usage` db test + `tenancy.test.ts` |
-| Usage dashboard | 🟡 | `/billing` |
-| Subscription billing | ❌⛔ | Tables only; provider not chosen/configured (Phase 3) |
-| Workspace suspension | ✅ | db test (lock-out + audit); background jobs skip suspended 🟡 |
-| Platform admin console | 🟡 | `/platform` via audited RPCs (RPCs ✅ tested) |
-| Support impersonation | ❌ | Deliberately not built yet (needs consent + time-limit design) |
-| Workspace branding | ❌ | `brand_color` column only; UI strings hard-code TukTuk24 |
-| Workspace-specific AI config | ✅🟡 | `ai_settings` per workspace; prompts no longer inject TukTuk24 playbook into other tenants |
+| Mandatory MFA + admin reset | 🟡 | `mfa-gate.tsx`, `resetMemberMfa` |
+| MFA recovery codes | ✅ (codes, storage) / 🟡 (flow) | `mfa-recovery.test.ts`, `platform-support.test.ts` |
+| Plans & entitlements, DB-enforced limits | ✅ | `saas-foundations.test.ts`; prices ⛔ B-BIZ-1 |
+| Usage metering (AI, automations) | ✅ | db + unit tests |
+| Usage dashboard | 🟡 | `/billing` (level logic unit-tested) |
+| Subscription billing (Stripe) | ✅ (logic) / ⛔ (live) | `stripe.test.ts`, `stripe-webhook.test.ts`; needs Stripe account (B-BIZ-2) |
+| Workspace suspension | ✅ | db test |
+| Platform admin console (plans, suspend, revenue, health, backlog) | ✅ (RPCs) / 🟡 (UI) | `saas-foundations`, `platform-support` tests |
+| Support access (consented, time-limited, audited, read-only) | ✅ | `platform-support.test.ts` |
+| White-label (business name in app & customer messages) | 🟡 | ticket branding unit-tested; brand colour/logo upload ❌ |
+| Industry modules (tour tools optional) | ✅ (rules) / 🟡 (UI) | `modules.test.ts` |
+| Workspace data export (JSON) | 🟡 | `privacy.functions.ts` (RLS-scoped) |
+| Workspace deletion (30-day grace) + retention | ✅ | `gdpr.test.ts` |
 
 ## 2. Multi-channel inbox
 
 | Feature | Status | Evidence / gaps |
 |---|---|---|
-| Unified inbox, assignment, notes, status, priority | 🟡 | `inbox.tsx` (908 lines), RLS ✅ |
-| Agents see only own/unassigned conversations | ✅ | db test |
-| No fake delivery statuses | ✅ | db test (`messages` insert must be `logged`) |
-| WhatsApp (operator, Lovable connector) | 🟡 | live for TukTuk24 per roadmap; not verifiable here |
-| WhatsApp / Messenger / Instagram (BYO Meta app) | 🟡⛔ | code complete (`channels.server.ts`, webhook w/ signature); Meta app + App Review needed |
-| Gmail (operator, Lovable connector) | 🟡 | operator-only since 0019 guard ✅ (unit test) |
-| Extra Gmail via IMAP/SMTP app password | 🟡 | `imap-mail.server.ts` (+ unit tests of parsing) |
-| Gmail OAuth for tenants | ❌ | needed for SaaS (Google verification ⛔) |
-| Microsoft Outlook | ❌ | |
-| Telegram | ❌ | (listed as "coming soon" in connect sheet) |
-| Website live chat | ❌ | |
-| Automation Hub (n8n/Make) generic channel | 🟡 | HMAC-signed inbound/outbound |
-| Attachments / media | ❌ | `message_attachments` table exists; no storage upload/download; inbound media shown as placeholder text |
-| Read/delivery statuses | 🟡 | from webhooks only |
-| Saved replies | 🟡 | `canned_replies` |
-| Contact merge / anonymise | 🟡 | RPCs with role checks |
-| Webhook dedupe / retry limits | 🟡 | unique external ids; WhatsApp inbox max 10 attempts |
-| Search & filters | 🟠 | basic; full-text index exists on messages |
+| Unified inbox, assignment, notes, status, priority, tags | 🟡 | `inbox.tsx`; RLS ✅ |
+| Agent visibility rules / no fake delivery status | ✅ | db tests |
+| WhatsApp — operator connector | 🟡 | operator-only guard ✅ |
+| WhatsApp / Messenger / Instagram — BYO Meta app | 🟡⛔ | signature-verified webhook; Meta App Review (B-META-1) |
+| Gmail — operator connector | 🟡 | operator-only guard ✅ |
+| Gmail — IMAP/SMTP app password (any business) | 🟡 | parsing unit-tested |
+| Gmail OAuth for tenants | ❌⛔ | needs Google verification (B-GOOGLE-1) |
+| Outlook | ❌⛔ | needs Microsoft app (B-MS-1) |
+| Telegram (per-business bot) | ✅ (parsing) / 🟡 (live) | `telegram.test.ts`; webhook secret auth |
+| Website live chat widget | ✅ (validation, CORS) / 🟡 (live) | `webchat.test.ts`; widget render-checked at 384 px |
+| Automation Hub (n8n/Make) | 🟡 | HMAC-signed |
+| Attachments / media | ❌ | inbound media shown as a labelled placeholder |
+| AI reply approval queue | ✅ (DB) / 🟡 (UI) | `ai-drafts.test.ts` |
+| AI classification badges (intent/sentiment/summary) | ✅ (parsing) / 🟡 | `classify.test.ts` |
+| Webhook dedupe, retry limits, rate limits | ✅ (limiter) / 🟡 | `rate-limits.test.ts` |
 
-## 3. Social media management
+## 3. Social media
 
 | Feature | Status | Evidence / gaps |
 |---|---|---|
-| Social planner (drafts, schedule records) | 🟠 | `social.tsx` stores posts; **no publishing worker** — "scheduled" posts are never published (see KNOWN_LIMITATIONS L-04) |
-| Publishing / comments / analytics (any platform) | ❌⛔ | Needs platform apps + reviews (Meta, TikTok, LinkedIn, Google) |
-| Scheduled-post plan limit | ✅ | db trigger |
+| Planner: drafts, schedule | 🟡 | `social.tsx` |
+| Publishing worker — Facebook Pages, Instagram (image/Reel) | ✅ (planning/status) / ⛔ (live) | `social-publish.test.ts`; needs `pages_manage_posts` / `instagram_content_publish` (Meta review) |
+| Publishing integrity (no fake "published") | ✅ | `jobs-social.test.ts` |
+| TikTok / LinkedIn / YouTube publishing | ❌⛔ | partner approvals (B-TIKTOK-1, B-LI-1, B-GOOGLE-1) |
+| Comments inbox, analytics, media library, approvals | ❌ | roadmap Phase 5 |
 
 ## 4. AI
 
-| Feature | Status | Evidence / gaps |
+| Feature | Status | Evidence |
 |---|---|---|
-| Draft / summarise / translate in inbox | 🟡 | `ai.functions.ts` |
-| Multi-provider (OpenAI, Anthropic, Gemini, OpenRouter, custom) | 🟡 | `ai-provider.server.ts` (+ model-picking unit tests ✅) |
-| Encrypted BYO key | ✅ | `secrets.test.ts` (AES-GCM round trip) |
-| AI Operator (away mode, bounded, logged) | 🟡 | `ai-operator*.ts` (+ outcome unit tests ✅) |
-| Knowledge base | 🟡 | text documents; no file upload/embeddings |
-| Per-workspace AI metering & limit | ✅ | db + unit tests |
-| AI cost tracking in money | ❌ | requests counted, not tokens/cost |
-| Intent / sentiment / auto-tagging | ❌ | |
+| Draft / summarise / translate | 🟡 | `ai.functions.ts` |
+| Multi-provider + encrypted BYO key | ✅ | `ai-provider.test.ts`, `secrets.test.ts` |
+| Custom-provider SSRF guard | ✅ | `url-safety.test.ts` |
+| Tenant-neutral prompts (no TukTuk24 playbook for others) | 🟡 | code review |
+| AI Operator (away mode) + approval mode | ✅ (outcomes) / 🟡 | `ai-operator*.test.ts`, `ai-drafts.test.ts` |
+| Per-workspace AI metering & cap | ✅ | db + unit |
+| Token/cost tracking in money | ❌ | requests only |
+| Document knowledge (files, embeddings) | ❌ | text knowledge only |
 
 ## 5. CRM
 
-| Feature | Status | Evidence / gaps |
+| Feature | Status | Evidence |
 |---|---|---|
-| Contacts, leads pipeline, tags, activities | 🟡 | pages + RLS |
-| GDPR export (per contact, audited) | 🟡 | contact page |
-| Anonymisation | 🟡 | `anonymize_contact` RPC |
-| Custom fields, segmentation, import, duplicate detection | ❌ | |
+| Contacts, leads, tags, activities | 🟡 | pages + RLS |
+| CSV export | 🟡 | contacts page (audited) |
+| CSV import with de-duplication | ✅ | `crm.test.ts`, `csv.test.ts` |
+| Duplicate finder + merge | ✅ | `crm.test.ts` |
+| Custom fields (typed, validated) | ✅ | `crm.test.ts` |
+| Segmentation | 🟠 | search + "assigned to me"; tag/segment filters ❌ |
+| GDPR per-contact export / anonymise | 🟡 | contact page, RPC |
 
 ## 6. Bookings & operations
 
-| Feature | Status | Evidence / gaps |
+| Feature | Status | Evidence |
 |---|---|---|
-| Bookings, calendar, dispatch (guides/vehicles) | 🟡 | `bookings.tsx`, `dispatch.tsx`; conflict detection unit-tested ✅ |
-| DB conflict guard (no double-booking) | 🟡 | trigger `booking_conflict_guard` (not yet in db-tests) |
-| Tickets + check-in | 🟡 | `check_in_ticket` RPC; ticket rules unit-tested ✅ |
-| Website booking import (operator) | 🟡 | operator-only since 0019 ✅ (unit test) |
-| Guest reminders / review requests | 🟡 | operator-only (uses operator WhatsApp) |
-| Generic (non-tour) booking model / industry modules | ❌ | tour fields are core columns |
-| Deposits / online payments | ❌ | |
+| Bookings, calendar, dispatch, conflict guard | 🟡 | `dispatch.test.ts` (client preview); DB guard not yet in db-tests |
+| Tickets + check-in | 🟡 | `tickets.test.ts` |
+| Generic (non-tour) booking model | 🟠 | tour tools hidden for other industries; generic resources/services ❌ |
+| Deposits / online customer payments | ❌ | |
 
 ## 7. Team & scheduling
 
-| Feature | Status |
-|---|---|
-| Team page, roles, deactivate, MFA reset | 🟡 |
-| Shifts, availability, time-off, attendance | ❌ |
-| Tasks | 🟡 |
+| Feature | Status | Evidence |
+|---|---|---|
+| Shifts (no overlaps, members only, notifications) | ✅ | `scheduling.test.ts` |
+| Time-off requests & approvals | ✅ | same |
+| Shift swaps | ✅ | same |
+| Attendance clock in/out (server time; not legal timekeeping) | ✅ | same |
+| Workload overview | ✅ (logic) / 🟡 | `schedule.test.ts` |
 
 ## 8. Automation
 
-| Feature | Status |
-|---|---|
-| Auto-assign rule on new conversation (DB trigger, logged) | 🟡 |
-| Visual workflow builder, delays, retries, branching | ❌ |
+| Feature | Status | Evidence |
+|---|---|---|
+| Legacy auto-assign rule | 🟡 | DB trigger |
+| Workflows: triggers, conditions, actions, delays | ✅ (queue, conditions, templates) / 🟡 (worker live) | `automation.test.ts` (db + unit) |
+| Idempotency, retries, history, plan limits | ✅ | same |
+| Branching / visual canvas editor | ❌ | linear actions with conditions |
 
-## 9. Finance
-
-| Feature | Status |
-|---|---|
-| PayPal transaction sync + booking matching | 🟡 (matching rules unit-tested ✅) |
-| SaaS subscription billing | ❌⛔ |
-
-## 10. Analytics & admin
+## 9. Finance / 10. Analytics & admin
 
 | Feature | Status |
 |---|---|
-| Dashboard stats, analytics export | 🟡 |
-| Audit log (triggers + page) | 🟡; platform actions audited ✅ |
-| Integration health alerts | 🟡 |
-| Monitoring / error reporting / backups | ❌ (see DEPLOYMENT_GUIDE) |
+| PayPal sync + matching | 🟡 (matching ✅) |
+| SaaS billing (Stripe) | ✅ logic / ⛔ live |
+| Dashboard, analytics export | 🟡 |
+| Audit log | 🟡; platform/support/billing actions ✅ |
+| Monitoring / error reporting | ❌ (see DEPLOYMENT_GUIDE) |
 
 ## Progress against acceptance criteria
 
-Counted mechanically from the rows above (a row counts as ✅ if any automated test covers it):
-**73 rows — 16 ✅ verified, 38 🟡/🟠 implemented or partial, 19 ❌/⛔ missing or blocked.**
-No overall "percent complete" is claimed: rows are not equal in size, and live integration checks
-are still outstanding (`docs/BLOCKERS.md`).
+Counted mechanically from the rows above (✅ = any automated test covers it, even if the UI part is 🟡):
+**78 rows — 42 ✅ verified, 25 🟡/🟠 implemented or partial, 11 ❌/⛔ missing or blocked** (re-run
+`python3 scripts/inventory-count.py` after editing this file). Start of session: 73 rows, 16 ✅.
+No overall "percent complete" is claimed: rows differ in size and live integration checks are outstanding.

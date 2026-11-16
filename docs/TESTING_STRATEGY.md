@@ -4,15 +4,15 @@
 
 | Layer | Tool | Command | Runs where | Status |
 |---|---|---|---|---|
-| Unit (pure logic) | Vitest | `npm test` | anywhere | 23 files / 113 tests passing |
+| Unit (pure logic) | Vitest | `npm test` | anywhere | 34 files / 153 tests passing |
 | Component / routing | Vitest + Testing Library (jsdom) | `npm test` | anywhere | `src/test/app-routing.test.tsx` |
 | Server-module guards (mocked Supabase + fetch) | Vitest | `npm test` | anywhere | `src/lib/tenancy.test.ts` |
-| **Database policies & RPCs** | Vitest + `postgres` driver against throwaway PG16 | `npm run test:db` | needs local PostgreSQL 16 binaries | 3 files / 45 tests passing |
+| **Database policies & RPCs** | Vitest + `postgres` driver against throwaway PG16 | `npm run test:db` | needs local PostgreSQL 16 binaries | 10 files / 81 tests passing |
 | Migration idempotency | `scripts/db-test/run.sh` re-applies 0019+ | `npm run test:db` | same | passing |
 | Typecheck | `tsc --noEmit` | `npx tsc --noEmit` | anywhere | clean |
-| Lint | ESLint + Prettier | `npm run lint` | anywhere | **failing: ~4,900 pre-existing formatting errors** (roadmap 1.10) |
+| Lint | ESLint + Prettier | `npm run lint` | anywhere | passing (0 errors; `any` = warning) — enforced in CI |
 | Build | Vite/Nitro | `npm run build` | anywhere | passing |
-| Browser E2E | Playwright | _not yet in repo_ | needs a staging Supabase project | manual 384px check of public pages done |
+| Browser E2E | Playwright | _not yet in repo_ | needs a staging Supabase project | manual 384 px checks of public pages + chat widget done |
 | Live integration smoke tests | manual checklist | — | production/staging with credentials | blocked (B-OPS-1) |
 
 ## How the database test harness works
@@ -42,7 +42,10 @@ secrets unreadable; agents limited; privileged columns locked; platform-admin-on
 Mobile viewports: 384×800 and 768×1024 for every page; assert no horizontal scroll.
 
 ## Gaps (honest)
-* CI workflow exists but has not run on GitHub yet (push access pending).
+* CI is green on GitHub (typecheck, unit, DB policy, lint, build, audit).
 * Webhook handlers (Meta, WhatsApp, hub) have no automated tests with signed fixture payloads — next.
-* `booking_conflict_guard`, `check_in_ticket`, `merge_contacts`, `anonymize_contact` not yet in db-tests.
+* `booking_conflict_guard`, `check_in_ticket`, `anonymize_contact` not yet in db-tests.
+* Server workers (automation actions, social publisher, classifier, Telegram send) are tested through their pure
+  logic and the DB queue; their live third-party calls are untested here (no credentials).
+* The DB tests already caught two serious trigger bugs this session (SECURITY_AUDIT F-16) — keep adding them.
 * No load/performance tests; no backup-restore drill.

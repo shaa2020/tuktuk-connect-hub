@@ -10,7 +10,7 @@ export type LeadStage = E["lead_stage"];
 export type BookingStatus = E["booking_status"];
 export type PaymentStatus = E["payment_status"];
 export type Tone =
-  | "blue" | "teal" | "success" | "warning" | "danger" | "info" | "muted" | "secondary";
+  "blue" | "teal" | "success" | "warning" | "danger" | "info" | "muted" | "secondary";
 
 export const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Business Admin",
@@ -24,6 +24,8 @@ export const CHANNEL_LABEL: Record<ChannelType, string> = {
   messenger: "Messenger",
   email: "Email",
   manual: "Phone / Manual",
+  telegram: "Telegram",
+  webchat: "Website chat",
 };
 
 export const STATUS_META: Record<ConversationStatus, { label: string; tone: Tone }> = {
@@ -55,7 +57,14 @@ export const MESSAGE_STATUS_LABEL: Record<MessageStatus, string> = {
 };
 
 export const LEAD_STAGES: LeadStage[] = [
-  "new", "contacted", "qualified", "quote_requested", "quote_sent", "awaiting_customer", "won", "lost",
+  "new",
+  "contacted",
+  "qualified",
+  "quote_requested",
+  "quote_sent",
+  "awaiting_customer",
+  "won",
+  "lost",
 ];
 export const LEAD_STAGE_META: Record<LeadStage, { label: string; tone: Tone }> = {
   new: { label: "New", tone: "blue" },
@@ -108,11 +117,7 @@ export function canDeleteBookings(role: AppRole | null | undefined) {
   return role === "admin" || role === "manager" || role === "agent";
 }
 /** Agents may only (re)assign a conversation to themselves or unassign it. */
-export function canAssignTo(
-  role: AppRole | null | undefined,
-  me: string,
-  target: string | null,
-) {
+export function canAssignTo(role: AppRole | null | undefined, me: string, target: string | null) {
   if (!role) return false;
   if (role === "admin" || role === "manager") return true;
   return target === null || target === me;
@@ -137,6 +142,9 @@ export function canSendOnChannel(channel: ChannelType, connected: boolean) {
 
 export function initials(name?: string | null) {
   if (!name) return "?";
-  const parts = name.replace(/\[SAMPLE\]\s*/i, "").trim().split(/\s+/);
+  const parts = name
+    .replace(/\[SAMPLE\]\s*/i, "")
+    .trim()
+    .split(/\s+/);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
 }

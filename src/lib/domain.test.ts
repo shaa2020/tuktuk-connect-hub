@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  canAssignTo, canDeleteBookings, canDeleteContacts, canManageTeam, canSeeConversation,
-  canSendOnChannel, canViewAudit,
+  canAssignTo,
+  canDeleteBookings,
+  canDeleteContacts,
+  canManageTeam,
+  canSeeConversation,
+  canSendOnChannel,
+  canViewAudit,
 } from "./domain";
 
 describe("role permissions", () => {

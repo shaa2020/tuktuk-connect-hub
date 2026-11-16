@@ -22,12 +22,22 @@ function bytesToB64u(b: ArrayBuffer | Uint8Array): string {
 function concat(...parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let off = 0;
-  for (const p of parts) { out.set(p, off); off += p.length; }
+  for (const p of parts) {
+    out.set(p, off);
+    off += p.length;
+  }
   return out;
 }
 
-async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, len: number): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey("raw", ikm as BufferSource, "HKDF", false, ["deriveBits"]);
+async function hkdf(
+  salt: Uint8Array,
+  ikm: Uint8Array,
+  info: Uint8Array,
+  len: number,
+): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey("raw", ikm as BufferSource, "HKDF", false, [
+    "deriveBits",
+  ]);
   const bits = await crypto.subtle.deriveBits(
     { name: "HKDF", hash: "SHA-256", salt: salt as BufferSource, info: info as BufferSource },
     key,
@@ -62,28 +72,51 @@ async function vapidJwt(audience: string, privB64: string, pubB64: string): Prom
   return `${header}.${claims}.${bytesToB64u(sig)}`;
 }
 
-async function encryptPayload(p256dhB64: string, authB64: string, payload: string): Promise<Uint8Array> {
+async function encryptPayload(
+  p256dhB64: string,
+  authB64: string,
+  payload: string,
+): Promise<Uint8Array> {
   const uaPubBytes = b64uToBytes(p256dhB64);
   const authSecret = b64uToBytes(authB64);
 
-  const asKeys = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const asKeys = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, [
+    "deriveBits",
+  ]);
   const asPubBytes = new Uint8Array(await crypto.subtle.exportKey("raw", asKeys.publicKey));
 
-  const uaPub = await crypto.subtle.importKey("raw", uaPubBytes as BufferSource, { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const uaPub = await crypto.subtle.importKey(
+    "raw",
+    uaPubBytes as BufferSource,
+    { name: "ECDH", namedCurve: "P-256" },
+    false,
+    [],
+  );
   const sharedSecret = new Uint8Array(
     await crypto.subtle.deriveBits({ name: "ECDH", public: uaPub }, asKeys.privateKey, 256),
   );
 
   // RFC 8291 §3.3 key derivation
-  const ikm = await hkdf(authSecret, sharedSecret, concat(enc.encode("WebPush: info\0"), uaPubBytes, asPubBytes), 32);
+  const ikm = await hkdf(
+    authSecret,
+    sharedSecret,
+    concat(enc.encode("WebPush: info\0"), uaPubBytes, asPubBytes),
+    32,
+  );
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const cek = await hkdf(salt, ikm, enc.encode("Content-Encoding: aes128gcm\0"), 16);
   const nonce = await hkdf(salt, ikm, enc.encode("Content-Encoding: nonce\0"), 12);
 
   const plain = concat(enc.encode(payload), new Uint8Array([2])); // 0x02 = last-record delimiter
-  const aesKey = await crypto.subtle.importKey("raw", cek as BufferSource, "AES-GCM", false, ["encrypt"]);
+  const aesKey = await crypto.subtle.importKey("raw", cek as BufferSource, "AES-GCM", false, [
+    "encrypt",
+  ]);
   const cipher = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce as BufferSource }, aesKey, plain as BufferSource),
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: nonce as BufferSource },
+      aesKey,
+      plain as BufferSource,
+    ),
   );
 
   // aes128gcm content coding header: salt | rs(4) | idlen(1) | keyid
@@ -125,9 +158,13 @@ async function sendOne(
  * push_sent_at so it is delivered exactly once. Dead subscriptions (404/410)
  * are removed.
  */
-export async function sendPendingPushes(sb: SupabaseClient, onlyIds?: string[]): Promise<{ sent: number; failed: number }> {
+export async function sendPendingPushes(
+  sb: SupabaseClient,
+  onlyIds?: string[],
+): Promise<{ sent: number; failed: number }> {
   const priv = process.env["VAPID_PRIVATE_KEY"];
-  const pub = "BBJQIT6EMFi7FhBZuS-iVN4ia3HmIDL_SXOkMhDHXy1_Qd33xwF0lEEawpIfF4Lk7KjEAwmymgKPlvgwUtf8D_o"; // raw P-256 point (RFC 8292)
+  const pub =
+    "BBJQIT6EMFi7FhBZuS-iVN4ia3HmIDL_SXOkMhDHXy1_Qd33xwF0lEEawpIfF4Lk7KjEAwmymgKPlvgwUtf8D_o"; // raw P-256 point (RFC 8292)
   if (!priv) return { sent: 0, failed: 0 };
 
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
@@ -145,7 +182,10 @@ export async function sendPendingPushes(sb: SupabaseClient, onlyIds?: string[]):
   let sent = 0;
   let failed = 0;
   for (const n of pending) {
-    const { data: subs } = await sb.from("push_subscriptions").select("id, endpoint, keys").eq("user_id", n.user_id);
+    const { data: subs } = await sb
+      .from("push_subscriptions")
+      .select("id, endpoint, keys")
+      .eq("user_id", n.user_id);
     const payload = JSON.stringify({
       title: n.title,
       body: n.body ?? "",
@@ -157,24 +197,50 @@ export async function sendPendingPushes(sb: SupabaseClient, onlyIds?: string[]):
       try {
         const status = await sendOne(sub.endpoint, sub.keys as PushKeys, payload, priv, pub);
         if (status >= 200 && status < 300) ok = true;
-        else if (status === 404 || status === 410) await sb.from("push_subscriptions").delete().eq("id", sub.id);
+        else if (status === 404 || status === 410)
+          await sb.from("push_subscriptions").delete().eq("id", sub.id);
         else failed++;
       } catch {
         failed++;
       }
     }
     if (ok) sent++;
-    await sb.from("notifications").update({ push_sent_at: new Date().toISOString() }).eq("id", n.id);
+    await sb
+      .from("notifications")
+      .update({ push_sent_at: new Date().toISOString() })
+      .eq("id", n.id);
   }
   return { sent, failed };
 }
 
 /** Creates a notification for every active team member and pushes it to their phones right away. */
-export async function notifyTeam(sb: SupabaseClient, ws: string, n: { kind: string; title: string; body: string; link: string }) {
-  const { data: members } = await sb.from("workspace_members").select("user_id").eq("workspace_id", ws).eq("active", true);
+export async function notifyTeam(
+  sb: SupabaseClient,
+  ws: string,
+  n: { kind: string; title: string; body: string; link: string },
+) {
+  const { data: members } = await sb
+    .from("workspace_members")
+    .select("user_id")
+    .eq("workspace_id", ws)
+    .eq("active", true);
   if (!members?.length) return;
-  const { data: rows } = await sb.from("notifications").insert(members.map((m: any) => ({
-    workspace_id: ws, user_id: m.user_id, kind: n.kind, title: n.title.slice(0, 120), body: n.body.slice(0, 300), link: n.link,
-  }))).select("id");
-  if (rows?.length) await sendPendingPushes(sb, rows.map((r: any) => r.id));
+  const { data: rows } = await sb
+    .from("notifications")
+    .insert(
+      members.map((m: any) => ({
+        workspace_id: ws,
+        user_id: m.user_id,
+        kind: n.kind,
+        title: n.title.slice(0, 120),
+        body: n.body.slice(0, 300),
+        link: n.link,
+      })),
+    )
+    .select("id");
+  if (rows?.length)
+    await sendPendingPushes(
+      sb,
+      rows.map((r: any) => r.id),
+    );
 }

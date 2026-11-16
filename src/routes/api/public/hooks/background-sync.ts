@@ -13,18 +13,33 @@ export const Route = createFileRoute("/api/public/hooks/background-sync")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const token = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.get("authorization") ?? "")?.[1];
+        const token = /^Bearer ([a-f0-9]{64})$/.exec(
+          request.headers.get("authorization") ?? "",
+        )?.[1];
         if (!token) return new Response("Unauthorized", { status: 401 });
         const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
         const { safeEqual } = await import("@/lib/secrets.server");
-        const { data: row } = await sb.from("internal_job_tokens").select("token").eq("name", "background_sync").maybeSingle();
-        if (!row || !safeEqual(token, row.token)) return new Response("Unauthorized", { status: 401 });
-        const body = (await request.json().catch(() => ({}))) as { operatorOnly?: unknown; workspace?: unknown };
-        const ws = typeof body.workspace === "string" && UUID.test(body.workspace) ? body.workspace : null;
+        const { data: row } = await sb
+          .from("internal_job_tokens")
+          .select("token")
+          .eq("name", "background_sync")
+          .maybeSingle();
+        if (!row || !safeEqual(token, row.token))
+          return new Response("Unauthorized", { status: 401 });
+        const body = (await request.json().catch(() => ({}))) as {
+          operatorOnly?: unknown;
+          workspace?: unknown;
+        };
+        const ws =
+          typeof body.workspace === "string" && UUID.test(body.workspace) ? body.workspace : null;
 
         if (body.operatorOnly === true && ws) {
           let r: unknown;
-          try { r = await (await import("@/lib/ai-operator.server")).runOperatorFor(ws); } catch (e) { r = { error: (e as Error).message.slice(0, 200) }; }
+          try {
+            r = await (await import("@/lib/ai-operator.server")).runOperatorFor(ws);
+          } catch (e) {
+            r = { error: (e as Error).message.slice(0, 200) };
+          }
           return Response.json({ ok: true, operator: r });
         }
 

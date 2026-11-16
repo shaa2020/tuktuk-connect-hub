@@ -19,16 +19,28 @@ export const paypalStatus = createServerFn({ method: "POST" })
 
 export const savePaypal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => W.extend({ clientId: z.string().trim().min(20).max(200), secret: z.string().trim().min(20).max(200) }).parse(d))
+  .inputValidator((d) =>
+    W.extend({
+      clientId: z.string().trim().min(20).max(200),
+      secret: z.string().trim().min(20).max(200),
+    }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase, data.workspaceId, ["admin"]);
     const { paypalToken, syncPaypalFor } = await import("./paypal.server");
-    try { await paypalToken(data.clientId, data.secret); } catch (e) { return { ok: false as const, error: (e as Error).message }; }
+    try {
+      await paypalToken(data.clientId, data.secret);
+    } catch (e) {
+      return { ok: false as const, error: (e as Error).message };
+    }
     const { setSecret } = await import("./secrets.server");
     await setSecret(data.workspaceId, "paypal_client_id", data.clientId, context.userId);
     await setSecret(data.workspaceId, "paypal_secret", data.secret, context.userId);
-    try { return { ok: true as const, ...(await syncPaypalFor(data.workspaceId, 31)) }; }
-    catch (e) { return { ok: true as const, warning: (e as Error).message }; }
+    try {
+      return { ok: true as const, ...(await syncPaypalFor(data.workspaceId, 31)) };
+    } catch (e) {
+      return { ok: true as const, warning: (e as Error).message };
+    }
   });
 
 export const syncPaypalNow = createServerFn({ method: "POST" })
@@ -37,6 +49,9 @@ export const syncPaypalNow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase, data.workspaceId, ["admin", "manager"]);
     const { syncPaypalFor } = await import("./paypal.server");
-    try { return { ok: true as const, ...(await syncPaypalFor(data.workspaceId, 31)) }; }
-    catch (e) { return { ok: false as const, error: (e as Error).message }; }
+    try {
+      return { ok: true as const, ...(await syncPaypalFor(data.workspaceId, 31)) };
+    } catch (e) {
+      return { ok: false as const, error: (e as Error).message };
+    }
   });

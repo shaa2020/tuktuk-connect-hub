@@ -37,3 +37,20 @@
 * Migration 0021 + `rate-limit.server.ts`: public ticket lookup, invite redemption (fail closed),
   hub + Meta webhooks (fail open). 3 db tests.
 * `.github/workflows/ci.yml` (typecheck, unit, db tests, build, audit; lint informational) — unverified.
+
+## 2026-11-15 — Milestones 5–15 ("finish everything" request)
+| # | Commit | What |
+|---|---|---|
+| 5 | 60fb3db | Background fan-out per workspace (0022); Facebook/Instagram publishing worker |
+| 6 | 94e6e6a | White-label copy; industry modules |
+| 7 | 466961a | Telegram channel (0023) |
+| 8 | 90b4cce | Website live chat widget |
+| 9 | 71fe4da | Stripe Billing (0024) |
+| 10 | 3014f63 | Staff scheduling (0025) |
+| 11 | 27646ca | CRM import/dedupe/custom fields (0026) |
+| 12 | eee1f98 | Automation workflows engine (0027) — DB tests caught trigger bug F-16a |
+| 13 | 8d9eaf3 | Data lifecycle: export, deletion, ownership, retention (0028) — DB tests caught F-16b |
+| 14 | d1d1998 | AI approval queue + classification (0029) |
+| 15 | fc52378 | Platform revenue/health, consented support access, MFA recovery codes (0030) |
+| 16 | ab32158 | Lint clean-up (0 errors), lint enforced in CI |
+Each milestone: typecheck, unit tests, DB policy tests and build run before commit; CI green on GitHub.
