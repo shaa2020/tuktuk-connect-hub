@@ -597,8 +597,6 @@ export type Database = {
       }
       bookings: {
         Row: {
-          service_id: string | null
-          end_date: string | null
           amount: number | null
           checked_in_at: string | null
           checked_in_by: string | null
@@ -635,8 +633,6 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
-          service_id?: string | null
-          end_date?: string | null
           amount?: number | null
           checked_in_at?: string | null
           checked_in_by?: string | null
@@ -673,8 +669,6 @@ export type Database = {
           workspace_id: string
         }
         Update: {
-          service_id?: string | null
-          end_date?: string | null
           amount?: number | null
           checked_in_at?: string | null
           checked_in_by?: string | null
@@ -1197,7 +1191,6 @@ export type Database = {
           lead_id: string | null
           priority: Database["public"]["Enums"]["priority_level"]
           resolved_at: string | null
-          snoozed_until: string | null
           status: Database["public"]["Enums"]["conversation_status"]
           subject: string | null
           unread: boolean
@@ -1228,7 +1221,6 @@ export type Database = {
           lead_id?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolved_at?: string | null
-          snoozed_until?: string | null
           status?: Database["public"]["Enums"]["conversation_status"]
           subject?: string | null
           unread?: boolean
@@ -1259,7 +1251,6 @@ export type Database = {
           lead_id?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolved_at?: string | null
-          snoozed_until?: string | null
           status?: Database["public"]["Enums"]["conversation_status"]
           subject?: string | null
           unread?: boolean
@@ -1546,7 +1537,6 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
-          source_name: string | null
           title: string
           updated_at: string
           workspace_id: string
@@ -1556,7 +1546,6 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
-          source_name?: string | null
           title: string
           updated_at?: string
           workspace_id: string
@@ -1566,7 +1555,6 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
-          source_name?: string | null
           title?: string
           updated_at?: string
           workspace_id?: string
@@ -1722,8 +1710,6 @@ export type Database = {
       }
       message_attachments: {
         Row: {
-          file_name: string | null
-          kind: string
           created_at: string
           id: string
           message_id: string
@@ -1733,8 +1719,6 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
-          file_name?: string | null
-          kind?: string
           created_at?: string
           id?: string
           message_id: string
@@ -1744,8 +1728,6 @@ export type Database = {
           workspace_id: string
         }
         Update: {
-          file_name?: string | null
-          kind?: string
           created_at?: string
           id?: string
           message_id?: string
@@ -2209,81 +2191,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      services: {
-        Row: {
-          active: boolean
-          advance_days: number
-          booking_mode: string
-          capacity: number
-          capacity_unit: string
-          created_at: string
-          currency: string
-          description: string | null
-          duration_minutes: number
-          id: string
-          lead_time_hours: number
-          max_guests: number
-          min_guests: number
-          name: string
-          price_cents: number | null
-          price_per: string
-          public: boolean
-          slot_interval_minutes: number
-          sort: number
-          updated_at: string
-          weekly_hours: Json
-          workspace_id: string
-        }
-        Insert: {
-          active?: boolean
-          advance_days?: number
-          booking_mode?: string
-          capacity?: number
-          capacity_unit?: string
-          created_at?: string
-          currency?: string
-          description?: string | null
-          duration_minutes?: number
-          id?: string
-          lead_time_hours?: number
-          max_guests?: number
-          min_guests?: number
-          name: string
-          price_cents?: number | null
-          price_per?: string
-          public?: boolean
-          slot_interval_minutes?: number
-          sort?: number
-          updated_at?: string
-          weekly_hours?: Json
-          workspace_id: string
-        }
-        Update: {
-          active?: boolean
-          advance_days?: number
-          booking_mode?: string
-          capacity?: number
-          capacity_unit?: string
-          created_at?: string
-          currency?: string
-          description?: string | null
-          duration_minutes?: number
-          id?: string
-          lead_time_hours?: number
-          max_guests?: number
-          min_guests?: number
-          name?: string
-          price_cents?: number | null
-          price_per?: string
-          public?: boolean
-          slot_interval_minutes?: number
-          sort?: number
-          updated_at?: string
-          weekly_hours?: Json
-          workspace_id?: string
-        }
-        Relationships: []
       }
       shift_swap_requests: {
         Row: {
@@ -3087,10 +2994,6 @@ export type Database = {
       }
       workspaces: {
         Row: {
-          public_slug: string | null
-          booking_page_enabled: boolean
-          booking_page_intro: string | null
-          booking_auto_confirm: boolean
           agents_see_unassigned: boolean
           auto_assign_driver: boolean
           brand_color: string | null
@@ -3121,10 +3024,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          public_slug?: string | null
-          booking_page_enabled?: boolean
-          booking_page_intro?: string | null
-          booking_auto_confirm?: boolean
           agents_see_unassigned?: boolean
           auto_assign_driver?: boolean
           brand_color?: string | null
@@ -3155,10 +3054,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          public_slug?: string | null
-          booking_page_enabled?: boolean
-          booking_page_intro?: string | null
-          booking_auto_confirm?: boolean
           agents_see_unassigned?: boolean
           auto_assign_driver?: boolean
           brand_color?: string | null
@@ -3210,7 +3105,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      attachment_path_allowed: { Args: { _path: string }; Returns: boolean }
       accept_invitation: { Args: { _token: string }; Returns: string }
       anonymize_contact: { Args: { _id: string }; Returns: undefined }
       apply_message_retention: { Args: never; Returns: number }
@@ -3360,15 +3254,12 @@ export type Database = {
           suspended_reason: string
         }[]
       }
-      public_booking_page: { Args: { _slug: string }; Returns: Json }
-      public_create_booking: { Args: { _date: string; _email: string; _guests: number; _name: string; _nights?: number; _note: string; _phone: string; _service: string; _slug: string; _time: string }; Returns: Json }
       purge_due_workspaces: { Args: never; Returns: number }
       request_workspace_deletion: {
         Args: { _confirm_name: string; _ws: string }
         Returns: string
       }
       revoke_support_access: { Args: { _id: string }; Returns: undefined }
-      service_availability: { Args: { _date: string; _service: string }; Returns: { start_time: string | null; remaining: number }[] }
       shares_workspace: { Args: { _other: string }; Returns: boolean }
       support_workspace_snapshot: { Args: { _ws: string }; Returns: Json }
       transfer_workspace_ownership: {
