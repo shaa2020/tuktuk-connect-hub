@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { modulesFor, pickWorkspace } from "@/hooks/use-workspace";
+import { modulesFor, needsBusinessChoice, pickWorkspace } from "@/hooks/use-workspace";
 
 describe("industry modules", () => {
   it("shows tour tools to tour/travel businesses, the operator and legacy workspaces", () => {
@@ -21,5 +21,12 @@ describe("workspace selection", () => {
     expect(pickWorkspace(m, "zzz")?.workspace_id).toBe("a");
     expect(pickWorkspace(m, null)?.workspace_id).toBe("a");
     expect(pickWorkspace([], "a")).toBeNull();
+  });
+  it("asks which business to open when several exist and none is remembered", () => {
+    expect(needsBusinessChoice(m, null)).toBe(true);
+    expect(needsBusinessChoice(m, "gone")).toBe(true);
+    expect(needsBusinessChoice(m, "b")).toBe(false);
+    expect(needsBusinessChoice([{ workspace_id: "a" }], null)).toBe(false);
+    expect(needsBusinessChoice([], null)).toBe(false);
   });
 });

@@ -113,12 +113,13 @@ function useCounts() {
     },
   });
   const notif = useQuery({
-    queryKey: ["count", "notif", userId],
+    queryKey: ["count", "notif", userId, workspaceId],
     queryFn: async () => {
       const { count } = await supabase
         .from("notifications")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
+        .eq("workspace_id", workspaceId)
         .is("read_at", null);
       return count ?? 0;
     },
@@ -326,6 +327,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <h2 className="min-w-0 truncate font-display text-[15px] font-bold tracking-tight">
             {pageTitle}
           </h2>
+          {ws.workspaces.length > 1 && (
+            <span
+              className="max-w-[16rem] shrink-0 truncate rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary"
+              title="Current business — switch from your profile menu"
+            >
+              {ws.workspaceName}
+            </span>
+          )}
           <button
             onClick={() => setSearchOpen(true)}
             className="ml-auto flex h-9 w-72 items-center gap-2 rounded-lg border bg-surface-2 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -397,6 +406,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="truncate font-display text-[16px] font-bold tracking-tight">
               {pageTitle}
             </div>
+            {ws.workspaces.length > 1 && (
+              <div className="-mt-0.5 truncate text-[11px] font-semibold text-primary">
+                {ws.workspaceName}
+              </div>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <button
