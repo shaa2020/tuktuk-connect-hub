@@ -32,6 +32,19 @@ if [ -z "${MIGRATIONS_UPTO:-}" ]; then
     echo "re-applying $(basename "$f") (idempotency check)"; "${PSQL[@]}" -d app -1 -f "$f" >/dev/null
   done
 fi
+# UPGRADE_CHECK=1: simulate production — old schema (0000–0018) + realistic data, then upgrade.
+if [ -n "${UPGRADE_CHECK:-}" ]; then
+  "${PSQL[@]}" -d postgres -c "create database upgrade" && "${PSQL[@]}" -d upgrade -c "alter database upgrade set search_path = public, extensions"
+  "${PSQL[@]}" -d upgrade -f "$ROOT/scripts/db-test/supabase-stubs.sql"
+  for f in "$ROOT"/drizzle/migrations/*.sql; do n="$(basename "$f" | cut -c1-4)"; [ "$n" \> "0018" ] && continue; "${PSQL[@]}" -d upgrade -1 -f "$f" >/dev/null; done
+  "${PSQL[@]}" -d upgrade -c "insert into auth.users(id, email, email_confirmed_at) values ('00000000-0000-0000-0000-0000000000a0', 'first@tuktuk.test', now())" # bootstraps the workspace
+  "${PSQL[@]}" -d upgrade -f "$ROOT/scripts/db-test/upgrade-seed.sql"
+  for f in "$ROOT"/drizzle/migrations/*.sql; do n="$(basename "$f" | cut -c1-4)"; [ "$n" \< "0019" ] && continue; echo "upgrading with $(basename "$f")"; "${PSQL[@]}" -d upgrade -1 -f "$f" >/dev/null; done
+  PGOPTIONS="-c client_min_messages=notice" "${PSQL[@]}" -d upgrade -f "$ROOT/scripts/db-test/upgrade-checks.sql"
+  echo "re-applying the combined manual file on the upgraded database (must be a no-op)"
+  "${PSQL[@]}" -d upgrade -f "$ROOT/drizzle/manual/0019-0030_combined.sql" >/dev/null
+  PGOPTIONS="-c client_min_messages=notice" "${PSQL[@]}" -d upgrade -f "$ROOT/scripts/db-test/upgrade-checks.sql"
+fi
 export DATABASE_TEST_URL="postgres://postgres@127.0.0.1:$PORT/app"
 cd "$ROOT"
 npx vitest run --config vitest.db.config.ts "$@"
