@@ -601,7 +601,7 @@ function BookingEditor({
 
 const schema = z
   .object({
-    tour_name: z.string().trim().min(1, "Tour name is required").max(200),
+    tour_name: z.string().trim().min(1, "Please enter what is booked").max(200),
     guests: z
       .string()
       .refine((v) => !v || (/^\d+$/.test(v) && +v >= 1 && +v <= 500), "Guests must be 1–500"),
@@ -628,6 +628,7 @@ function BookingForm({
   const qc = useQueryClient();
   const [f, setF] = useState({
     reference: b?.reference ?? "",
+    service_id: b?.service_id ?? "",
     tour_name: b?.tour_name ?? "",
     contact_id: b?.contact_id ?? defaults.contact_id ?? "",
     lead_id: b?.lead_id ?? defaults.lead_id ?? "",
@@ -652,6 +653,38 @@ function BookingForm({
     setF((p) => ({ ...p, [k]: e.target.value }));
   const setV = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
   const syncedPayment = b && b.payment_status_source !== "manual";
+  const services = useQuery({
+    queryKey: ["services", ws.workspaceId, "picker"],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("services")
+          .select("id, name, duration_minutes, price_cents, price_per, booking_mode")
+          .eq("workspace_id", ws.workspaceId)
+          .eq("active", true)
+          .order("sort")
+          .order("name")
+      ).data ?? [],
+  });
+  function pickService(id: string) {
+    const sv = services.data?.find((x) => x.id === id);
+    setF((p) => {
+      if (!sv) return { ...p, service_id: "" };
+      const guests = Number(p.guests) || 1;
+      const amount =
+        sv.price_cents == null
+          ? p.amount
+          : ((sv.price_cents / 100) * (sv.price_per === "person" ? guests : 1)).toFixed(2);
+      return {
+        ...p,
+        service_id: id,
+        tour_name: sv.name,
+        duration_minutes:
+          sv.booking_mode === "slot" ? String(sv.duration_minutes) : p.duration_minutes,
+        amount,
+      };
+    });
+  }
 
   async function save() {
     setErr(null);
@@ -662,6 +695,7 @@ function BookingForm({
       const v = emptyToNull({ ...f }) as Record<string, string | null>;
       const payload = {
         tour_name: v.tour_name!,
+        service_id: v.service_id,
         contact_id: v.contact_id,
         lead_id: v.lead_id,
         tour_date: v.tour_date,
@@ -765,7 +799,32 @@ function BookingForm({
         still an inquiry. Card details are never stored here.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Tour name *" htmlFor="b-tour" className="sm:col-span-2">
+        {!!services.data?.length && (
+          <Field
+            label="Service"
+            htmlFor="b-service"
+            className="sm:col-span-2"
+            hint="Fills in name, duration and price — you can still change them."
+          >
+            <NativeSelect
+              id="b-service"
+              value={f.service_id}
+              onChange={(e) => pickService(e.target.value)}
+            >
+              <option value="">— None —</option>
+              {services.data.map((sv) => (
+                <option key={sv.id} value={sv.id}>
+                  {sv.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        )}
+        <Field
+          label={ws.modules.tours ? "Tour name *" : "What is booked *"}
+          htmlFor="b-tour"
+          className="sm:col-span-2"
+        >
           <Input id="b-tour" value={f.tour_name} onChange={set("tour_name")} />
         </Field>
         <Field

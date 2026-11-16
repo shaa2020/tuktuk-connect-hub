@@ -28,6 +28,7 @@ import {
   Wallet,
   Gauge,
   CalendarDays,
+  Store,
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
 import { WorkspaceList } from "@/components/workspace-switcher";
@@ -74,6 +75,7 @@ export const NAV: NavItem[] = [
     module: "tours",
   },
   { to: "/bookings", label: "Bookings", icon: CalendarCheck, group: "Daily work" },
+  { to: "/services", label: "Services", icon: Store, group: "Daily work" },
   { to: "/finance", label: "Finance", icon: Wallet, group: "Daily work" },
   { to: "/tasks", label: "Tasks", icon: CheckSquare, group: "Daily work" },
   { to: "/schedule", label: "Schedule", icon: CalendarDays, group: "Daily work" },

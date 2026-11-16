@@ -232,6 +232,13 @@
       "when": 1794824224618,
       "tag": "0032_inbox_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794824783411,
+      "tag": "0033_services_booking_page",
+      "breakpoints": true
     }
   ]
 }

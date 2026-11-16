@@ -37,3 +37,4 @@ All new migrations are idempotent and non-destructive (no DROP of tables/columns
 - `0029_ai_classification_approvals.sql` — conversation ai_intent/ai_sentiment/ai_summary, ai_settings.auto_classify, ai_reply_drafts approval queue + decide_ai_draft.
 - `0030_platform_health_support_mfa_recovery.sql` — platform_revenue_summary / platform_health / platform_job_backlog, support_access_grants + support_workspace_snapshot (audited), mfa_recovery_codes.
 - `0032_inbox_attachments.sql` — attachments bucket + storage policies, message_attachments file_name/kind, insert policy, attachment_path_allowed.
+- `0033_services_booking_page.sql` — services table (hours, capacity, price, slot/day mode), bookings.service_id/end_date, workspace booking-page columns, service_availability / public_booking_page / public_create_booking RPCs.
