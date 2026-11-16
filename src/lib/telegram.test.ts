@@ -53,3 +53,36 @@ describe("telegram", () => {
     expect(parseUpdate({ callback_query: {} })).toBeNull();
   });
 });
+
+describe("telegram media", () => {
+  it("extracts the largest photo, voice notes and documents", async () => {
+    const { parseUpdate } = await import("./telegram");
+    const photo = parseUpdate({
+      message: {
+        message_id: 5,
+        chat: { id: 1, type: "private" },
+        from: { first_name: "A" },
+        photo: [{ file_id: "small" }, { file_id: "big" }],
+      },
+    });
+    expect(photo?.media).toEqual({ fileId: "big", mime: "image/jpeg", name: "photo-5.jpg" });
+    const voice = parseUpdate({
+      message: {
+        message_id: 6,
+        chat: { id: 1, type: "private" },
+        from: { first_name: "A" },
+        voice: { file_id: "v1", mime_type: "audio/ogg" },
+      },
+    });
+    expect(voice?.media?.mime).toBe("audio/ogg");
+    const text = parseUpdate({
+      message: {
+        message_id: 7,
+        chat: { id: 1, type: "private" },
+        from: { first_name: "A" },
+        text: "hi",
+      },
+    });
+    expect(text?.media).toBeUndefined();
+  });
+});

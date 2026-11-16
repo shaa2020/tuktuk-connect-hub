@@ -1710,6 +1710,8 @@ export type Database = {
       }
       message_attachments: {
         Row: {
+          file_name: string | null
+          kind: string
           created_at: string
           id: string
           message_id: string
@@ -1719,6 +1721,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          file_name?: string | null
+          kind?: string
           created_at?: string
           id?: string
           message_id: string
@@ -1728,6 +1732,8 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          file_name?: string | null
+          kind?: string
           created_at?: string
           id?: string
           message_id?: string
@@ -3105,6 +3111,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attachment_path_allowed: { Args: { _path: string }; Returns: boolean }
       accept_invitation: { Args: { _token: string }; Returns: string }
       anonymize_contact: { Args: { _id: string }; Returns: undefined }
       apply_message_retention: { Args: never; Returns: number }

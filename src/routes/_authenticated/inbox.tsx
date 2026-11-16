@@ -37,6 +37,7 @@ import {
   CheckCheck,
   PanelRight,
   Globe,
+  Paperclip,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
 import { listWebsiteTours } from "@/lib/website.functions";
@@ -47,6 +48,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { aiAssist } from "@/lib/ai.functions";
 import { sendChannelMessage, syncEmailNow } from "@/lib/admin.functions";
 import { INTENT_LABEL } from "@/lib/classify";
+import { sendAttachment } from "@/lib/attachments.functions";
+import {
+  attachmentLabel,
+  attachmentPath,
+  attachmentProblem,
+  kindOf,
+  normalizeMime,
+  safeFileName,
+} from "@/lib/attachments";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -737,8 +747,73 @@ type TimelineItem =
       status: string;
       author: string | null;
       error: string | null;
+      files: FileRef[];
     }
   | { kind: "note"; id: string; at: string; body: string; author: string };
+type FileRef = {
+  id: string;
+  storage_path: string;
+  mime_type: string | null;
+  file_name: string | null;
+  size_bytes: number | null;
+  kind: "image" | "video" | "audio" | "file";
+};
+
+/** Shows one attachment from private storage via a short-lived signed link. */
+function FileView({ f, outbound }: { f: FileRef; outbound: boolean }) {
+  const url = useQuery({
+    queryKey: ["file-url", f.storage_path],
+    staleTime: 50 * 60_000,
+    queryFn: async () =>
+      (await supabase.storage.from("attachments").createSignedUrl(f.storage_path, 3600)).data
+        ?.signedUrl ?? null,
+  });
+  if (url.isLoading) return <div className="mt-1.5 h-24 w-40 animate-pulse rounded-lg bg-muted" />;
+  if (!url.data) return <p className="mt-1 text-[11px] opacity-80">File unavailable</p>;
+  const name = f.file_name ?? "file";
+  if (f.kind === "image")
+    return (
+      <a href={url.data} target="_blank" rel="noreferrer" className="mt-1.5 block">
+        <img
+          src={url.data}
+          alt={name}
+          loading="lazy"
+          className="max-h-64 max-w-full rounded-lg object-contain"
+        />
+      </a>
+    );
+  if (f.kind === "audio")
+    return <audio controls src={url.data} className="mt-1.5 w-60 max-w-full" aria-label={name} />;
+  if (f.kind === "video")
+    return (
+      <video
+        controls
+        src={url.data}
+        className="mt-1.5 max-h-64 max-w-full rounded-lg"
+        aria-label={name}
+      />
+    );
+  return (
+    <a
+      href={url.data}
+      target="_blank"
+      rel="noreferrer"
+      download={name}
+      className={cn(
+        "mt-1.5 flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium",
+        outbound ? "bg-primary-foreground/15" : "bg-muted",
+      )}
+    >
+      <Paperclip className="size-3.5 shrink-0" aria-hidden />
+      <span className="truncate">{name}</span>
+      {f.size_bytes ? (
+        <span className="shrink-0 opacity-70">
+          {Math.max(1, Math.round(f.size_bytes / 1024))} KB
+        </span>
+      ) : null}
+    </a>
+  );
+}
 
 const MSG_PAGE = 50;
 
@@ -775,9 +850,10 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       const [m, n] = await Promise.all([
         supabase
           .from("messages")
-          .select("id, direction, body, status, author_id, created_at, error_message", {
-            count: "exact",
-          })
+          .select(
+            "id, direction, body, status, author_id, created_at, error_message, message_attachments(id, storage_path, mime_type, file_name, size_bytes, kind)",
+            { count: "exact" },
+          )
           .eq("conversation_id", id)
           .order("created_at", { ascending: false })
           .range(0, msgLimit - 1),
@@ -802,6 +878,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           status: x.status,
           author: x.author_id,
           error: x.error_message,
+          files: ((x as any).message_attachments ?? []) as FileRef[],
         })),
         ...n.data
           .filter((x) => !hasMore || !oldest || x.created_at >= oldest)
@@ -1164,9 +1241,15 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                   >
                     {v.channel === "email" ? (
                       <EmailBody body={it.body} outbound={it.direction === "outbound"} />
-                    ) : (
+                    ) : it.files.length &&
+                      /^(📷|🎬|🎤|📎)|^\[(image|video|audio|voice|document|sticker|photo|file|attachment)[^\]]*\]$/.test(
+                        it.body,
+                      ) ? null : (
                       <p className="whitespace-pre-wrap text-sm">{it.body}</p>
                     )}
+                    {it.files.map((f) => (
+                      <FileView key={f.id} f={f} outbound={it.direction === "outbound"} />
+                    ))}
                     <div
                       className={cn(
                         "mt-1 flex items-center justify-end gap-1 text-[10px]",
@@ -1666,6 +1749,9 @@ function Composer({
   const waClosed = waTemplates && lastIn.isSuccess && !windowOpen(lastIn.data);
   const [direction, setDirection] = useState<"outbound" | "inbound">("outbound");
   const [text, setText] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const sendFileFn = useServerFn(sendAttachment);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   useEffect(() => {
@@ -1711,6 +1797,7 @@ function Composer({
 
   async function submit() {
     const body = text.trim();
+    if (file) return submitFile(body);
     if (!body) return;
     if (body.length > (mode === "note" ? 5000 : 10000)) return toast.error("Message is too long");
     setBusy(true);
@@ -1745,6 +1832,70 @@ function Composer({
       qc.invalidateQueries({ queryKey: ["conversations"] });
     } catch (e) {
       setFailed(errMsg(e)); // keep the text so nothing is lost
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Upload into this conversation's private folder, then send (or log) it with an optional caption. */
+  async function submitFile(caption: string) {
+    if (!file) return;
+    const problem = attachmentProblem(file);
+    if (problem) return toast.error(problem);
+    setBusy(true);
+    setFailed(null);
+    try {
+      const path = attachmentPath(ws.workspaceId, conversationId, file.name);
+      const mime = normalizeMime(file.type);
+      const up = await supabase.storage
+        .from("attachments")
+        .upload(path, file, { contentType: mime, upsert: false });
+      if (up.error) throw new Error(up.error.message);
+      if (mode === "send") {
+        const r = await sendFileFn({
+          data: {
+            conversationId,
+            path,
+            name: file.name,
+            mime,
+            size: file.size,
+            caption: caption || undefined,
+          },
+        });
+        if (!r.ok) {
+          qc.invalidateQueries({ queryKey: ["timeline", conversationId] });
+          throw new Error(r.error);
+        }
+      } else {
+        const { data: msg, error } = await supabase
+          .from("messages")
+          .insert({
+            workspace_id: ws.workspaceId,
+            conversation_id: conversationId,
+            direction,
+            body: caption || attachmentLabel(kindOf(mime), file.name),
+            status: "logged",
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        const { error: e2 } = await supabase.from("message_attachments").insert({
+          workspace_id: ws.workspaceId,
+          message_id: msg.id,
+          storage_path: path,
+          mime_type: mime,
+          size_bytes: file.size,
+          file_name: safeFileName(file.name),
+          kind: kindOf(mime),
+        });
+        if (e2) throw e2;
+      }
+      setFile(null);
+      setText("");
+      qc.invalidateQueries({ queryKey: ["timeline", conversationId] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+    } catch (e) {
+      setFailed(errMsg(e));
     } finally {
       setBusy(false);
     }
@@ -1990,6 +2141,34 @@ function Composer({
             </div>
           </PopoverContent>
         </Popover>
+        {mode !== "note" && (
+          <>
+            <input
+              ref={fileInput}
+              type="file"
+              className="hidden"
+              accept="image/*,video/*,audio/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                if (!f) return;
+                const problem = attachmentProblem(f);
+                if (problem) return toast.error(problem);
+                setFile(f);
+              }}
+              aria-label="Attach a file"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-9 shrink-0"
+              aria-label="Attach photo or file"
+              onClick={() => fileInput.current?.click()}
+            >
+              <Paperclip />
+            </Button>
+          </>
+        )}
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -2016,15 +2195,36 @@ function Composer({
           size="icon"
           className="size-9 shrink-0"
           onClick={submit}
-          disabled={busy || !text.trim()}
+          disabled={busy || (!text.trim() && !file)}
           variant={mode === "note" ? "navy" : "default"}
           aria-label={mode === "send" ? "Send" : mode === "note" ? "Add note" : "Log message"}
         >
           <Send />
         </Button>
       </div>
+      {file && mode !== "note" && (
+        <div className="mt-2 flex items-center gap-2 rounded-lg border bg-surface-2 px-2.5 py-1.5 text-xs">
+          <Paperclip className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{file.name}</span>
+          <span className="shrink-0 text-muted-foreground">
+            {Math.max(1, Math.round(file.size / 1024))} KB
+          </span>
+          <button
+            type="button"
+            onClick={() => setFile(null)}
+            className="shrink-0 rounded p-0.5 hover:bg-muted"
+            aria-label="Remove attachment"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
       <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>Ctrl/⌘ + Enter to save · Draft is kept on this device</span>
+        <span>
+          {file
+            ? "Your text is sent as the caption"
+            : "Ctrl/⌘ + Enter to save · Draft is kept on this device"}
+        </span>
         {failed && (
           <span className="flex items-center gap-1 text-destructive">
             {mode === "send" ? "Not sent:" : "Not saved:"} {failed}{" "}

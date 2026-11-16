@@ -112,3 +112,38 @@ export async function sendTelegram(ws: string, connectionId: string, chatId: str
   const r = await call(token, "sendMessage", { chat_id: chatId, text: text.slice(0, 4096) });
   return `tg:${chatId}:${r.message_id}`;
 }
+
+/** Sends a photo / video / voice / document by URL (Telegram downloads it). */
+export async function sendTelegramMedia(
+  ws: string,
+  connectionId: string,
+  chatId: string,
+  m: { kind: "image" | "video" | "audio" | "file"; url: string; caption?: string },
+) {
+  const token = await getSecret(ws, tokenKey(connectionId));
+  if (!token) throw new Error("This Telegram bot needs to be connected again.");
+  const [method, field] =
+    m.kind === "image"
+      ? ["sendPhoto", "photo"]
+      : m.kind === "video"
+        ? ["sendVideo", "video"]
+        : m.kind === "audio"
+          ? ["sendAudio", "audio"]
+          : ["sendDocument", "document"];
+  const r = await call(token, method, {
+    chat_id: chatId,
+    [field]: m.url,
+    ...(m.caption ? { caption: m.caption.slice(0, 1024) } : {}),
+  });
+  return `tg:${chatId}:${r.message_id}`;
+}
+
+/** Downloads an inbound Telegram file (≤15 MB; the Bot API itself caps downloads at 20 MB). */
+export async function downloadTelegramFile(ws: string, connectionId: string, fileId: string) {
+  const token = await getSecret(ws, tokenKey(connectionId));
+  if (!token) return null;
+  const f = await call(token, "getFile", { file_id: fileId }).catch(() => null);
+  if (!f?.file_path || (f.file_size ?? 0) > 15 * 1024 * 1024) return null;
+  const { fetchMedia } = await import("./channels.server");
+  return fetchMedia(`${API}/file/bot${token}/${f.file_path}`);
+}

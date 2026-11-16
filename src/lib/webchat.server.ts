@@ -64,17 +64,33 @@ export async function visitorMessages(ws: string, visitor: string, after: string
   if (!ids.length) return [];
   let q = sb
     .from("messages")
-    .select("id, direction, body, created_at, status")
+    .select(
+      "id, direction, body, created_at, status, message_attachments(storage_path, mime_type, file_name, kind)",
+    )
     .in("conversation_id", ids)
     .in("status", ["sent", "delivered", "read"])
     .order("created_at")
     .limit(200);
   if (after) q = q.gt("created_at", after);
   const { data } = await q;
-  return (data ?? []).map((m: any) => ({
-    id: m.id,
-    from: m.direction === "inbound" ? "visitor" : "team",
-    text: m.body,
-    at: m.created_at,
-  }));
+  // Team files: short-lived signed links (1 h) so the visitor's widget can show/download them.
+  const out = [];
+  for (const m of data ?? []) {
+    const files = [];
+    for (const a of (m as any).message_attachments ?? []) {
+      const { data: signed } = await sb.storage
+        .from("attachments")
+        .createSignedUrl(a.storage_path, 3600);
+      if (signed?.signedUrl)
+        files.push({ url: signed.signedUrl, name: a.file_name ?? "file", kind: a.kind });
+    }
+    out.push({
+      id: m.id,
+      from: m.direction === "inbound" ? "visitor" : "team",
+      text: m.body,
+      at: m.created_at,
+      files,
+    });
+  }
+  return out;
 }
