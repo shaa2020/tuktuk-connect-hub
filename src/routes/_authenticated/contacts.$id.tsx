@@ -276,7 +276,7 @@ function ContactDetail() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 [&>*]:min-w-0">
         <Panel className="p-4 lg:col-span-1">
           <h2 className="mb-3 text-sm font-semibold">Details</h2>
           <dl className="space-y-2.5 text-sm">
@@ -295,7 +295,9 @@ function ContactDetail() {
             ))}
           </dl>
           {c.notes && (
-            <div className="mt-4 rounded-lg bg-note p-3 text-sm whitespace-pre-wrap">{c.notes}</div>
+            <div className="mt-4 rounded-lg bg-note p-3 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
+              {c.notes}
+            </div>
           )}
           <ContactCustomFields
             key={c.id}

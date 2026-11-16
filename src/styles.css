@@ -243,6 +243,8 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Long links, emails or IDs wrap instead of pushing layouts wider than the screen. */
+    overflow-wrap: break-word;
   }
   /* Soft colour backdrop the glass surfaces float on (fixed, so it never scrolls or repaints). */
   body::before {

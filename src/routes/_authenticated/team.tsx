@@ -186,7 +186,7 @@ function TeamPage() {
                 ) : null}
               </div>
               {admin ? (
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                   <NativeSelect
                     className="h-9 w-40"
                     value={m.role}
