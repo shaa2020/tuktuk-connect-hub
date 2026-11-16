@@ -31,10 +31,12 @@ import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
+import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticated/services'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
+import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as TicketTokenRouteImport } from './routes/ticket.$token'
 import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts.index'
@@ -160,6 +162,11 @@ const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
   path: '/schedule',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedServicesRoute = AuthenticatedServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -179,6 +186,11 @@ const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   id: '/team',
   path: '/team',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const BookSlugRoute = BookSlugRouteImport.update({
+  id: '/book/$slug',
+  path: '/book/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -270,10 +282,12 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/schedule': typeof AuthenticatedScheduleRoute
+  '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/book/$slug': typeof BookSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
@@ -309,10 +323,12 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/schedule': typeof AuthenticatedScheduleRoute
+  '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/book/$slug': typeof BookSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/ticket/$token': typeof TicketTokenRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
@@ -350,10 +366,12 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
+  '/_authenticated/services': typeof AuthenticatedServicesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
+  '/book/$slug': typeof BookSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/ticket/$token': typeof TicketTokenRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
@@ -391,10 +409,12 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/platform'
     | '/schedule'
+    | '/services'
     | '/settings'
     | '/social'
     | '/tasks'
     | '/team'
+    | '/book/$slug'
     | '/invite/$token'
     | '/ticket/$token'
     | '/contacts/$id'
@@ -430,10 +450,12 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/platform'
     | '/schedule'
+    | '/services'
     | '/settings'
     | '/social'
     | '/tasks'
     | '/team'
+    | '/book/$slug'
     | '/invite/$token'
     | '/ticket/$token'
     | '/contacts/$id'
@@ -470,10 +492,12 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/platform'
     | '/_authenticated/schedule'
+    | '/_authenticated/services'
     | '/_authenticated/settings'
     | '/_authenticated/social'
     | '/_authenticated/tasks'
     | '/_authenticated/team'
+    | '/book/$slug'
     | '/invite/$token'
     | '/ticket/$token'
     | '/_authenticated/contacts/$id'
@@ -495,6 +519,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  BookSlugRoute: typeof BookSlugRoute
   InviteTokenRoute: typeof InviteTokenRoute
   TicketTokenRoute: typeof TicketTokenRoute
   ApiPublicChatKeyRoute: typeof ApiPublicChatKeyRoute
@@ -663,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScheduleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/services': {
+      id: '/_authenticated/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof AuthenticatedServicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -690,6 +722,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/team'
       preLoaderRoute: typeof AuthenticatedTeamRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/book/$slug': {
+      id: '/book/$slug'
+      path: '/book/$slug'
+      fullPath: '/book/$slug'
+      preLoaderRoute: typeof BookSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -795,6 +834,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
+  AuthenticatedServicesRoute: typeof AuthenticatedServicesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
@@ -820,6 +860,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
+  AuthenticatedServicesRoute: AuthenticatedServicesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
@@ -838,6 +879,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  BookSlugRoute: BookSlugRoute,
   InviteTokenRoute: InviteTokenRoute,
   TicketTokenRoute: TicketTokenRoute,
   ApiPublicChatKeyRoute: ApiPublicChatKeyRoute,

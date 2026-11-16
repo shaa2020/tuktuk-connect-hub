@@ -54,6 +54,14 @@ export const tokenKind = (channel: MetaChannel, connectionId?: string | null) =>
 /** WhatsApp via the built-in Lovable connector (no Meta token stored by us).
  *  The connector is the platform operator's own number: only its workspace may use it. */
 export async function sendWhatsAppConnector(ws: string, to: string, body: string) {
+  return sendWhatsAppConnectorPayload(ws, { to, type: "text", text: { body } });
+}
+
+/** Any WhatsApp Cloud API message payload (text, image, document…) via the operator connector. */
+export async function sendWhatsAppConnectorPayload(
+  ws: string,
+  msg: { to: string; type: string; [k: string]: unknown },
+) {
   await (await import("./tenancy.server")).assertPlatformConnectors(ws);
   const lk = process.env.LOVABLE_API_KEY,
     wk = process.env.WHATSAPP_API_KEY;
@@ -65,12 +73,7 @@ export async function sendWhatsAppConnector(ws: string, to: string, body: string
       "X-Connection-Api-Key": wk,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: to.replace(/\D/g, ""),
-      type: "text",
-      text: { body },
-    }),
+    body: JSON.stringify({ messaging_product: "whatsapp", ...msg, to: msg.to.replace(/\D/g, "") }),
   });
   const txt = await res.text();
   if (!res.ok) {
@@ -218,16 +221,20 @@ export async function ingestInbound(
       .from("conversation_participants")
       .insert({ conversation_id: convId, external_identity_id: ident.id, workspace_id: ws });
   }
-  const { error } = await sb.from("messages").insert({
-    workspace_id: ws,
-    conversation_id: convId,
-    direction: ev.direction ?? "inbound",
-    body: (ev.text || "(unsupported message type)").slice(0, 10000),
-    status: ev.direction === "outbound" ? "sent" : "delivered",
-    external_id: ev.externalMessageId,
-    author_id: null,
-    ...(ev.at ? { created_at: ev.at.toISOString() } : {}),
-  });
+  const { data: inserted, error } = await sb
+    .from("messages")
+    .insert({
+      workspace_id: ws,
+      conversation_id: convId,
+      direction: ev.direction ?? "inbound",
+      body: (ev.text || "(unsupported message type)").slice(0, 10000),
+      status: ev.direction === "outbound" ? "sent" : "delivered",
+      external_id: ev.externalMessageId,
+      author_id: null,
+      ...(ev.at ? { created_at: ev.at.toISOString() } : {}),
+    })
+    .select("id")
+    .maybeSingle();
   if (error && error.code !== "23505") throw error; // duplicate webhook delivery is fine
   // Phone alert for genuinely new, recent guest messages (skip history imports and duplicates).
   const fresh = !ev.at || Date.now() - ev.at.getTime() < 30 * 60 * 1000;
@@ -255,6 +262,11 @@ export async function ingestInbound(
       /* never block message saving on alerts */
     }
   }
+  // New message id (null for a duplicate delivery) so callers can attach downloaded media.
+  return {
+    conversationId: convId as string,
+    messageId: (inserted?.id as string | undefined) ?? null,
+  };
 }
 
 const STATUS_MAP: Record<string, "sent" | "delivered" | "read" | "failed"> = {
@@ -325,4 +337,96 @@ export async function findConnection(
     .eq("account_id", String(accountId))
     .maybeSingle();
   return data?.id ?? null;
+}
+
+export type OutboundMedia = {
+  kind: "image" | "video" | "audio" | "file";
+  url: string;
+  name: string;
+  caption?: string;
+};
+
+/** Sends a photo/video/voice/file through WhatsApp (Cloud API or connector), Messenger or Instagram. */
+export async function sendMetaMedia(
+  ws: string,
+  channel: MetaChannel,
+  config: Record<string, string>,
+  to: string,
+  media: OutboundMedia,
+  connectionId?: string | null,
+) {
+  if (channel === "whatsapp") {
+    const type = media.kind === "file" ? "document" : media.kind;
+    const body: Record<string, unknown> = { link: media.url };
+    if (media.caption && type !== "audio") body.caption = media.caption.slice(0, 1024);
+    if (type === "document") body.filename = media.name;
+    const msg = { to, type, [type]: body };
+    if (config.mode === "connector") return sendWhatsAppConnectorPayload(ws, msg);
+    const token =
+      (connectionId && (await getSecret(ws, tokenKind(channel, connectionId)))) ||
+      (await getSecret(ws, TOKEN_KIND[channel]));
+    if (!token) throw new Error("Channel credentials are missing.");
+    const res = await fetch(`${GRAPH}/${config.phone_number_id}/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ messaging_product: "whatsapp", ...msg }),
+    });
+    const j = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok) throw new Error(scrub(`Meta: ${j?.error?.message ?? res.status}`, token));
+    return j.messages?.[0]?.id as string;
+  }
+  const token =
+    (connectionId && (await getSecret(ws, tokenKind(channel, connectionId)))) ||
+    (await getSecret(ws, TOKEN_KIND[channel]));
+  if (!token) throw new Error("Channel credentials are missing.");
+  const res = await fetch(`${GRAPH}/me/messages`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      recipient: { id: to },
+      messaging_type: "RESPONSE",
+      message: {
+        attachment: { type: media.kind, payload: { url: media.url, is_reusable: false } },
+      },
+    }),
+  });
+  const j = (await res.json().catch(() => ({}))) as any;
+  if (!res.ok) throw new Error(scrub(`Meta: ${j?.error?.message ?? res.status}`, token));
+  if (media.caption)
+    await sendMeta(ws, channel, config, to, media.caption, connectionId).catch(() => {});
+  return j.message_id as string;
+}
+
+/** Downloads a provider media file (bounded size) for storing in the inbox. */
+export async function fetchMedia(
+  url: string,
+  headers: Record<string, string> = {},
+): Promise<{ bytes: ArrayBuffer; mime: string } | null> {
+  const res = await fetch(url, { headers });
+  if (!res.ok) return null;
+  const len = Number(res.headers.get("content-length") ?? 0);
+  if (len > 15 * 1024 * 1024) return null;
+  const bytes = await res.arrayBuffer();
+  if (bytes.byteLength > 15 * 1024 * 1024) return null;
+  return {
+    bytes,
+    mime: (res.headers.get("content-type") ?? "application/octet-stream").split(";")[0]!.trim(),
+  };
+}
+
+/** WhatsApp Cloud API (BYO token) inbound media: media id → temporary URL → bytes. */
+export async function fetchWhatsAppMedia(ws: string, connectionId: string | null, mediaId: string) {
+  const token =
+    (connectionId && (await getSecret(ws, tokenKind("whatsapp", connectionId)))) ||
+    (await getSecret(ws, TOKEN_KIND.whatsapp));
+  if (!token) return null;
+  const meta = (await (
+    await fetch(`${GRAPH}/${encodeURIComponent(mediaId)}`, {
+      headers: { authorization: `Bearer ${token}` },
+    })
+  )
+    .json()
+    .catch(() => null)) as any;
+  if (!meta?.url) return null;
+  return fetchMedia(meta.url, { authorization: `Bearer ${token}` });
 }

@@ -225,6 +225,34 @@
       "when": 1794787919072,
       "tag": "0031_apply_pending_0019_0030",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794824224618,
+      "tag": "0032_inbox_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794824783411,
+      "tag": "0033_services_booking_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794824784411,
+      "tag": "0034_inbox_snooze",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794824785411,
+      "tag": "0035_knowledge_documents",
+      "breakpoints": true
     }
   ]
 }

@@ -25,16 +25,18 @@ export const Route = createFileRoute("/_authenticated/notifications")({
 });
 
 function NotificationsPage() {
-  const { userId } = useWorkspace();
+  const { userId, workspaceId } = useWorkspace();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const q = useQuery({
-    queryKey: ["notifications", userId],
+    queryKey: ["notifications", userId, workspaceId],
     queryFn: async () => {
+      // Only this business's alerts — someone in several businesses never sees another one's.
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
         .eq("user_id", userId)
+        .eq("workspace_id", workspaceId)
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -50,6 +52,7 @@ function NotificationsPage() {
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
       .eq("user_id", userId)
+      .eq("workspace_id", workspaceId)
       .is("read_at", null);
     refresh();
   }

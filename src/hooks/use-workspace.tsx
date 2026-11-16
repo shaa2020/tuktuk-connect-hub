@@ -77,6 +77,14 @@ export function pickWorkspace<T extends { workspace_id: string }>(
   return memberships.find((m) => m.workspace_id === preferred) ?? memberships[0] ?? null;
 }
 
+/** True when the person belongs to 2+ businesses and hasn't picked a valid one on this device. */
+export function needsBusinessChoice(
+  memberships: { workspace_id: string }[],
+  preferred: string | null,
+) {
+  return memberships.length > 1 && !memberships.some((m) => m.workspace_id === preferred);
+}
+
 const Ctx = createContext<WorkspaceCtx | null>(null);
 
 export function useWorkspace() {
@@ -99,21 +107,34 @@ async function loadWorkspace() {
     .order("created_at");
   if (error) throw error;
   const all = (mems ?? []) as any[];
-  const mem = pickWorkspace(all, getSelectedWorkspaceId());
+  const preferred = getSelectedWorkspaceId();
+  const mem = pickWorkspace(all, preferred);
   const workspaces: WorkspaceSummary[] = all.map((m) => ({
     id: m.workspace_id,
     name: m.workspaces?.name ?? "Workspace",
     role: m.role,
     suspended: !!m.workspaces?.suspended_at,
   }));
+  // Several businesses and none chosen on this device yet: ask instead of silently opening the
+  // first one, so nobody mistakes one business's bookings for another's.
+  if (needsBusinessChoice(all, preferred))
+    return {
+      user,
+      profile: null,
+      mem: null,
+      members: [] as Member[],
+      workspaces,
+      needsChoice: true,
+    };
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
     .eq("id", user.id)
     .maybeSingle();
-  if (!mem) return { user, profile, mem: null, members: [] as Member[], workspaces };
+  if (!mem)
+    return { user, profile, mem: null, members: [] as Member[], workspaces, needsChoice: false };
   if (mem.workspaces?.suspended_at)
-    return { user, profile, mem, members: [] as Member[], workspaces };
+    return { user, profile, mem, members: [] as Member[], workspaces, needsChoice: false };
   const { data: rows, error: me } = await (supabase as any)
     .from("workspace_members")
     .select("id, user_id, role, active, whatsapp_phone, profiles(full_name, email)")
@@ -129,7 +150,7 @@ async function loadWorkspace() {
     full_name: r.profiles?.full_name ?? null,
     email: r.profiles?.email ?? null,
   }));
-  return { user, profile, mem, members, workspaces };
+  return { user, profile, mem, members, workspaces, needsChoice: false };
 }
 
 export const workspaceQueryKey = ["workspace"];
@@ -140,9 +161,11 @@ export function WorkspaceProvider({
   suspended,
   loading,
   error,
+  choose,
 }: {
   children: ReactNode;
   noAccess: ReactNode;
+  choose: (workspaces: WorkspaceSummary[]) => ReactNode;
   suspended: (info: {
     name: string;
     reason: string | null;
@@ -155,6 +178,7 @@ export function WorkspaceProvider({
   if (q.isLoading) return <>{loading}</>;
   if (q.error) return <>{error((q.error as Error).message, () => q.refetch())}</>;
   const d = q.data!;
+  if (d.needsChoice) return <>{choose(d.workspaces)}</>;
   if (!d.mem) return <>{noAccess}</>;
   const ws = d.mem.workspaces as {
     name: string;

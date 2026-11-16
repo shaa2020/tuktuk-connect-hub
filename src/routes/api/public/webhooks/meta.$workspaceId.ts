@@ -61,8 +61,11 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
                     m.button?.text ??
                     m.interactive?.button_reply?.title ??
                     m.interactive?.list_reply?.title ??
-                    (m.type ? `[${m.type} received — open WhatsApp to view]` : "");
-                  await ingestInbound(ws, "whatsapp", {
+                    m.image?.caption ??
+                    m.video?.caption ??
+                    m.document?.caption ??
+                    (m.type ? `[${m.type} received]` : "");
+                  const saved = await ingestInbound(ws, "whatsapp", {
                     from: m.from,
                     name: names[m.from],
                     externalMessageId: m.id,
@@ -70,6 +73,26 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
                     at: m.timestamp ? new Date(Number(m.timestamp) * 1000) : undefined,
                     connectionId,
                   });
+                  // Photo / video / voice / document: download via the Cloud API into the inbox.
+                  const media = m.image ?? m.video ?? m.audio ?? m.voice ?? m.document ?? m.sticker;
+                  if (media?.id && saved?.messageId) {
+                    try {
+                      const { fetchWhatsAppMedia } = await import("@/lib/channels.server");
+                      const file = await fetchWhatsAppMedia(ws, connectionId, media.id);
+                      if (file)
+                        await (
+                          await import("@/lib/attachments.server")
+                        ).storeInboundMedia(
+                          ws,
+                          saved.conversationId,
+                          saved.messageId,
+                          { bytes: file.bytes, mime: media.mime_type ?? file.mime },
+                          media.filename ?? `${m.type}-${m.id}`,
+                        );
+                    } catch {
+                      /* message is saved; media is best effort */
+                    }
+                  }
                   gotInbound = true;
                 }
                 for (const s of v.statuses ?? [])
@@ -90,15 +113,34 @@ export const Route = createFileRoute("/api/public/webhooks/meta/$workspaceId")({
                   const text =
                     ev.message.text ??
                     (ev.message.attachments?.length
-                      ? "[attachment received — open the app to view]"
+                      ? `[${ev.message.attachments[0]?.type ?? "attachment"} received]`
                       : "");
-                  await ingestInbound(ws, channel, {
+                  const saved = await ingestInbound(ws, channel, {
                     from: ev.sender.id,
                     externalMessageId: ev.message.mid,
                     text,
                     at: ev.timestamp ? new Date(ev.timestamp) : undefined,
                     connectionId,
                   });
+                  for (const a of (ev.message.attachments ?? []).slice(0, 5)) {
+                    if (!a?.payload?.url || !saved?.messageId) continue;
+                    try {
+                      const { fetchMedia } = await import("@/lib/channels.server");
+                      const file = await fetchMedia(a.payload.url);
+                      if (file)
+                        await (
+                          await import("@/lib/attachments.server")
+                        ).storeInboundMedia(
+                          ws,
+                          saved.conversationId,
+                          saved.messageId,
+                          file,
+                          `${a.type}-${ev.message.mid}`.slice(0, 80),
+                        );
+                    } catch {
+                      /* best effort */
+                    }
+                  }
                   gotInbound = true;
                 }
                 for (const mid of ev.delivery?.mids ?? [])

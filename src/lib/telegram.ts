@@ -1,6 +1,14 @@
 // Pure helpers for the Telegram Bot API channel (tested).
 
-export type TgInbound = { chatId: string; name: string; text: string; messageId: string; at: Date };
+export type TgMedia = { fileId: string; mime: string; name: string };
+export type TgInbound = {
+  chatId: string;
+  name: string;
+  text: string;
+  messageId: string;
+  at: Date;
+  media?: TgMedia;
+};
 
 /** Telegram bot tokens look like 123456789:AA... (digits, colon, 30+ url-safe chars). */
 export function isBotToken(t: string) {
@@ -34,7 +42,9 @@ export function parseUpdate(u: any): TgInbound | null {
       ? `[${kind} received${m.caption ? `: ${m.caption}` : ""} — open Telegram to view]`
       : (m.caption ?? ""));
   if (!text) return null;
+  const media = mediaOf(m);
   return {
+    ...(media ? { media } : {}),
     chatId: String(m.chat.id),
     name: String(name).slice(0, 200),
     text: String(text).slice(0, 10000),
@@ -45,3 +55,36 @@ export function parseUpdate(u: any): TgInbound | null {
 
 export const telegramWebhookPath = (connectionId: string) =>
   `/api/public/webhooks/telegram/${connectionId}`;
+
+/** The downloadable file in a message, if any (largest photo size). */
+export function mediaOf(m: any): TgMedia | null {
+  if (Array.isArray(m?.photo) && m.photo.length) {
+    const p = m.photo[m.photo.length - 1];
+    return { fileId: p.file_id, mime: "image/jpeg", name: `photo-${m.message_id}.jpg` };
+  }
+  if (m?.voice)
+    return {
+      fileId: m.voice.file_id,
+      mime: m.voice.mime_type ?? "audio/ogg",
+      name: `voice-${m.message_id}.ogg`,
+    };
+  if (m?.audio)
+    return {
+      fileId: m.audio.file_id,
+      mime: m.audio.mime_type ?? "audio/mpeg",
+      name: m.audio.file_name ?? `audio-${m.message_id}.mp3`,
+    };
+  if (m?.video)
+    return {
+      fileId: m.video.file_id,
+      mime: m.video.mime_type ?? "video/mp4",
+      name: m.video.file_name ?? `video-${m.message_id}.mp4`,
+    };
+  if (m?.document)
+    return {
+      fileId: m.document.file_id,
+      mime: m.document.mime_type ?? "application/octet-stream",
+      name: m.document.file_name ?? `file-${m.message_id}`,
+    };
+  return null;
+}

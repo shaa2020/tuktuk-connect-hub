@@ -55,12 +55,34 @@
   document.body.appendChild(box);
   var log = box.querySelector("#ttc-log"),
     input = box.querySelector("#ttc-in");
-  function add(from, text, id) {
+  function add(from, text, id, files) {
     if (id && seen[id]) return;
     if (id) seen[id] = 1;
     var d = document.createElement("div");
     d.className = "ttc-m " + (from === "visitor" ? "ttc-v" : "ttc-t");
     d.textContent = text;
+    (files || []).forEach(function (f) {
+      if (!/^https?:\/\//.test(f.url || "")) return;
+      var a = document.createElement("a");
+      a.href = f.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.style.display = "block";
+      a.style.marginTop = "6px";
+      if (f.kind === "image") {
+        var img = document.createElement("img");
+        img.src = f.url;
+        img.alt = f.name || "image";
+        img.style.maxWidth = "100%";
+        img.style.borderRadius = "8px";
+        a.appendChild(img);
+      } else {
+        a.textContent = "\uD83D\uDCCE " + (f.name || "file");
+        a.style.color = "inherit";
+        a.style.textDecoration = "underline";
+      }
+      d.appendChild(a);
+    });
     log.appendChild(d);
     log.scrollTop = log.scrollHeight;
   }
@@ -83,7 +105,7 @@
           add("team", j.greeting);
         }
         (j.messages || []).forEach(function (m) {
-          add(m.from, m.text, m.id);
+          add(m.from, m.text, m.id, m.files);
           last = m.at;
         });
       })

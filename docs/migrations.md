@@ -36,3 +36,7 @@ All new migrations are idempotent and non-destructive (no DROP of tables/columns
 - `0028_gdpr_ownership_retention.sql` — ownership transfer, deletion with 30-day grace (+ deletion log), message retention, cascade-safe audit/tombstone triggers.
 - `0029_ai_classification_approvals.sql` — conversation ai_intent/ai_sentiment/ai_summary, ai_settings.auto_classify, ai_reply_drafts approval queue + decide_ai_draft.
 - `0030_platform_health_support_mfa_recovery.sql` — platform_revenue_summary / platform_health / platform_job_backlog, support_access_grants + support_workspace_snapshot (audited), mfa_recovery_codes.
+- `0032_inbox_attachments.sql` — attachments bucket + storage policies, message_attachments file_name/kind, insert policy, attachment_path_allowed.
+- `0033_services_booking_page.sql` — services table (hours, capacity, price, slot/day mode), bookings.service_id/end_date, workspace booking-page columns, service_availability / public_booking_page / public_create_booking RPCs.
+- `0034_inbox_snooze.sql` — conversations.snoozed_until + wake-on-inbound trigger; realtime_conv_allowed + Realtime Authorization policies for private `conv:<id>` presence channels (skipped when the realtime schema is absent).
+- `0035_knowledge_documents.sql` — knowledge documents up to 200k chars + source_name; chunking trigger (rebuild_knowledge_chunks) with tsvector index and backfill; knowledge_context RPC (whole KB when small, ranked passages when large).

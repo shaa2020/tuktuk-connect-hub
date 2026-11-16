@@ -35,7 +35,7 @@ export const Route = createFileRoute("/api/public/webhooks/telegram/$connectionI
         if (!m) return new Response("OK"); // not a private message: acknowledge so Telegram stops retrying
         try {
           const { ingestInbound } = await import("@/lib/channels.server");
-          await ingestInbound(cc.workspace_id, "telegram", {
+          const saved = await ingestInbound(cc.workspace_id, "telegram", {
             from: m.chatId,
             name: m.name,
             externalMessageId: m.messageId,
@@ -43,6 +43,23 @@ export const Route = createFileRoute("/api/public/webhooks/telegram/$connectionI
             at: m.at,
             connectionId: id,
           });
+          // Photos, voice notes and files: download from Telegram into the private inbox storage.
+          if (m.media && saved?.messageId) {
+            const { downloadTelegramFile } = await import("@/lib/telegram.server");
+            const file = await downloadTelegramFile(cc.workspace_id, id, m.media.fileId).catch(
+              () => null,
+            );
+            if (file)
+              await (
+                await import("@/lib/attachments.server")
+              ).storeInboundMedia(
+                cc.workspace_id,
+                saved.conversationId,
+                saved.messageId,
+                { bytes: file.bytes, mime: m.media.mime || file.mime },
+                m.media.name,
+              );
+          }
         } catch (e) {
           console.error("telegram webhook", e);
           return new Response("Error", { status: 500 }); // Telegram retries
