@@ -608,6 +608,7 @@ export type Database = {
           driver_id: string | null
           driver_notify_pending: boolean
           duration_minutes: number | null
+          end_date: string | null
           external_reference: string | null
           guests: number | null
           id: string
@@ -621,6 +622,7 @@ export type Database = {
           reference: string
           reminder_sent_at: string | null
           review_sent_at: string | null
+          service_id: string | null
           source_system: string
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
@@ -644,6 +646,7 @@ export type Database = {
           driver_id?: string | null
           driver_notify_pending?: boolean
           duration_minutes?: number | null
+          end_date?: string | null
           external_reference?: string | null
           guests?: number | null
           id?: string
@@ -657,6 +660,7 @@ export type Database = {
           reference: string
           reminder_sent_at?: string | null
           review_sent_at?: string | null
+          service_id?: string | null
           source_system?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -680,6 +684,7 @@ export type Database = {
           driver_id?: string | null
           driver_notify_pending?: boolean
           duration_minutes?: number | null
+          end_date?: string | null
           external_reference?: string | null
           guests?: number | null
           id?: string
@@ -693,6 +698,7 @@ export type Database = {
           reference?: string
           reminder_sent_at?: string | null
           review_sent_at?: string | null
+          service_id?: string | null
           source_system?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -724,6 +730,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
           {
@@ -1191,6 +1204,7 @@ export type Database = {
           lead_id: string | null
           priority: Database["public"]["Enums"]["priority_level"]
           resolved_at: string | null
+          snoozed_until: string | null
           status: Database["public"]["Enums"]["conversation_status"]
           subject: string | null
           unread: boolean
@@ -1221,6 +1235,7 @@ export type Database = {
           lead_id?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolved_at?: string | null
+          snoozed_until?: string | null
           status?: Database["public"]["Enums"]["conversation_status"]
           subject?: string | null
           unread?: boolean
@@ -1251,6 +1266,7 @@ export type Database = {
           lead_id?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolved_at?: string | null
+          snoozed_until?: string | null
           status?: Database["public"]["Enums"]["conversation_status"]
           subject?: string | null
           unread?: boolean
@@ -1498,6 +1514,8 @@ export type Database = {
           created_at: string
           document_id: string
           id: string
+          seq: number
+          tsv: unknown
           workspace_id: string
         }
         Insert: {
@@ -1505,6 +1523,8 @@ export type Database = {
           created_at?: string
           document_id: string
           id?: string
+          seq?: number
+          tsv?: unknown
           workspace_id: string
         }
         Update: {
@@ -1512,6 +1532,8 @@ export type Database = {
           created_at?: string
           document_id?: string
           id?: string
+          seq?: number
+          tsv?: unknown
           workspace_id?: string
         }
         Relationships: [
@@ -1537,6 +1559,7 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
+          source_name: string | null
           title: string
           updated_at: string
           workspace_id: string
@@ -1546,6 +1569,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          source_name?: string | null
           title: string
           updated_at?: string
           workspace_id: string
@@ -1555,6 +1579,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          source_name?: string | null
           title?: string
           updated_at?: string
           workspace_id?: string
@@ -1711,7 +1736,9 @@ export type Database = {
       message_attachments: {
         Row: {
           created_at: string
+          file_name: string | null
           id: string
+          kind: string
           message_id: string
           mime_type: string | null
           size_bytes: number | null
@@ -1720,7 +1747,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          file_name?: string | null
           id?: string
+          kind?: string
           message_id: string
           mime_type?: string | null
           size_bytes?: number | null
@@ -1729,7 +1758,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          file_name?: string | null
           id?: string
+          kind?: string
           message_id?: string
           mime_type?: string | null
           size_bytes?: number | null
@@ -2185,6 +2216,89 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "saved_replies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          active: boolean
+          advance_days: number
+          booking_mode: string
+          capacity: number
+          capacity_unit: string
+          created_at: string
+          currency: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          lead_time_hours: number
+          max_guests: number
+          min_guests: number
+          name: string
+          price_cents: number | null
+          price_per: string
+          public: boolean
+          slot_interval_minutes: number
+          sort: number
+          updated_at: string
+          weekly_hours: Json
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          advance_days?: number
+          booking_mode?: string
+          capacity?: number
+          capacity_unit?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          lead_time_hours?: number
+          max_guests?: number
+          min_guests?: number
+          name: string
+          price_cents?: number | null
+          price_per?: string
+          public?: boolean
+          slot_interval_minutes?: number
+          sort?: number
+          updated_at?: string
+          weekly_hours?: Json
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          advance_days?: number
+          booking_mode?: string
+          capacity?: number
+          capacity_unit?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          lead_time_hours?: number
+          max_guests?: number
+          min_guests?: number
+          name?: string
+          price_cents?: number | null
+          price_per?: string
+          public?: boolean
+          slot_interval_minutes?: number
+          sort?: number
+          updated_at?: string
+          weekly_hours?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -2996,6 +3110,9 @@ export type Database = {
         Row: {
           agents_see_unassigned: boolean
           auto_assign_driver: boolean
+          booking_auto_confirm: boolean
+          booking_page_enabled: boolean
+          booking_page_intro: string | null
           brand_color: string | null
           created_at: string
           default_driver_id: string | null
@@ -3015,6 +3132,7 @@ export type Database = {
           plan: string
           plan_limits: Json
           platform_connectors: boolean
+          public_slug: string | null
           review_request_auto: boolean
           suspended_at: string | null
           suspended_reason: string | null
@@ -3026,6 +3144,9 @@ export type Database = {
         Insert: {
           agents_see_unassigned?: boolean
           auto_assign_driver?: boolean
+          booking_auto_confirm?: boolean
+          booking_page_enabled?: boolean
+          booking_page_intro?: string | null
           brand_color?: string | null
           created_at?: string
           default_driver_id?: string | null
@@ -3045,6 +3166,7 @@ export type Database = {
           plan?: string
           plan_limits?: Json
           platform_connectors?: boolean
+          public_slug?: string | null
           review_request_auto?: boolean
           suspended_at?: string | null
           suspended_reason?: string | null
@@ -3056,6 +3178,9 @@ export type Database = {
         Update: {
           agents_see_unassigned?: boolean
           auto_assign_driver?: boolean
+          booking_auto_confirm?: boolean
+          booking_page_enabled?: boolean
+          booking_page_intro?: string | null
           brand_color?: string | null
           created_at?: string
           default_driver_id?: string | null
@@ -3075,6 +3200,7 @@ export type Database = {
           plan?: string
           plan_limits?: Json
           platform_connectors?: boolean
+          public_slug?: string | null
           review_request_auto?: boolean
           suspended_at?: string | null
           suspended_reason?: string | null
@@ -3112,6 +3238,7 @@ export type Database = {
         Args: { _increment?: number; _key: string; _ws: string }
         Returns: undefined
       }
+      attachment_path_allowed: { Args: { _path: string }; Returns: boolean }
       can_view_conversation: {
         Args: { _assigned: string; _ws: string }
         Returns: boolean
@@ -3196,6 +3323,15 @@ export type Database = {
       is_platform_admin: { Args: never; Returns: boolean }
       is_workspace_owner: { Args: { _ws: string }; Returns: boolean }
       kick_ai_operator: { Args: { _ws: string }; Returns: undefined }
+      knowledge_context: {
+        Args: { _budget?: number; _terms: string[]; _ws: string }
+        Returns: {
+          category: string
+          content: string
+          title: string
+          whole: boolean
+        }[]
+      }
       load_demo_data: { Args: { _ws: string }; Returns: undefined }
       merge_contacts: {
         Args: { _keep: string; _merge: string }
@@ -3254,12 +3390,37 @@ export type Database = {
           suspended_reason: string
         }[]
       }
+      public_booking_page: { Args: { _slug: string }; Returns: Json }
+      public_create_booking: {
+        Args: {
+          _date: string
+          _email: string
+          _guests: number
+          _name: string
+          _nights?: number
+          _note: string
+          _phone: string
+          _service: string
+          _slug: string
+          _time: string
+        }
+        Returns: Json
+      }
       purge_due_workspaces: { Args: never; Returns: number }
+      realtime_conv_allowed: { Args: { _topic: string }; Returns: boolean }
+      rebuild_knowledge_chunks: { Args: { _doc: string }; Returns: undefined }
       request_workspace_deletion: {
         Args: { _confirm_name: string; _ws: string }
         Returns: string
       }
       revoke_support_access: { Args: { _id: string }; Returns: undefined }
+      service_availability: {
+        Args: { _date: string; _service: string }
+        Returns: {
+          remaining: number
+          start_time: string
+        }[]
+      }
       shares_workspace: { Args: { _other: string }; Returns: boolean }
       support_workspace_snapshot: { Args: { _ws: string }; Returns: Json }
       transfer_workspace_ownership: {
