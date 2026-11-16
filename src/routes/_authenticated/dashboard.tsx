@@ -25,6 +25,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { PageContainer } from "@/components/app-shell";
+import { channelHealth } from "@/lib/channel-health";
 import { SetupChecklist } from "@/components/setup-checklist";
 import { ErrorState, PageHeader, Panel } from "@/components/states";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -395,14 +396,7 @@ function Dashboard() {
             </Panel>
             <Panel className="min-w-0 overflow-hidden p-4">
               <h2 className="text-sm font-semibold">By status</h2>
-              <ChartOrEmpty
-                data={Object.entries(s?.by_status ?? {}).map(([k, v]) => ({
-                  name: STATUS_META[k as ConversationStatus]?.label ?? k,
-                  value: v,
-                }))}
-                loading={!s}
-                kind="bar"
-              />
+              <StatusBars byStatus={(s?.by_status ?? null) as Record<string, number> | null} />
             </Panel>
             <Panel className="min-w-0 overflow-hidden p-4">
               <h2 className="mb-3 text-sm font-semibold">
@@ -521,29 +515,23 @@ function Dashboard() {
                 </Link>
               </div>
               <ul className="divide-y text-sm">
-                {activity.data?.channels.map((c) => (
-                  <li key={c.channel} className="flex items-center justify-between px-4 py-2.5">
-                    <span className="flex items-center gap-2">
-                      <Plug className="size-3.5 text-muted-foreground" />
-                      {CHANNEL_LABEL[c.channel]}
-                    </span>
-                    <ToneBadge
-                      tone={
-                        c.status === "connected"
-                          ? "success"
-                          : c.status === "error"
-                            ? "danger"
-                            : "muted"
-                      }
-                    >
-                      {c.status === "connected"
-                        ? "Connected"
-                        : c.status === "error"
-                          ? "Error"
-                          : "Not connected"}
-                    </ToneBadge>
+                {activity.data && channelHealth(activity.data.channels).length === 0 && (
+                  <li className="px-4 py-2.5">
+                    <Link to="/integrations" className="text-sm font-medium text-primary">
+                      Connect your first channel →
+                    </Link>
                   </li>
-                ))}
+                )}
+                {activity.data &&
+                  channelHealth(activity.data.channels).map((c) => (
+                    <li key={c.channel} className="flex items-center justify-between px-4 py-2.5">
+                      <span className="flex items-center gap-2">
+                        <Plug className="size-3.5 text-muted-foreground" />
+                        {CHANNEL_LABEL[c.channel as keyof typeof CHANNEL_LABEL] ?? c.channel}
+                      </span>
+                      <ToneBadge tone={c.tone}>{c.label}</ToneBadge>
+                    </li>
+                  ))}
                 <li className="flex items-center justify-between px-4 py-2.5">
                   <span className="flex items-center gap-2">
                     <AlertTriangle className="size-3.5 text-muted-foreground" />
@@ -713,5 +701,38 @@ function ChartOrEmpty({
         )}
       </ResponsiveContainer>
     </div>
+  );
+}
+
+/** Conversations per status as labelled horizontal bars (clearer than a one-bar chart). */
+function StatusBars({ byStatus }: { byStatus: Record<string, number> | null }) {
+  if (!byStatus) return <div className="mt-4 h-40 animate-pulse rounded-lg bg-muted" />;
+  const rows = (Object.keys(STATUS_META) as ConversationStatus[])
+    .map((k) => ({ k, n: Number(byStatus[k] ?? 0) }))
+    .filter((r) => r.n > 0);
+  const max = Math.max(1, ...rows.map((r) => r.n));
+  if (!rows.length)
+    return (
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        No conversations in this period.
+      </p>
+    );
+  return (
+    <ul className="mt-4 space-y-3">
+      {rows.map((r) => (
+        <li key={r.k}>
+          <div className="mb-1 flex justify-between text-xs">
+            <span className="font-medium">{STATUS_META[r.k].label}</span>
+            <span className="tabular-nums text-muted-foreground">{r.n}</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.max(4, (r.n / max) * 100)}%` }}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
 import { WorkspaceList } from "@/components/workspace-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -328,7 +329,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="ml-auto flex h-9 w-72 items-center gap-2 rounded-lg border bg-surface-2 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Search className="size-4" />
-            <span className="flex-1 text-left">Jump to…</span>
+            <span className="flex-1 text-left">Search…</span>
             <kbd className="rounded border bg-card px-1.5 text-[10px] font-semibold">Ctrl K</kbd>
           </button>
           <Link
@@ -363,6 +364,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Business
               </DropdownMenuLabel>
               <WorkspaceList className="px-1 pb-1" />
+              <DropdownMenuSeparator />
+              <div className="px-1 py-1">
+                <ThemeToggle />
+              </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/settings">
@@ -515,6 +520,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               Business
             </div>
             <WorkspaceList onPicked={() => setMoreOpen(false)} className="rounded-2xl border p-1" />
+          </div>
+          <div className="mt-4">
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Appearance
+            </div>
+            <ThemeToggle />
           </div>
           {GROUPS.map((g) => {
             const groupItems = items.filter((n) => n.group === g && !mobileMain.includes(n.to));
