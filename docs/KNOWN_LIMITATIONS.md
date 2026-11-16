@@ -11,7 +11,7 @@
 | L-07 | White-labelling covers names/messages; no logo/colour upload; operator's ticket domain kept for TukTuk24 only | | Roadmap |
 | L-08 | Services + online booking page cover slots and nights with capacity; no online payment/deposit at booking time, no per-room inventory (rooms are counted as units) and no customer self-cancel link | Payment is arranged directly; staff cancel in Bookings | Roadmap |
 | L-09 | Workspace switching reloads the page | Brief reload | Acceptable (safest) |
-| L-10 | AI usage counted in requests, not tokens/money; no document upload for knowledge | | Phase 6 |
+| L-10 | AI usage counted in requests, not tokens/money. Knowledge upload reads text-based PDFs, Word .docx, text/Markdown/CSV/HTML; scanned PDFs (no OCR), old .doc, Excel and images aren't read. Retrieval is keyword full-text search, not semantic embeddings | Paste text for scanned files | Phase 6 |
 | L-11 | Automation workflows are linear (conditions + up to 10 actions); no branching canvas | | Phase 7 |
 | L-12 | Attendance is an operational record, not certified legal timekeeping or payroll | | Out of scope until specified |
 | L-13 | `types.ts` extended by hand for migrations 0019–0030 | Regenerate after applying | Deployment §3 |
@@ -19,3 +19,4 @@
 | L-15 | Workspace export is one JSON download (max 50k rows/table) | Very large businesses need a background export | Roadmap |
 | L-16 | Custom roles not supported (admin / manager / agent) | | Roadmap |
 | L-17 | Secrets encryption has no key versioning (F-11) | Key rotation needs a script | Roadmap |
+| L-18 | `pdfjs-dist` was added to package.json without regenerating `bun.lock` (it resolves through Lovable's private mirror) | Lovable/bun updates the lockfile on its next install | Commit the refreshed bun.lock from Lovable |

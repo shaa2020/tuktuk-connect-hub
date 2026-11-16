@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Plus, Trash2, Zap } from "lucide-react";
+import { BookOpen, FileText, Loader2, Plus, Trash2, Upload, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Confirm, Field, NativeSelect, ToneBadge, fmtDate } from "@/components/kit";
+import { MAX_DOC_CHARS, titleFromFile } from "@/lib/knowledge";
+import { KNOWLEDGE_ACCEPT, extractFileText } from "@/lib/knowledge-files";
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
   head: () => ({
@@ -42,6 +44,7 @@ type Doc = {
   title: string;
   category: string;
   content: string | null;
+  source_name: string | null;
   updated_at: string;
 };
 
@@ -49,12 +52,50 @@ function KnowledgePage() {
   const ws = useWorkspace();
   const canEdit = ws.role === "admin" || ws.role === "manager";
   const [edit, setEdit] = useState<Doc | "new" | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  async function upload(files: FileList | null) {
+    if (!files?.length) return;
+    let added = 0;
+    for (const f of Array.from(files)) {
+      setUploading(f.name);
+      const r = await extractFileText(f);
+      if (!r.ok) {
+        toast.error(`${f.name}: ${r.error}`);
+        continue;
+      }
+      const { error } = await supabase.from("knowledge_documents").insert({
+        workspace_id: ws.workspaceId,
+        title: titleFromFile(f.name),
+        category: "general",
+        content: r.text,
+        source_name: f.name.slice(0, 255),
+      });
+      if (error) {
+        toast.error(`${f.name}: ${error.message}`);
+        continue;
+      }
+      added++;
+      if (r.truncated)
+        toast.warning(
+          `${f.name} was long — only the first ${MAX_DOC_CHARS.toLocaleString()} characters were kept.`,
+        );
+    }
+    setUploading(null);
+    if (fileRef.current) fileRef.current.value = "";
+    if (added)
+      toast.success(
+        `${added} document${added > 1 ? "s" : ""} added — the AI can use ${added > 1 ? "them" : "it"} now.`,
+      );
+    q.refetch();
+  }
   const q = useQuery({
     queryKey: ["kb", ws.workspaceId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("knowledge_documents")
-        .select("id, title, category, content, updated_at")
+        .select("id, title, category, content, source_name, updated_at")
         .eq("workspace_id", ws.workspaceId)
         .order("category")
         .order("title");
@@ -66,12 +107,32 @@ function KnowledgePage() {
     <PageContainer className="max-w-4xl">
       <PageHeader
         title="Knowledge Base"
-        description="Facts the AI uses for suggestions: tours, prices, meeting points and policies."
+        description="Facts the AI uses for suggestions and the AI Operator: write articles or upload your price lists, menus, FAQs and policies."
         actions={
           canEdit && (
-            <Button size="sm" onClick={() => setEdit("new")}>
-              <Plus /> New article
-            </Button>
+            <div className="flex gap-2">
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                accept={KNOWLEDGE_ACCEPT}
+                className="hidden"
+                onChange={(e) => upload(e.target.files)}
+                aria-label="Upload documents"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!!uploading}
+                onClick={() => fileRef.current?.click()}
+              >
+                {uploading ? <Loader2 className="animate-spin" /> : <Upload />}
+                {uploading ? "Reading…" : "Upload documents"}
+              </Button>
+              <Button size="sm" onClick={() => setEdit("new")}>
+                <Plus /> New article
+              </Button>
+            </div>
           )
         }
       />
@@ -86,12 +147,17 @@ function KnowledgePage() {
           <EmptyState
             icon={<BookOpen />}
             title="No articles yet"
-            description="Add your tour descriptions, prices and meeting points so AI suggestions are accurate."
+            description="Upload a PDF, Word or text file (price list, menu, FAQ) or write an article, so AI answers are accurate."
             action={
               canEdit && (
-                <Button onClick={() => setEdit("new")}>
-                  <Plus /> New article
-                </Button>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button variant="outline" onClick={() => fileRef.current?.click()}>
+                    <Upload /> Upload documents
+                  </Button>
+                  <Button onClick={() => setEdit("new")}>
+                    <Plus /> New article
+                  </Button>
+                </div>
               )
             }
           />
@@ -108,10 +174,16 @@ function KnowledgePage() {
                     <ToneBadge tone="teal">
                       {CATS[d.category as keyof typeof CATS] ?? d.category}
                     </ToneBadge>
+                    {d.source_name && (
+                      <ToneBadge tone="muted">
+                        <FileText className="size-3" /> {d.source_name}
+                      </ToneBadge>
+                    )}
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{d.content}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    Updated {fmtDate(d.updated_at)}
+                    Updated {fmtDate(d.updated_at)} · {(d.content?.length ?? 0).toLocaleString()}{" "}
+                    characters
                   </p>
                 </button>
               </li>
@@ -140,7 +212,8 @@ function DocDialog({ doc, onClose }: { doc?: Doc; onClose: () => void }) {
   const [content, setContent] = useState(doc?.content ?? "");
   async function save() {
     if (!title.trim()) return toast.error("Title is required");
-    if (content.length > 20000) return toast.error("Content is too long (max 20,000 characters)");
+    if (content.length > MAX_DOC_CHARS)
+      return toast.error(`Content is too long (max ${MAX_DOC_CHARS.toLocaleString()} characters)`);
     const row = { title: title.trim().slice(0, 200), category, content };
     const { error } = doc
       ? await supabase.from("knowledge_documents").update(row).eq("id", doc.id)

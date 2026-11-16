@@ -246,6 +246,13 @@
       "when": 1794824784411,
       "tag": "0034_inbox_snooze",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794824785411,
+      "tag": "0035_knowledge_documents",
+      "breakpoints": true
     }
   ]
 }

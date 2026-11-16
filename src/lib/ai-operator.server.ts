@@ -8,6 +8,7 @@ import {
   withinTourHours,
 } from "./ai-operator";
 import { TT24_PLAYBOOK } from "./tt24-playbook";
+import { loadKnowledge } from "./knowledge.server";
 
 const BATCH = 5;
 // Strict structured output so the model's decision is always parseable JSON.
@@ -125,7 +126,6 @@ export async function runOperatorFor(ws: string, opts: { force?: boolean } = {})
       .gte("last_message_at", since)
       .order("last_message_at", { ascending: true })
       .limit(25);
-    const kb = await knowledge(sb, ws);
     for (const c of convs ?? []) {
       if (handled >= BATCH) break;
       const { data: last } = await sb
@@ -173,6 +173,17 @@ export async function runOperatorFor(ws: string, opts: { force?: boolean } = {})
       // A previous handoff never silences the chat: every new guest message gets an answer.
       if (mark?.last_inbound_id === last.id) continue;
       handled++;
+      const { data: recent } = await sb
+        .from("messages")
+        .select("body")
+        .eq("conversation_id", c.id)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      const kb = await loadKnowledge(
+        sb,
+        ws,
+        ((recent ?? []) as { body: string | null }[]).map((m) => m.body ?? "").reverse(),
+      );
       const r = await handleConversation(sb, ws, s, ai, kb, c, mark?.replies ?? 0);
       await sb.from("ai_operator_marks").upsert({
         conversation_id: c.id,
@@ -193,19 +204,6 @@ export async function runOperatorFor(ws: string, opts: { force?: boolean } = {})
       .eq("workspace_id", ws);
   }
   return { handled };
-}
-
-async function knowledge(sb: Admin, ws: string) {
-  const { data } = await sb
-    .from("knowledge_documents")
-    .select("title, category, content")
-    .eq("workspace_id", ws)
-    .order("updated_at", { ascending: false })
-    .limit(40);
-  return (data ?? [])
-    .map((d: any) => `## ${d.title} (${d.category})\n${d.content ?? ""}`)
-    .join("\n\n")
-    .slice(0, 30000);
 }
 
 async function log(

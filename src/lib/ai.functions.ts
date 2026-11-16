@@ -15,32 +15,21 @@ Be friendly, concise and accurate. Only state facts found in the business instru
 If a fact is missing, write a placeholder like [confirm price] for the team to fill in.`;
 }
 
-async function loadContext(supabase: any, workspaceId: string) {
-  const [s, kb, w] = await Promise.all([
+async function loadContext(supabase: any, workspaceId: string, texts: string[]) {
+  const { loadKnowledge } = await import("./knowledge.server");
+  const [s, kbText, w] = await Promise.all([
     supabase
       .from("ai_settings")
       .select("instructions, enabled, provider, model, base_url")
       .eq("workspace_id", workspaceId)
       .maybeSingle(),
-    supabase
-      .from("knowledge_documents")
-      .select("title, category, content")
-      .eq("workspace_id", workspaceId)
-      .order("updated_at", { ascending: false })
-      .limit(40),
+    loadKnowledge(supabase, workspaceId, texts),
     supabase
       .from("workspaces")
       .select("name, platform_connectors")
       .eq("id", workspaceId)
       .maybeSingle(),
   ]);
-  const kbText = (kb.data ?? [])
-    .map(
-      (d: { title: string; category: string; content: string | null }) =>
-        `## ${d.title} (${d.category})\n${d.content ?? ""}`,
-    )
-    .join("\n\n")
-    .slice(0, 30000);
   return {
     settings: {
       provider: (s.data?.provider ?? "lovable") as any,
@@ -87,18 +76,26 @@ export const aiAssist = createServerFn({ method: "POST" })
       .eq("id", data.conversationId)
       .maybeSingle();
     if (!conv) return { ok: false as const, error: "Conversation not found or not accessible." };
-    const ctx = await loadContext(supabase, conv.workspace_id);
-    if (!ctx.enabled)
-      return {
-        ok: false as const,
-        error: "AI assistance is turned off. An admin can enable it on the AI Assistant page.",
-      };
     const { data: msgs } = await supabase
       .from("messages")
       .select("direction, body, created_at")
       .eq("conversation_id", conv.id)
       .order("created_at", { ascending: false })
       .limit(30);
+    // Search the knowledge base with the latest messages (newest first) plus the team's notes.
+    const searchTexts = [
+      ...((msgs ?? []) as { body: string | null }[])
+        .slice(0, 8)
+        .map((m) => m.body ?? "")
+        .reverse(),
+      data.text ?? "",
+    ];
+    const ctx = await loadContext(supabase, conv.workspace_id, searchTexts);
+    if (!ctx.enabled)
+      return {
+        ok: false as const,
+        error: "AI assistance is turned off. An admin can enable it on the AI Assistant page.",
+      };
     const transcript = (msgs ?? [])
       .reverse()
       .map(
@@ -162,7 +159,7 @@ export const aiAsk = createServerFn({ method: "POST" })
     const { generate } = await import("./ai-provider.server");
     const { data: member } = await context.supabase.rpc("is_member", { _ws: data.workspaceId });
     if (member !== true) return { ok: false as const, error: "Workspace not accessible." };
-    const ctx = await loadContext(context.supabase, data.workspaceId);
+    const ctx = await loadContext(context.supabase, data.workspaceId, [data.question]);
     if (!ctx.enabled)
       return {
         ok: false as const,
