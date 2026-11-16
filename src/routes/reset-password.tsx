@@ -54,7 +54,7 @@ function ResetPassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-5">
-      <div className="w-full max-w-sm">
+      <div className="glass w-full max-w-sm rounded-3xl p-6 sm:p-8">
         <div className="mb-8">
           <BrandLockup />
         </div>

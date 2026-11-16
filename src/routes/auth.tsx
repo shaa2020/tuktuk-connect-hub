@@ -80,7 +80,7 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-navy p-10 lg:flex">
+      <div className="m-4 hidden flex-col justify-between glass-dark overflow-hidden rounded-3xl p-10 lg:flex">
         <BrandLockup light />
         <div>
           <h2 className="font-display text-3xl font-bold text-navy-foreground">
@@ -96,7 +96,7 @@ function AuthPage() {
         </p>
       </div>
       <div className="flex items-center justify-center px-5 py-10">
-        <div className="w-full max-w-sm">
+        <div className="glass w-full max-w-sm rounded-3xl p-6 sm:p-8">
           <div className="mb-8 lg:hidden">
             <BrandLockup />
           </div>

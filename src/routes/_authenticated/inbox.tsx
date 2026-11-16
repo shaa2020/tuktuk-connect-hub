@@ -520,14 +520,14 @@ function InboxPage() {
   return (
     <div
       className={cn(
-        "flex md:h-[calc(100dvh-3.5rem)]",
+        "flex md:glass md:m-3 md:h-[calc(100dvh-5.75rem)] md:overflow-hidden md:rounded-2xl",
         c ? "h-[calc(100dvh-3.5rem)]" : "h-[calc(100dvh-3.5rem-4rem)]",
       )}
     >
       {/* List pane */}
       <section
         className={cn(
-          "flex w-full flex-col border-r bg-card md:w-[340px] md:shrink-0 lg:w-[380px]",
+          "flex w-full flex-col border-r bg-card md:w-[340px] md:shrink-0 md:bg-surface-1 lg:w-[380px]",
           c && "hidden md:flex",
         )}
         aria-label="Conversations"
@@ -953,9 +953,7 @@ function InboxPage() {
         </DialogContent>
       </Dialog>
       {/* Thread pane */}
-      <section
-        className={cn("min-w-0 flex-1 flex-col bg-background", c ? "flex" : "hidden md:flex")}
-      >
+      <section className={cn("min-w-0 flex-1 flex-col", c ? "flex" : "hidden md:flex")}>
         {c ? (
           <Thread key={c} id={c} onBack={() => navigate({ search: {} })} />
         ) : (

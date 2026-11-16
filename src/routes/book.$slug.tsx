@@ -295,7 +295,7 @@ function BookingPage() {
         )}
 
         {service && date && (
-          <div className="sticky bottom-0 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur">
+          <div className="sticky bottom-0 -mx-4 border-t border-glass-edge bg-popover px-4 py-3 backdrop-blur-xl">
             {error && (
               <p
                 role="alert"
@@ -327,7 +327,7 @@ function Shell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-dvh bg-background">
+    <main className="min-h-dvh">
       <div className="mx-auto max-w-xl px-4 py-8">
         {title && <h1 className="font-display text-2xl font-bold">{title}</h1>}
         {intro && <p className="mt-1 text-sm text-muted-foreground">{intro}</p>}

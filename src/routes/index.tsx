@@ -24,5 +24,5 @@ function Index() {
       navigate({ to: data.session ? "/dashboard" : "/auth", replace: true });
     });
   }, [navigate]);
-  return <div className="min-h-screen bg-background" />;
+  return <div className="min-h-screen" />;
 }

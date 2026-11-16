@@ -23,7 +23,7 @@ function NoAccess() {
   const signOut = useSignOut();
   return (
     <div className="flex min-h-screen items-center justify-center px-5">
-      <div className="max-w-sm text-center">
+      <div className="glass max-w-sm rounded-3xl p-6 text-center sm:p-8">
         <ShieldAlert className="mx-auto size-10 text-warning" />
         <h1 className="mt-3 text-xl font-bold">No workspace access yet</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -56,7 +56,7 @@ function Suspended({
   const others = workspaces.filter((w) => !w.suspended);
   return (
     <div className="flex min-h-screen items-center justify-center px-5">
-      <div className="max-w-sm text-center">
+      <div className="glass max-w-sm rounded-3xl p-6 text-center sm:p-8">
         <Ban className="mx-auto size-10 text-destructive" />
         <h1 className="mt-3 text-xl font-bold">{name} is suspended</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -81,15 +81,15 @@ function Suspended({
 function ChooseBusiness({ workspaces }: { workspaces: WorkspaceSummary[] }) {
   const signOut = useSignOut();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-5">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center px-5">
+      <div className="glass w-full max-w-sm rounded-3xl p-6 sm:p-8">
         <Building2 className="mx-auto size-10 text-primary" />
         <h1 className="mt-3 text-center text-xl font-bold">Choose a business</h1>
         <p className="mt-1 text-center text-sm text-muted-foreground">
           You're part of several businesses. Each one has its own inbox, bookings and customers —
           you can switch any time from your profile menu.
         </p>
-        <ul className="mt-6 divide-y overflow-hidden rounded-xl border bg-card">
+        <ul className="mt-6 divide-y overflow-hidden rounded-xl border bg-surface-1">
           {workspaces.map((w) => (
             <li key={w.id}>
               <button

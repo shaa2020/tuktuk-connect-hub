@@ -5,9 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Tuk Tuk 24 Lisbon design system.
- * Brand: navy #14213D, blue #2563EB, teal #0F766E, bg #F7F8FC.
- * All colors in oklch. Components must only use these semantic tokens.
+ * TeamInbox design system — "clean 3D glass".
+ * Brand: navy #14213D, blue #2563EB, teal #0F766E.
+ * Surfaces are translucent frosted glass over a soft colour backdrop (body::before); depth comes
+ * from layered shadows with a light top edge. All colours are oklch tokens — components must use
+ * the semantic tokens and the glass / glass-strong / btn-3d utilities, never raw colours.
+ * Without backdrop-filter support, or with "reduce transparency", surfaces become solid.
  */
 
 @theme inline {
@@ -66,9 +69,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --shadow-card: 0 1px 2px oklch(0.25 0.06 265 / 0.04), 0 1px 3px oklch(0.25 0.06 265 / 0.06);
-  --shadow-pop: 0 10px 30px -10px oklch(0.25 0.06 265 / 0.25);
-  --shadow-elev: 0 1px 0 oklch(0.25 0.06 265 / 0.03), 0 4px 12px -4px oklch(0.25 0.06 265 / 0.10);
+  --shadow-card: var(--elev-1);
+  --shadow-pop: var(--elev-3);
+  --shadow-elev: var(--elev-2);
+  --color-field: var(--field);
+  --color-glass-edge: var(--glass-edge);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-border-subtle: var(--border-subtle);
@@ -79,12 +84,13 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.981 0.005 274);
+  --radius: 0.875rem;
+  --glass-blur: 18px;
+  --background: oklch(0.975 0.008 274);
   --foreground: oklch(0.23 0.035 264);
-  --card: oklch(1 0 0);
+  --card: oklch(1 0 0 / 0.62);
   --card-foreground: oklch(0.23 0.035 264);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.995 0.003 274 / 0.86);
   --popover-foreground: oklch(0.23 0.035 264);
   --primary: oklch(0.546 0.215 262.9);
   --primary-foreground: oklch(0.99 0 0);
@@ -94,11 +100,11 @@
   --teal: oklch(0.511 0.086 186.4);
   --teal-foreground: oklch(0.99 0 0);
   --teal-soft: oklch(0.95 0.03 186);
-  --secondary: oklch(0.96 0.006 270);
+  --secondary: oklch(0.25 0.06 265 / 0.06);
   --secondary-foreground: oklch(0.23 0.035 264);
-  --muted: oklch(0.96 0.006 270);
+  --muted: oklch(0.25 0.06 265 / 0.06);
   --muted-foreground: oklch(0.551 0.034 264);
-  --accent: oklch(0.95 0.03 262.9);
+  --accent: oklch(0.546 0.215 262.9 / 0.09);
   --accent-foreground: oklch(0.25 0.06 265);
   --destructive: oklch(0.577 0.215 27);
   --destructive-foreground: oklch(0.99 0 0);
@@ -111,39 +117,54 @@
   --info-soft: oklch(0.96 0.03 241.9);
   --note: oklch(0.975 0.04 90);
   --note-border: oklch(0.88 0.09 90);
-  --border: oklch(0.928 0.006 264.5);
-  --input: oklch(0.928 0.006 264.5);
+  --border: oklch(0.25 0.06 265 / 0.1);
+  --input: oklch(0.25 0.06 265 / 0.14);
+  --field: oklch(1 0 0 / 0.66);
+  --glass-edge: oklch(1 0 0 / 0.7);
   --ring: oklch(0.546 0.215 262.9);
   --chart-1: oklch(0.546 0.215 262.9);
   --chart-2: oklch(0.511 0.086 186.4);
   --chart-3: oklch(0.666 0.157 58);
   --chart-4: oklch(0.588 0.139 241.9);
   --chart-5: oklch(0.25 0.06 265);
-  --sidebar: oklch(0.25 0.06 265);
-  --sidebar-foreground: oklch(0.85 0.02 265);
+  --sidebar: oklch(0.21 0.065 266 / 0.9);
+  --sidebar-foreground: oklch(0.86 0.02 265);
   --sidebar-primary: oklch(0.546 0.215 262.9);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.32 0.06 265);
+  --sidebar-accent: oklch(1 0 0 / 0.1);
   --sidebar-accent-foreground: oklch(0.99 0 0);
-  --sidebar-border: oklch(0.32 0.05 265);
+  --sidebar-border: oklch(1 0 0 / 0.1);
   --sidebar-ring: oklch(0.546 0.215 262.9);
-  --surface-1: oklch(0.99 0.003 274);
-  --surface-2: oklch(0.965 0.007 270);
-  --border-subtle: oklch(0.95 0.005 264);
+  --surface-1: oklch(1 0 0 / 0.5);
+  --surface-2: oklch(0.25 0.06 265 / 0.05);
+  --border-subtle: oklch(0.25 0.06 265 / 0.07);
+  /* depth: light top edge + soft, tinted drop shadows */
+  --elev-1:
+    inset 0 1px 0 oklch(1 0 0 / 0.75), 0 1px 2px oklch(0.25 0.06 265 / 0.05),
+    0 8px 24px -12px oklch(0.25 0.06 265 / 0.18);
+  --elev-2:
+    inset 0 1px 0 oklch(1 0 0 / 0.8), 0 2px 4px oklch(0.25 0.06 265 / 0.06),
+    0 14px 32px -14px oklch(0.25 0.06 265 / 0.24);
+  --elev-3:
+    inset 0 1px 0 oklch(1 0 0 / 0.85), 0 4px 10px oklch(0.25 0.06 265 / 0.08),
+    0 28px 60px -20px oklch(0.25 0.06 265 / 0.35);
+  /* backdrop glows */
+  --glow-1: oklch(0.8 0.12 262 / 0.6);
+  --glow-2: oklch(0.85 0.1 300 / 0.48);
+  --glow-3: oklch(0.87 0.09 186 / 0.5);
   --whatsapp: oklch(0.6 0.15 150);
   --gmail: oklch(0.58 0.19 27);
   --instagram: oklch(0.6 0.22 0);
   --facebook: oklch(0.55 0.18 258);
 }
 
-
 /* Dark theme: same tokens, re-tuned for low light. Toggled by the "dark" class on <html>. */
 .dark {
-  --background: oklch(0.17 0.02 265);
+  --background: oklch(0.16 0.025 265);
   --foreground: oklch(0.94 0.01 265);
-  --card: oklch(0.215 0.025 265);
+  --card: oklch(0.24 0.03 265 / 0.55);
   --card-foreground: oklch(0.94 0.01 265);
-  --popover: oklch(0.23 0.025 265);
+  --popover: oklch(0.22 0.03 265 / 0.9);
   --popover-foreground: oklch(0.94 0.01 265);
   --primary: oklch(0.65 0.18 262.9);
   --primary-foreground: oklch(0.15 0.02 265);
@@ -153,11 +174,11 @@
   --teal: oklch(0.66 0.1 186.4);
   --teal-foreground: oklch(0.15 0.02 265);
   --teal-soft: oklch(0.3 0.05 186);
-  --secondary: oklch(0.27 0.02 265);
+  --secondary: oklch(1 0 0 / 0.07);
   --secondary-foreground: oklch(0.94 0.01 265);
-  --muted: oklch(0.27 0.02 265);
+  --muted: oklch(1 0 0 / 0.07);
   --muted-foreground: oklch(0.7 0.02 265);
-  --accent: oklch(0.3 0.05 262.9);
+  --accent: oklch(0.65 0.18 262.9 / 0.16);
   --accent-foreground: oklch(0.95 0.01 265);
   --destructive: oklch(0.66 0.19 25);
   --destructive-foreground: oklch(0.15 0.02 265);
@@ -170,25 +191,39 @@
   --info-soft: oklch(0.3 0.05 241.9);
   --note: oklch(0.3 0.05 90);
   --note-border: oklch(0.45 0.08 90);
-  --border: oklch(0.3 0.02 265);
-  --input: oklch(0.33 0.02 265);
+  --border: oklch(1 0 0 / 0.09);
+  --input: oklch(1 0 0 / 0.14);
+  --field: oklch(0.2 0.03 265 / 0.6);
+  --glass-edge: oklch(1 0 0 / 0.1);
   --ring: oklch(0.65 0.18 262.9);
   --chart-1: oklch(0.65 0.18 262.9);
   --chart-2: oklch(0.66 0.1 186.4);
   --chart-3: oklch(0.78 0.14 70);
   --chart-4: oklch(0.7 0.12 241.9);
   --chart-5: oklch(0.85 0.03 265);
-  --sidebar: oklch(0.13 0.025 265);
+  --sidebar: oklch(0.13 0.03 265 / 0.7);
   --sidebar-foreground: oklch(0.8 0.02 265);
   --sidebar-primary: oklch(0.65 0.18 262.9);
   --sidebar-primary-foreground: oklch(0.15 0.02 265);
-  --sidebar-accent: oklch(0.22 0.03 265);
+  --sidebar-accent: oklch(1 0 0 / 0.08);
   --sidebar-accent-foreground: oklch(0.97 0.01 265);
-  --sidebar-border: oklch(0.24 0.03 265);
+  --sidebar-border: oklch(1 0 0 / 0.08);
   --sidebar-ring: oklch(0.65 0.18 262.9);
-  --surface-1: oklch(0.2 0.02 265);
-  --surface-2: oklch(0.24 0.02 265);
-  --border-subtle: oklch(0.26 0.02 265);
+  --surface-1: oklch(1 0 0 / 0.04);
+  --surface-2: oklch(1 0 0 / 0.07);
+  --border-subtle: oklch(1 0 0 / 0.07);
+  --elev-1:
+    inset 0 1px 0 oklch(1 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.3),
+    0 10px 28px -12px oklch(0 0 0 / 0.55);
+  --elev-2:
+    inset 0 1px 0 oklch(1 0 0 / 0.08), 0 2px 6px oklch(0 0 0 / 0.35),
+    0 16px 36px -14px oklch(0 0 0 / 0.6);
+  --elev-3:
+    inset 0 1px 0 oklch(1 0 0 / 0.1), 0 6px 14px oklch(0 0 0 / 0.4),
+    0 30px 70px -20px oklch(0 0 0 / 0.7);
+  --glow-1: oklch(0.45 0.16 262 / 0.45);
+  --glow-2: oklch(0.42 0.14 300 / 0.32);
+  --glow-3: oklch(0.45 0.09 186 / 0.3);
   color-scheme: dark;
 }
 
@@ -199,7 +234,8 @@
   html {
     -webkit-tap-highlight-color: transparent;
   }
-  html, body {
+  html,
+  body {
     overflow-x: clip;
   }
   body {
@@ -208,7 +244,23 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 {
+  /* Soft colour backdrop the glass surfaces float on (fixed, so it never scrolls or repaints). */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60rem 42rem at 8% -12%, var(--glow-1), transparent 62%),
+      radial-gradient(52rem 38rem at 104% 4%, var(--glow-2), transparent 60%),
+      radial-gradient(58rem 42rem at 62% 112%, var(--glow-3), transparent 62%),
+      var(--color-background);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
@@ -219,16 +271,126 @@
 }
 @utility scrollbar-none {
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
+/* Frosted glass surface: panels, cards, bars. */
+@utility glass {
+  background-color: var(--color-card);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
+  border: 1px solid var(--color-glass-edge);
+  box-shadow: var(--elev-1);
+}
+/* Denser glass for floating layers: dialogs, sheets, menus, popovers. */
+@utility glass-strong {
+  background-color: var(--color-popover);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid var(--color-glass-edge);
+  box-shadow: var(--elev-3);
+}
+/* Tinted dark glass with soft inner light: sidebar, hero panels. */
+@utility glass-dark {
+  background-color: var(--color-sidebar);
+  background-image:
+    radial-gradient(120% 55% at 0% 0%, oklch(0.6 0.2 262.9 / 0.38), transparent 62%),
+    radial-gradient(90% 45% at 100% 100%, oklch(0.6 0.1 186.4 / 0.3), transparent 62%),
+    linear-gradient(180deg, oklch(1 0 0 / 0.07), transparent 38%);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid var(--color-sidebar-border);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.14),
+    var(--elev-3);
+}
+/* Raised, tactile button: top highlight, colour-matched depth, lifts on hover, presses on tap. */
+@utility btn-3d {
+  background-image: linear-gradient(
+    180deg,
+    oklch(1 0 0 / 0.22) 0%,
+    oklch(1 0 0 / 0.04) 48%,
+    oklch(0 0 0 / 0.06) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.38),
+    inset 0 -1px 0 oklch(0 0 0 / 0.12),
+    0 1px 2px oklch(0.25 0.06 265 / 0.2),
+    0 8px 18px -8px color-mix(in oklch, var(--btn-glow, var(--color-primary)) 60%, transparent);
+  transition:
+    transform 140ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease,
+    background-color 160ms ease;
+  &:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+  }
+  &:active {
+    transform: translateY(0.5px) scale(0.985);
+    box-shadow:
+      inset 0 1px 2px oklch(0 0 0 / 0.18),
+      0 1px 1px oklch(0.25 0.06 265 / 0.15);
+  }
+}
+/* Subtle lift for interactive cards. */
+@utility lift {
+  transition:
+    transform 160ms ease,
+    box-shadow 180ms ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elev-2);
+  }
+}
+
 @utility pressable {
-  transition: transform 120ms ease, background-color 150ms ease, color 150ms ease;
-  &:active { transform: scale(0.97); }
+  transition:
+    transform 120ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* No backdrop-filter (older browsers) or the person asked for less transparency: solid surfaces
+   so text always stays readable. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --card: oklch(1 0 0);
+    --popover: oklch(1 0 0);
+    --field: oklch(1 0 0);
+    --sidebar: oklch(0.25 0.06 265);
+  }
+  .dark {
+    --card: oklch(0.215 0.025 265);
+    --popover: oklch(0.23 0.025 265);
+    --field: oklch(0.2 0.02 265);
+    --sidebar: oklch(0.13 0.025 265);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --card: oklch(1 0 0);
+    --popover: oklch(1 0 0);
+    --field: oklch(1 0 0);
+    --sidebar: oklch(0.25 0.06 265);
+  }
+  .dark {
+    --card: oklch(0.215 0.025 265);
+    --popover: oklch(0.23 0.025 265);
+    --field: oklch(0.2 0.02 265);
+    --sidebar: oklch(0.13 0.025 265);
   }
 }
