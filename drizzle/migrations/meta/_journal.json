@@ -239,6 +239,13 @@
       "when": 1794824783411,
       "tag": "0033_services_booking_page",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794824784411,
+      "tag": "0034_inbox_snooze",
+      "breakpoints": true
     }
   ]
 }

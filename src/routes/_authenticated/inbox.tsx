@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ConnectAccountButton } from "@/components/connect-account";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -38,6 +39,9 @@ import {
   PanelRight,
   Globe,
   Paperclip,
+  AlarmClock,
+  Keyboard,
+  ListChecks,
 } from "lucide-react";
 import { TOUR_PACKAGES, formatQuote, quoteTotal } from "@/lib/quotes";
 import { listWebsiteTours } from "@/lib/website.functions";
@@ -70,6 +74,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -104,6 +111,16 @@ import {
   type Priority,
 } from "@/lib/domain";
 import { cn } from "@/lib/utils";
+import {
+  SHORTCUTS,
+  SNOOZE_LABEL,
+  commandFor,
+  isSnoozed,
+  moveSelection,
+  snoozeLabel,
+  snoozeUntil,
+  type SnoozePreset,
+} from "@/lib/inbox-keys";
 import { parseEmailBody, cleanSubject } from "@/lib/email-format";
 
 const FILTERS = {
@@ -116,6 +133,7 @@ const FILTERS = {
   waiting_team: "Waiting for team",
   resolved: "Resolved",
   high: "High priority",
+  snoozed: "Snoozed",
   failed: "Failed messages",
 } as const;
 type FilterKey = keyof typeof FILTERS;
@@ -303,6 +321,11 @@ function InboxPage() {
   const [limit, setLimit] = useState(40);
   const [newOpen, setNewOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
   const activeFilters = [channel, assignee, label, since].filter(Boolean).length;
   useEffect(() => {
     const t = setTimeout(() => setDebounced(term.trim().replace(/[%,()]/g, "")), 300);
@@ -338,7 +361,7 @@ function InboxPage() {
       let r = supabase
         .from("conversations")
         .select(
-          "id, channel, connection_id, subject, status, priority, assigned_to, unread, last_message_at, last_message_preview, lead_id, booking_id, escalated, is_demo, contacts(full_name), conversation_tags(tags(id, name))",
+          "id, channel, connection_id, subject, status, priority, assigned_to, unread, last_message_at, last_message_preview, lead_id, booking_id, escalated, is_demo, snoozed_until, contacts(full_name), conversation_tags(tags(id, name))",
           { count: "exact" },
         )
         .eq("workspace_id", ws.workspaceId)
@@ -351,6 +374,11 @@ function InboxPage() {
       if (filter === "waiting_customer" || filter === "waiting_team" || filter === "resolved")
         r = r.eq("status", filter);
       if (filter === "high") r = r.in("priority", ["high", "urgent"]);
+      // Snoozed conversations leave the working views until their time passes (search finds them).
+      const nowIso = new Date().toISOString();
+      if (filter === "snoozed") r = r.gt("snoozed_until", nowIso);
+      else if (filter !== "resolved" && !debounced)
+        r = r.or(`snoozed_until.is.null,snoozed_until.lte.${nowIso}`);
       if (filter !== "resolved" && filter !== "all") r = r.neq("status", "archived");
       if (filter === "failed") {
         const { data: f } = await supabase
@@ -414,7 +442,80 @@ function InboxPage() {
       if (error) throw error;
       return { rows: data, count: count ?? 0 };
     },
+    refetchInterval: 60_000, // brings snoozed conversations back on time
   });
+  const ids = useMemo(() => (list.data?.rows ?? []).map((r) => r.id), [list.data]);
+
+  async function bulk(
+    patch: Database["public"]["Tables"]["conversations"]["Update"],
+    done: string,
+    only?: string[],
+  ) {
+    const target = only ?? [...selected];
+    if (!target.length) return;
+    const { data, error } = await supabase
+      .from("conversations")
+      .update(patch)
+      .in("id", target)
+      .select("id");
+    if (error)
+      return toast.error(
+        error.message.includes("Agents can only")
+          ? "Agents can only assign conversations to themselves."
+          : errMsg(error),
+      );
+    const n = data?.length ?? 0;
+    if (only) toast.success(done);
+    else
+      toast.success(
+        n === target.length
+          ? `${done} (${n})`
+          : `${done}: ${n} of ${target.length} — you can't change the others`,
+      );
+    if (!only) setSelected(new Set());
+    qc.invalidateQueries({ queryKey: ["conversations"] });
+    qc.invalidateQueries({ queryKey: ["conversation"] });
+    qc.invalidateQueries({ queryKey: ["count"] });
+  }
+  const toggleSel = (id: string) =>
+    setSelected((cur) => {
+      const n = new Set(cur);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+
+  // Keyboard shortcuts (ignored while typing or when a dialog is open)
+  const keyState = useRef({ ids, c, selected });
+  keyState.current = { ids, c, selected };
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const cmd = commandFor(e);
+      if (!cmd) return;
+      if (document.querySelector("[role=dialog],[role=alertdialog],[role=menu]") && cmd !== "close")
+        return;
+      const { ids, c, selected } = keyState.current;
+      if (cmd !== "close") e.preventDefault();
+      if (cmd === "next" || cmd === "prev") {
+        const to = moveSelection(ids, c, cmd === "next" ? 1 : -1);
+        if (to) navigate({ search: { c: to } });
+      } else if (cmd === "search") searchRef.current?.focus();
+      else if (cmd === "help") setHelpOpen(true);
+      else if (cmd === "reply") document.getElementById("composer-input")?.focus();
+      else if (cmd === "select" && c) toggleSel(c);
+      else if (cmd === "resolve" && c) bulk({ status: "resolved" }, "Resolved", [c]);
+      else if (cmd === "assignMe" && c) bulk({ assigned_to: ws.userId }, "Assigned to you", [c]);
+      else if (cmd === "close") {
+        if (document.querySelector("[role=dialog],[role=alertdialog],[role=menu]")) return;
+        if (selected.size) setSelected(new Set());
+        else if (c && !(e.target instanceof HTMLTextAreaElement)) navigate({ search: {} });
+        else if (e.target instanceof HTMLElement) e.target.blur();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, ws.userId]);
 
   return (
     <div
@@ -437,7 +538,9 @@ function InboxPage() {
               <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="h-9 pl-8 text-sm"
-                placeholder="Search inbox"
+                ref={searchRef}
+                placeholder="Search"
+                title="Search the inbox (/)"
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
                 aria-label="Search conversations"
@@ -459,19 +562,103 @@ function InboxPage() {
             </Button>
             <Button
               size="sm"
+              variant={selectMode ? "secondary" : "outline"}
+              className="h-9 shrink-0 px-2.5"
+              onClick={() => {
+                setSelectMode((m) => !m);
+                setSelected(new Set());
+              }}
+              aria-pressed={selectMode}
+              aria-label="Select conversations"
+              title="Select conversations (x)"
+            >
+              <ListChecks />
+            </Button>
+            <Button
+              size="sm"
               variant="outline"
               className="h-9 shrink-0 px-2.5"
               onClick={() => setNewOpen(true)}
               aria-label="New conversation"
             >
               <Plus />
-              <span className="hidden sm:inline">New</span>
             </Button>
             <ConnectAccountButton className="h-9 shrink-0 px-2.5" label="Connect" />
           </div>
+          {selected.size > 0 && (
+            <div
+              className="flex flex-wrap items-center gap-1.5 rounded-lg bg-primary-soft px-2 py-1.5"
+              role="toolbar"
+              aria-label="Bulk actions"
+            >
+              <span className="mr-1 text-xs font-semibold text-primary">
+                {selected.size} selected
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => bulk({ assigned_to: ws.userId }, "Assigned to you")}
+              >
+                <User /> Assign me
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => bulk({ unread: false }, "Marked as read")}
+              >
+                <MailOpen /> Read
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
+                    <AlarmClock /> Snooze
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {(Object.keys(SNOOZE_LABEL) as SnoozePreset[]).map((k) => (
+                    <DropdownMenuItem
+                      key={k}
+                      onClick={() =>
+                        bulk({ snoozed_until: snoozeUntil(k).toISOString() }, "Snoozed")
+                      }
+                    >
+                      {SNOOZE_LABEL[k]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => bulk({ status: "resolved" }, "Resolved")}
+              >
+                <CheckCheck /> Resolve
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-auto h-7 px-2 text-xs"
+                onClick={() => setSelected(new Set())}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-0.5 [scrollbar-width:none]">
             {(
-              ["all", "mine", "unread", "unassigned", "open", "waiting_team", "high"] as FilterKey[]
+              [
+                "all",
+                "mine",
+                "unread",
+                "unassigned",
+                "open",
+                "waiting_team",
+                "high",
+                "snoozed",
+              ] as FilterKey[]
             ).map((k) => (
               <button
                 key={k}
@@ -489,6 +676,13 @@ function InboxPage() {
                 {k === "all" ? "All" : k === "high" ? "High priority" : FILTERS[k]}
               </button>
             ))}
+            <button
+              onClick={() => setHelpOpen(true)}
+              className="hidden shrink-0 items-center gap-1 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground md:inline-flex"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="size-3.5" /> Shortcuts
+            </button>
           </div>
           {showFilters && (
             <div className="grid grid-cols-2 gap-2 pb-1">
@@ -611,14 +805,32 @@ function InboxPage() {
                   id: string;
                   name: string;
                 }[];
+                const isSel = selected.has(v.id);
                 return (
-                  <li key={v.id}>
+                  <li key={v.id} className="group relative">
+                    <input
+                      type="checkbox"
+                      checked={isSel}
+                      onChange={() => toggleSel(v.id)}
+                      aria-label={`Select ${v.contacts?.full_name ?? v.subject ?? "conversation"}`}
+                      className={cn(
+                        "absolute left-2 top-2 z-10 size-4 cursor-pointer accent-primary transition-opacity",
+                        selectMode || selected.size > 0 || isSel
+                          ? "opacity-100"
+                          : "opacity-0 focus:opacity-100 group-hover:opacity-100",
+                      )}
+                    />
                     <button
-                      onClick={() => navigate({ search: { c: v.id } })}
+                      onClick={() =>
+                        selectMode || selected.size > 0
+                          ? toggleSel(v.id)
+                          : navigate({ search: { c: v.id } })
+                      }
                       className={cn(
                         "relative flex w-full gap-2.5 border-b border-border-subtle px-3 py-2.5 text-left transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none",
                         c === v.id &&
                           "bg-primary-soft before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary hover:bg-primary-soft",
+                        isSel && "bg-primary-soft/70",
                       )}
                     >
                       <div className="relative">
@@ -662,6 +874,11 @@ function InboxPage() {
                             </ToneBadge>
                           )}
                           {v.escalated && <ToneBadge tone="danger">Escalated</ToneBadge>}
+                          {isSnoozed(v.snoozed_until) && (
+                            <ToneBadge tone="info">
+                              <AlarmClock className="size-3" /> {snoozeLabel(v.snoozed_until!)}
+                            </ToneBadge>
+                          )}
                           {v.connection_id && accounts.data?.byId.get(v.connection_id) && (
                             <ToneBadge tone="muted">
                               {accounts.data.byId.get(v.connection_id)!.name}
@@ -708,6 +925,33 @@ function InboxPage() {
           )}
         </div>
       </section>
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Keyboard shortcuts</DialogTitle>
+          </DialogHeader>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+            {SHORTCUTS.map((s) => (
+              <div key={s.keys} className="contents">
+                <dt>
+                  <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-xs">
+                    {s.keys}
+                  </kbd>
+                </dt>
+                <dd className="text-muted-foreground">{s.label}</dd>
+              </div>
+            ))}
+            <div className="contents">
+              <dt>
+                <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-xs">
+                  Ctrl ↵
+                </kbd>
+              </dt>
+              <dd className="text-muted-foreground">Send message</dd>
+            </div>
+          </dl>
+        </DialogContent>
+      </Dialog>
       {/* Thread pane */}
       <section
         className={cn("min-w-0 flex-1 flex-col bg-background", c ? "flex" : "hidden md:flex")}
@@ -817,6 +1061,79 @@ function FileView({ f, outbound }: { f: FileRef; outbound: boolean }) {
 
 const MSG_PAGE = 50;
 
+type Viewer = { id: string; name: string; typing: boolean };
+/**
+ * Who else has this conversation open, and who is typing. Private Realtime presence channel
+ * "conv:<id>" — the database only lets people who can see the conversation join (migration 0034).
+ */
+function usePresence(convId: string) {
+  const ws = useWorkspace();
+  const [others, setOthers] = useState<Viewer[]>([]);
+  const chRef = useRef<RealtimeChannel | null>(null);
+  const typingRef = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const name = ws.memberName(ws.userId);
+  useEffect(() => {
+    const ch = supabase.channel(`conv:${convId}`, {
+      config: { private: true, presence: { key: ws.userId } },
+    });
+    ch.on("presence", { event: "sync" }, () => {
+      const st = ch.presenceState<{ name: string; typing: boolean }>();
+      setOthers(
+        Object.entries(st)
+          .filter(([k]) => k !== ws.userId)
+          .map(([k, metas]) => ({
+            id: k,
+            name: metas[0]?.name ?? "A teammate",
+            typing: metas.some((m) => m.typing),
+          })),
+      );
+    }).subscribe((status) => {
+      if (status === "SUBSCRIBED") void ch.track({ name, typing: false });
+    });
+    chRef.current = ch;
+    return () => {
+      clearTimeout(timer.current);
+      chRef.current = null;
+      typingRef.current = false;
+      void supabase.removeChannel(ch);
+    };
+  }, [convId, ws.userId, name]);
+  const typing = useCallback(() => {
+    const ch = chRef.current;
+    if (!ch) return;
+    if (!typingRef.current) {
+      typingRef.current = true;
+      void ch.track({ name, typing: true });
+    }
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      typingRef.current = false;
+      void chRef.current?.track({ name, typing: false });
+    }, 4000);
+  }, [name]);
+  return { others, typing };
+}
+
+function PresenceLine({ others }: { others: Viewer[] }) {
+  if (!others.length) return null;
+  const typers = others.filter((o) => o.typing);
+  const first = (n: string) => n.split(" ")[0];
+  const text = typers.length
+    ? `${typers.map((o) => first(o.name)).join(", ")} ${typers.length > 1 ? "are" : "is"} typing…`
+    : `${others.map((o) => first(o.name)).join(", ")} ${others.length > 1 ? "are" : "is"} also viewing`;
+  return (
+    <div
+      className="flex items-center gap-1.5 border-b bg-warning-soft px-3 py-1 text-xs text-warning"
+      role="status"
+      aria-live="polite"
+    >
+      <span className={cn("size-1.5 rounded-full bg-warning", typers.length && "animate-pulse")} />
+      {text}
+    </div>
+  );
+}
+
 function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const ws = useWorkspace();
   const qc = useQueryClient();
@@ -829,6 +1146,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     null | "contact" | "newcontact" | "lead" | "booking" | "task" | "labels"
   >(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const presence = usePresence(id);
 
   const conv = useQuery({
     queryKey: ["conversation", id],
@@ -1014,6 +1332,11 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                 </span>
               )}
               <SampleBadge show={v.is_demo} />
+              {isSnoozed(v.snoozed_until) && (
+                <ToneBadge tone="info">
+                  <AlarmClock className="size-3" /> until {snoozeLabel(v.snoozed_until!)}
+                </ToneBadge>
+              )}
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <ChannelIcon channel={v.channel} className={CHANNEL_COLOR[v.channel]} />
@@ -1069,6 +1392,37 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                 <Tag />
                 Labels
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <AlarmClock />
+                  Snooze
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {(Object.keys(SNOOZE_LABEL) as SnoozePreset[]).map((k) => (
+                    <DropdownMenuItem
+                      key={k}
+                      onClick={() =>
+                        update(
+                          { snoozed_until: snoozeUntil(k).toISOString() },
+                          `Snoozed until ${snoozeLabel(snoozeUntil(k).toISOString())} — a new customer message brings it back sooner`,
+                        )
+                      }
+                    >
+                      {SNOOZE_LABEL[k]}
+                    </DropdownMenuItem>
+                  ))}
+                  {isSnoozed(v.snoozed_until) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => update({ snoozed_until: null }, "Back in the inbox")}
+                      >
+                        Unsnooze
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               <DropdownMenuItem
                 onClick={() =>
                   update({ status: "archived" as ConversationStatus }, "Hidden from inbox")
@@ -1111,6 +1465,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           </DropdownMenu>
         </header>
 
+        <PresenceLine others={presence.others} />
         <div className="grid grid-cols-3 gap-2 border-b bg-card px-3 py-2">
           <NativeSelect
             className="h-9 text-xs"
@@ -1320,7 +1675,12 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <span className="sr-only">AI classification — a suggestion, may be wrong</span>
           </div>
         )}
-        <Composer conversationId={id} channel={v.channel} connected={connected} />
+        <Composer
+          conversationId={id}
+          channel={v.channel}
+          connected={connected}
+          onTyping={presence.typing}
+        />
       </div>
       {details && (
         <aside
@@ -1715,10 +2075,12 @@ function Composer({
   conversationId,
   channel,
   connected,
+  onTyping,
 }: {
   conversationId: string;
   channel: ChannelType;
   connected: boolean;
+  onTyping?: () => void;
 }) {
   const ws = useWorkspace();
   const qc = useQueryClient();
@@ -2170,8 +2532,12 @@ function Composer({
           </>
         )}
         <Textarea
+          id="composer-input"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            onTyping?.();
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();

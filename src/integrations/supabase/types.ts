@@ -1197,6 +1197,7 @@ export type Database = {
           lead_id: string | null
           priority: Database["public"]["Enums"]["priority_level"]
           resolved_at: string | null
+          snoozed_until: string | null
           status: Database["public"]["Enums"]["conversation_status"]
           subject: string | null
           unread: boolean
@@ -1227,6 +1228,7 @@ export type Database = {
           lead_id?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolved_at?: string | null
+          snoozed_until?: string | null
           status?: Database["public"]["Enums"]["conversation_status"]
           subject?: string | null
           unread?: boolean
@@ -1257,6 +1259,7 @@ export type Database = {
           lead_id?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolved_at?: string | null
+          snoozed_until?: string | null
           status?: Database["public"]["Enums"]["conversation_status"]
           subject?: string | null
           unread?: boolean

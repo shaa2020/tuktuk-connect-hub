@@ -38,3 +38,4 @@ All new migrations are idempotent and non-destructive (no DROP of tables/columns
 - `0030_platform_health_support_mfa_recovery.sql` — platform_revenue_summary / platform_health / platform_job_backlog, support_access_grants + support_workspace_snapshot (audited), mfa_recovery_codes.
 - `0032_inbox_attachments.sql` — attachments bucket + storage policies, message_attachments file_name/kind, insert policy, attachment_path_allowed.
 - `0033_services_booking_page.sql` — services table (hours, capacity, price, slot/day mode), bookings.service_id/end_date, workspace booking-page columns, service_availability / public_booking_page / public_create_booking RPCs.
+- `0034_inbox_snooze.sql` — conversations.snoozed_until + wake-on-inbound trigger; realtime_conv_allowed + Realtime Authorization policies for private `conv:<id>` presence channels (skipped when the realtime schema is absent).
