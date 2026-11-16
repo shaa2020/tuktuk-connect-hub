@@ -84,8 +84,34 @@ function SettingsPage() {
         title="Settings"
         description={`Signed in as ${ws.email} · ${ROLE_LABEL[ws.role]}`}
       />
-      <div className="space-y-4">
-        <Panel className="space-y-3 p-4">
+      <nav
+        aria-label="Settings sections"
+        className="scrollbar-none sticky top-14 z-20 -mx-4 mb-4 flex gap-2 overflow-x-auto bg-background/90 px-4 py-2 backdrop-blur md:top-14 md:mx-0 md:px-0"
+      >
+        {[
+          ["profile", "Profile"],
+          ["security", "Security"],
+          ...(admin
+            ? [
+                ["workspace", "Workspace"],
+                ["fields", "Contact fields"],
+                ["privacy", "Data & privacy"],
+                ["support", "Support"],
+                ["sample", "Sample data"],
+              ]
+            : []),
+        ].map(([id, label]) => (
+          <a
+            key={id}
+            href={`#s-${id}`}
+            className="shrink-0 rounded-full border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+      <div className="space-y-4 [&>*]:scroll-mt-28 [&>div>*]:scroll-mt-28">
+        <Panel id="s-profile" className="space-y-3 p-4">
           <h2 className="text-sm font-semibold">Your profile</h2>
           <Field label="Display name">
             <Input value={name} onChange={(e) => setName(e.target.value)} />
@@ -116,14 +142,14 @@ function SettingsPage() {
             Update password
           </Button>
         </Panel>
-        <Panel className="space-y-3 p-4">
+        <Panel id="s-security" className="space-y-3 p-4">
           <h2 className="text-sm font-semibold">Two-step sign-in</h2>
           <MfaSettingsPanel />
           <RecoveryCodesPanel />
         </Panel>
         {admin && (
           <>
-            <Panel className="space-y-4 p-4">
+            <Panel id="s-workspace" className="space-y-4 p-4">
               <h2 className="text-sm font-semibold">Workspace</h2>
               <div className="flex gap-2">
                 <Input
@@ -172,10 +198,16 @@ function SettingsPage() {
                 </NativeSelect>
               </label>
             </Panel>
-            <CustomFieldDefinitions workspaceId={ws.workspaceId} />
-            <DataPrivacyPanel />
-            <SupportAccessPanel />
-            <Panel className="space-y-3 p-4">
+            <div id="s-fields">
+              <CustomFieldDefinitions workspaceId={ws.workspaceId} />
+            </div>
+            <div id="s-privacy">
+              <DataPrivacyPanel />
+            </div>
+            <div id="s-support">
+              <SupportAccessPanel />
+            </div>
+            <Panel id="s-sample" className="space-y-3 p-4">
               <h2 className="text-sm font-semibold">Sample data</h2>
               <p className="text-sm text-muted-foreground">
                 Add a few clearly marked "[SAMPLE]" records to explore the app. They're never mixed
